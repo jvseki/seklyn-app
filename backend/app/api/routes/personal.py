@@ -158,7 +158,7 @@ def criar_treino(
     db: Session = Depends(get_db),
 ) -> Treino:
     aluno = obter_aluno_do_personal(aluno_id, personal, db)
-    treino = Treino(aluno_id=aluno.id, nome=dados.nome, ordem=dados.ordem)
+    treino = Treino(aluno_id=aluno.id, nome=dados.nome, ordem=dados.ordem, dia_semana=dados.dia_semana)
     db.add(treino)
     db.commit()
     db.refresh(treino)

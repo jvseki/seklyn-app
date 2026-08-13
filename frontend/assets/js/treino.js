@@ -6,6 +6,16 @@ import { $, $all, escaparHtml, mensagemDeErro, mostrarToast } from "./utils.js";
 import "./tema.js"; // liga o botão de alternar tema (data-acao="alternar-tema") desta página
 import { aplicarTemaPersonalizado } from "./tema-personalizado.js";
 
+const ROTULO_DIA = {
+  segunda: "Segunda",
+  terca: "Terça",
+  quarta: "Quarta",
+  quinta: "Quinta",
+  sexta: "Sexta",
+  sabado: "Sábado",
+  domingo: "Domingo",
+};
+
 const parametros = new URLSearchParams(window.location.search);
 const token = parametros.get("t");
 
@@ -61,12 +71,14 @@ function cardTreino(treino) {
     : treino.series_concluidas_hoje > 0
       ? `<span class="badge badge-neutro">Em andamento</span>`
       : "";
+  const rotuloDia = treino.dia_semana ? `<p class="hint-text" style="margin-top:-8px;margin-bottom:8px;">${ROTULO_DIA[treino.dia_semana] || treino.dia_semana}</p>` : "";
   return `
     <button class="treino-resumo-card" data-treino-id="${treino.id}" style="text-align:left;width:100%;border:1.5px solid var(--cor-borda);cursor:pointer;">
       <div class="treino-resumo-topo">
         <h3>${escaparHtml(treino.nome)}</h3>
         ${rotuloBadge}
       </div>
+      ${rotuloDia}
       <div class="progresso">
         <div class="progresso-preenchimento ${treino.concluido_hoje ? "completo" : ""}" style="width:${treino.progresso_percentual}%;"></div>
       </div>

@@ -38,7 +38,7 @@ const cabecalhoNomeEl = $("#aluno-nome");
 const cabecalhoLinkEl = $("#aluno-link");
 const whatsappEl = $("#aluno-whatsapp");
 const listaTreinosEl = $("#lista-treinos-editor");
-const formNovoTreino = $("#form-novo-treino");
+const gradeSemanaEl = $("#grade-semana");
 const analyticsEl = $("#analytics-resumo");
 const modalEditarAluno = $("#modal-editar-aluno");
 const formEditarAluno = $("#form-editar-aluno");
@@ -49,6 +49,18 @@ const editarItemCampos = $("#editar-item-campos");
 
 let alunoAtual = null;
 let treinosCache = []; // guarda os dados carregados pra preencher os modais de edição sem outra chamada à API
+
+const DIAS_SEMANA = [
+  { chave: "segunda", rotulo: "Segunda" },
+  { chave: "terca", rotulo: "Terça" },
+  { chave: "quarta", rotulo: "Quarta" },
+  { chave: "quinta", rotulo: "Quinta" },
+  { chave: "sexta", rotulo: "Sexta" },
+  { chave: "sabado", rotulo: "Sábado" },
+  { chave: "domingo", rotulo: "Domingo" },
+];
+
+const ROTULO_DIA = Object.fromEntries(DIAS_SEMANA.map((d) => [d.chave, d.rotulo]));
 
 function linhaSerie(serie) {
   return `
@@ -81,10 +93,13 @@ function blocoExercicio(exercicio) {
 
 function cardTreino(treino) {
   const exercicios = treino.exercicios.map(blocoExercicio).join("");
+  const badgeDia = treino.dia_semana
+    ? `<span class="badge badge-neutro" style="margin-left:var(--espaco-2);">${ROTULO_DIA[treino.dia_semana] || treino.dia_semana}</span>`
+    : "";
   return `
     <div class="card treino-editor-card" data-treino-id="${treino.id}">
       <div class="modal-cabecalho">
-        <h3>${escaparHtml(treino.nome)}</h3>
+        <h3>${escaparHtml(treino.nome)}${badgeDia}</h3>
         <div style="display:flex;gap:var(--espaco-2);">
           <button class="btn btn-ghost btn-sm" data-acao="editar-treino" data-id="${treino.id}" type="button">Editar</button>
           <button class="btn btn-danger btn-sm" data-acao="excluir-treino" data-id="${treino.id}" type="button">Excluir treino</button>
@@ -99,12 +114,40 @@ function cardTreino(treino) {
   `;
 }
 
+function linhaDiaSemana(dia, treinoDoDia) {
+  const temTreino = Boolean(treinoDoDia);
+  return `
+    <div class="dia-linha ${temTreino ? "tem-treino" : ""}" data-dia="${dia.chave}">
+      <span class="dia-nome">${dia.rotulo}</span>
+      <input
+        class="input"
+        type="text"
+        placeholder="Dia de descanso (deixe em branco)"
+        value="${temTreino ? escaparHtml(treinoDoDia.nome) : ""}"
+        data-campo-nome-dia="${dia.chave}"
+      />
+      <div class="dia-acoes">
+        <button class="btn btn-secondary btn-sm" data-acao="salvar-dia" data-dia="${dia.chave}" type="button">Salvar</button>
+        ${temTreino ? `<button class="btn btn-ghost btn-sm" data-acao="excluir-dia" data-dia="${dia.chave}" data-id="${treinoDoDia.id}" type="button">🗑️</button>` : ""}
+      </div>
+    </div>
+  `;
+}
+
+function renderizarGradeSemana() {
+  gradeSemanaEl.innerHTML = DIAS_SEMANA.map((dia) => {
+    const treinoDoDia = treinosCache.find((t) => t.dia_semana === dia.chave);
+    return linhaDiaSemana(dia, treinoDoDia);
+  }).join("");
+}
+
 async function recarregarTreinos() {
   try {
     treinosCache = await api.listarTreinos(alunoId);
+    renderizarGradeSemana();
     listaTreinosEl.innerHTML =
       treinosCache.map(cardTreino).join("") ||
-      `<div class="estado-vazio"><p>Nenhum treino cadastrado ainda. Crie o primeiro treino acima.</p></div>`;
+      `<p class="hint-text">Nenhum treino com exercícios ainda — preencha um dia na semana acima pra começar.</p>`;
   } catch (erro) {
     mostrarToast(mensagemDeErro(erro), "erro");
   }
@@ -228,17 +271,55 @@ cabecalhoLinkEl?.addEventListener("click", () => {
   if (cabecalhoLinkEl.dataset.link) copiarParaAreaDeTransferencia(cabecalhoLinkEl.dataset.link);
 });
 
-formNovoTreino?.addEventListener("submit", async (evento) => {
-  evento.preventDefault();
-  const nome = formNovoTreino.nome.value.trim();
-  if (!nome) return;
-  try {
-    await api.criarTreino(alunoId, { nome, ordem: 0 });
-    formNovoTreino.reset();
-    mostrarToast("Treino criado!", "sucesso");
-    recarregarTreinos();
-  } catch (erro) {
-    mostrarToast(mensagemDeErro(erro), "erro");
+gradeSemanaEl?.addEventListener("click", async (evento) => {
+  const botao = evento.target.closest("button[data-acao]");
+  if (!botao) return;
+  const dia = botao.dataset.dia;
+
+  if (botao.dataset.acao === "salvar-dia") {
+    const linha = botao.closest(".dia-linha");
+    const input = linha.querySelector("[data-campo-nome-dia]");
+    const nome = input.value.trim();
+    const diaIndex = DIAS_SEMANA.findIndex((d) => d.chave === dia);
+    const treinoExistente = treinosCache.find((t) => t.dia_semana === dia);
+
+    if (!nome) {
+      // Campo vazio: se já existia um treino nesse dia, apaga (virou dia de descanso).
+      if (treinoExistente) {
+        if (!confirm(`Remover o treino de ${ROTULO_DIA[dia]}?`)) return;
+        try {
+          await api.excluirTreino(treinoExistente.id);
+          mostrarToast("Treino removido.", "sucesso");
+          recarregarTreinos();
+        } catch (erro) {
+          mostrarToast(mensagemDeErro(erro), "erro");
+        }
+      }
+      return;
+    }
+
+    try {
+      if (treinoExistente) {
+        await api.atualizarTreino(treinoExistente.id, { nome });
+      } else {
+        await api.criarTreino(alunoId, { nome, ordem: diaIndex, dia_semana: dia });
+      }
+      mostrarToast(`Treino de ${ROTULO_DIA[dia]} salvo!`, "sucesso");
+      recarregarTreinos();
+    } catch (erro) {
+      mostrarToast(mensagemDeErro(erro), "erro");
+    }
+  }
+
+  if (botao.dataset.acao === "excluir-dia") {
+    if (!confirm(`Remover o treino de ${ROTULO_DIA[dia]} e todos os seus exercícios/séries?`)) return;
+    try {
+      await api.excluirTreino(Number(botao.dataset.id));
+      mostrarToast("Treino removido.", "sucesso");
+      recarregarTreinos();
+    } catch (erro) {
+      mostrarToast(mensagemDeErro(erro), "erro");
+    }
   }
 });
 

@@ -84,17 +84,12 @@
         <div id="analytics-resumo"><p class="hint-text">Carregando…</p></div>
       </div>
 
-      <h3 style="margin-bottom:var(--espaco-4);">Treinos</h3>
+      <h3 style="margin-bottom:var(--espaco-2);">Organização da semana</h3>
+      <p class="hint-text" style="margin-bottom:var(--espaco-4);">Preencha o nome do treino em cada dia. Deixe em branco os dias de descanso.</p>
 
-      <form id="form-novo-treino" class="form-row" style="margin-bottom:var(--espaco-5);max-width:480px;">
-        <div class="form-group" style="flex:1;">
-          <input class="input" name="nome" placeholder="Nome do novo treino (ex: Treino A - Peito e Tríceps)" required />
-        </div>
-        <div class="form-group" style="flex:0;">
-          <button type="submit" class="btn btn-primary">+ Treino</button>
-        </div>
-      </form>
+      <div class="grade-semana" id="grade-semana"></div>
 
+      <h3 style="margin:var(--espaco-6) 0 var(--espaco-4);">Exercícios de cada treino</h3>
       <div class="editor-treinos" id="lista-treinos-editor"></div>
     </main>
   </div>

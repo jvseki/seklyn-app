@@ -15,6 +15,8 @@ class Treino(Base):
     aluno_id: Mapped[int] = mapped_column(ForeignKey("alunos.id", ondelete="CASCADE"), nullable=False)
     nome: Mapped[str] = mapped_column(String(120), nullable=False)
     ordem: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    # Dia da semana fixo desse treino (segunda..domingo), ou None se não tiver dia fixo.
+    dia_semana: Mapped[str | None] = mapped_column(String(10), nullable=True)
     ativo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

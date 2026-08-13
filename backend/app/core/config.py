@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     # Segurança / JWT
     jwt_secret: str = "troque-este-valor-em-producao"
     jwt_algorithm: str = "HS256"
-    jwt_expire_minutes: int = 60 * 24
+    jwt_expire_minutes: int = 60 * 24 * 30  # 30 dias — evita deslogar sozinho a cada dia que reabre o site
 
     # Frontend (CORS + geração de links do aluno)
     frontend_url: str = "http://localhost:5500"

@@ -50,6 +50,7 @@ def montar_treino_resumo(db: Session, treino: Treino, dia: date | None = None) -
         id=treino.id,
         nome=treino.nome,
         ordem=treino.ordem,
+        dia_semana=treino.dia_semana,
         total_series=total,
         series_concluidas_hoje=concluidas,
         progresso_percentual=percentual,
@@ -94,6 +95,7 @@ def montar_treino_detalhe(db: Session, treino: Treino, dia: date | None = None) 
     return TreinoDetalheOut(
         id=treino.id,
         nome=treino.nome,
+        dia_semana=treino.dia_semana,
         exercicios=exercicios_out,
         progresso_percentual=percentual,
         concluido_hoje=total > 0 and concluidas == total,

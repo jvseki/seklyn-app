@@ -154,6 +154,48 @@
   white-space: nowrap;
 }
 
+/* Grade semanal — um "quadradinho" por dia, pra montar o treino sem digitar do zero */
+.grade-semana {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-2);
+  margin-bottom: var(--espaco-2);
+}
+
+.dia-linha {
+  display: grid;
+  grid-template-columns: 110px 1fr auto auto;
+  align-items: center;
+  gap: var(--espaco-3);
+  padding: var(--espaco-3);
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-md);
+  transition: border-color 0.15s ease;
+}
+
+.dia-linha.tem-treino {
+  border-color: var(--cor-primaria-clara);
+}
+
+.dia-linha .dia-nome {
+  font-weight: 700;
+  color: var(--cor-texto);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 640px) {
+  .dia-linha {
+    grid-template-columns: 1fr;
+    gap: var(--espaco-2);
+  }
+
+  .dia-linha .dia-acoes {
+    display: flex;
+    gap: var(--espaco-2);
+  }
+}
+
 /* Editor de treino (aluno-detalhe.html) */
 .editor-treinos {
   display: flex;
