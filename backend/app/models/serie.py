@@ -17,6 +17,7 @@ class Serie(Base):
     ordem: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     repeticoes_alvo: Mapped[str] = mapped_column(String(30), nullable=False)  # ex: "12" ou "10-12"
     carga_alvo: Mapped[str | None] = mapped_column(String(30), nullable=True)  # ex: "20kg"
+    intervalo_descanso: Mapped[str | None] = mapped_column(String(20), nullable=True)  # ex: "60s", "2min"
 
     exercicio: Mapped["Exercicio"] = relationship(back_populates="series")
     execucoes: Mapped[list["Execucao"]] = relationship(back_populates="serie", cascade="all, delete-orphan")

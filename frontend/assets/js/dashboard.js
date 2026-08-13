@@ -12,6 +12,7 @@ import {
   fecharModal,
   linkWhatsApp,
 } from "./utils.js";
+import { confirmarAcao } from "./confirmar.js";
 
 protegerPagina();
 
@@ -117,14 +118,19 @@ listaEl?.addEventListener("click", async (evento) => {
   const acao = botao.dataset.acao;
 
   if (acao === "copiar") {
-    copiarParaAreaDeTransferencia(botao.dataset.link);
+    copiarParaAreaDeTransferencia(botao.dataset.link, botao);
     return;
   }
 
   const id = Number(botao.dataset.id);
 
   if (acao === "regenerar") {
-    if (!confirm("Isso invalida o link atual do aluno. Deseja continuar?")) return;
+    const confirmou = await confirmarAcao("Isso invalida o link atual do aluno. Deseja continuar?", {
+      titulo: "Gerar novo link",
+      textoConfirmar: "Gerar novo link",
+      perigo: false,
+    });
+    if (!confirmou) return;
     try {
       await api.regenerarLinkAluno(id);
       mostrarToast("Novo link gerado!", "sucesso");
@@ -135,7 +141,11 @@ listaEl?.addEventListener("click", async (evento) => {
   }
 
   if (acao === "excluir") {
-    if (!confirm("Tem certeza que deseja excluir este aluno? Essa ação não pode ser desfeita.")) return;
+    const confirmou = await confirmarAcao("Tem certeza que deseja excluir este aluno? Essa ação não pode ser desfeita.", {
+      titulo: "Excluir aluno",
+      textoConfirmar: "Excluir aluno",
+    });
+    if (!confirmou) return;
     try {
       await api.excluirAluno(id);
       mostrarToast("Aluno excluído.", "sucesso");

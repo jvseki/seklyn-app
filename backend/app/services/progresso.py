@@ -73,6 +73,7 @@ def montar_treino_detalhe(db: Session, treino: Treino, dia: date | None = None) 
                 ordem=s.ordem,
                 repeticoes_alvo=s.repeticoes_alvo,
                 carga_alvo=s.carga_alvo,
+                intervalo_descanso=s.intervalo_descanso,
                 concluida_hoje=s.id in concluidas_ids,
             )
             for s in ex.series

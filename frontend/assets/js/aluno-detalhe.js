@@ -11,7 +11,8 @@ import {
   abrirModal,
   fecharModal,
 } from "./utils.js";
-import { listaCompletaExercicios } from "./catalogo-exercicios.js";
+import { listaCompletaExercicios, CATEGORIAS_TREINO, obterCategoria } from "./catalogo-exercicios.js";
+import { confirmarAcao } from "./confirmar.js";
 
 protegerPagina();
 
@@ -46,9 +47,19 @@ const modalEditarItem = $("#modal-editar-item");
 const formEditarItem = $("#form-editar-item");
 const editarItemTitulo = $("#editar-item-titulo");
 const editarItemCampos = $("#editar-item-campos");
+const modalMontarTreino = $("#modal-montar-treino");
+const montarTreinoTitulo = $("#montar-treino-titulo");
+const passoCategoriaEl = $("#montar-treino-passo-categoria");
+const passoExerciciosEl = $("#montar-treino-passo-exercicios");
+const gradeCategoriasEl = $("#grade-categorias");
+const montarTreinoNomeInput = $("#montar-treino-nome");
+const listaExerciciosSugeridosEl = $("#lista-exercicios-sugeridos");
+const outroExercicioInput = $("#montar-treino-outro-exercicio");
 
 let alunoAtual = null;
 let treinosCache = []; // guarda os dados carregados pra preencher os modais de edição sem outra chamada à API
+let montarTreinoDia = null; // dia da semana sendo montado no modal assistido
+let itensSelecionados = []; // [{ nome, incluido }] — exercícios sugeridos pra categoria escolhida
 
 const DIAS_SEMANA = [
   { chave: "segunda", rotulo: "Segunda" },
@@ -65,7 +76,7 @@ const ROTULO_DIA = Object.fromEntries(DIAS_SEMANA.map((d) => [d.chave, d.rotulo]
 function linhaSerie(serie) {
   return `
     <div class="series-linha" data-serie-id="${serie.id}">
-      <span>Série ${serie.ordem + 1}: ${escaparHtml(serie.repeticoes_alvo)} reps${serie.carga_alvo ? " · " + escaparHtml(serie.carga_alvo) : ""}</span>
+      <span>Série ${serie.ordem + 1}: ${escaparHtml(serie.repeticoes_alvo)} reps${serie.carga_alvo ? " · " + escaparHtml(serie.carga_alvo) : ""}${serie.intervalo_descanso ? " · descanso " + escaparHtml(serie.intervalo_descanso) : ""}</span>
       <button class="btn btn-ghost btn-sm" data-acao="editar-serie" data-id="${serie.id}" type="button">Editar</button>
       <button class="btn btn-ghost btn-sm" data-acao="excluir-serie" data-id="${serie.id}" type="button">Remover</button>
     </div>
@@ -85,6 +96,7 @@ function blocoExercicio(exercicio) {
       <form class="form-row" data-acao="form-nova-serie" data-exercicio-id="${exercicio.id}" style="padding-left:var(--espaco-6);margin-top:var(--espaco-2);">
         <div class="form-group" style="flex:1;"><input class="input" name="repeticoes_alvo" placeholder="Repetições (ex: 10-12)" required /></div>
         <div class="form-group" style="flex:1;"><input class="input" name="carga_alvo" placeholder="Carga (opcional)" /></div>
+        <div class="form-group" style="flex:1;"><input class="input" name="intervalo_descanso" placeholder="Descanso (ex: 60s)" /></div>
         <div class="form-group" style="flex:0;"><button class="btn btn-secondary btn-sm" type="submit">+ Série</button></div>
       </form>
     </div>
@@ -127,6 +139,7 @@ function linhaDiaSemana(dia, treinoDoDia) {
         data-campo-nome-dia="${dia.chave}"
       />
       <div class="dia-acoes">
+        <button class="btn btn-ghost btn-sm" data-acao="montar-treino" data-dia="${dia.chave}" type="button" title="Montar com sugestões de exercícios">🏋️ Montar</button>
         <button class="btn btn-secondary btn-sm" data-acao="salvar-dia" data-dia="${dia.chave}" type="button">Salvar</button>
         ${temTreino ? `<button class="btn btn-ghost btn-sm" data-acao="excluir-dia" data-dia="${dia.chave}" data-id="${treinoDoDia.id}" type="button">🗑️</button>` : ""}
       </div>
@@ -207,10 +220,15 @@ const CAMPOS_POR_TIPO = {
           <input class="input" id="editar-item-carga" name="carga_alvo" value="${escaparHtml(item.carga_alvo || "")}" />
         </div>
       </div>
+      <div class="form-group">
+        <label class="label" for="editar-item-intervalo">Descanso (opcional)</label>
+        <input class="input" id="editar-item-intervalo" name="intervalo_descanso" placeholder="ex: 60s" value="${escaparHtml(item.intervalo_descanso || "")}" />
+      </div>
     `,
     montarPayload: (form) => ({
       repeticoes_alvo: form.repeticoes_alvo.value.trim(),
       carga_alvo: form.carga_alvo.value.trim() || null,
+      intervalo_descanso: form.intervalo_descanso.value.trim() || null,
     }),
     salvar: (id, payload) => api.atualizarSerie(id, payload),
   },
@@ -267,14 +285,141 @@ async function carregarAnalytics() {
   }
 }
 
+// --- Montador assistido de treino (categoria → exercícios sugeridos → cria tudo de uma vez) ---
+
+function renderizarGradeCategorias() {
+  gradeCategoriasEl.innerHTML = CATEGORIAS_TREINO.map(
+    (cat) => `
+      <button class="categoria-chip" type="button" data-categoria="${cat.chave}">
+        <span class="emoji">${cat.emoji}</span>
+        <span>${cat.rotulo}</span>
+      </button>
+    `
+  ).join("");
+}
+
+function renderizarChecklistExercicios() {
+  listaExerciciosSugeridosEl.innerHTML = itensSelecionados
+    .map(
+      (item, indice) => `
+        <label class="exercicio-sugerido ${item.incluido ? "selecionado" : ""}">
+          <input type="checkbox" data-indice="${indice}" ${item.incluido ? "checked" : ""} />
+          <span class="exercicio-sugerido-nome">${escaparHtml(item.nome)}</span>
+        </label>
+      `
+    )
+    .join("");
+}
+
+function selecionarCategoria(chave) {
+  const categoria = obterCategoria(chave);
+  if (!categoria) return;
+
+  montarTreinoNomeInput.value = `Treino - ${categoria.rotulo}`;
+  itensSelecionados = categoria.exercicios.map((ex) => ({ nome: ex.nome, incluido: ex.recomendado }));
+  renderizarChecklistExercicios();
+
+  passoCategoriaEl.hidden = true;
+  passoExerciciosEl.hidden = false;
+  passoExerciciosEl.dataset.categoria = chave;
+}
+
+function abrirMontarTreino(dia) {
+  montarTreinoDia = dia;
+  montarTreinoTitulo.textContent = `Montar treino de ${ROTULO_DIA[dia]}`;
+  itensSelecionados = [];
+  passoCategoriaEl.hidden = false;
+  passoExerciciosEl.hidden = true;
+  renderizarGradeCategorias();
+  abrirModal(modalMontarTreino);
+}
+
+async function confirmarMontagemTreino() {
+  const nome = montarTreinoNomeInput.value.trim();
+  const selecionados = itensSelecionados.filter((item) => item.incluido);
+  if (!nome || selecionados.length === 0) {
+    mostrarToast("Dê um nome ao treino e marque pelo menos um exercício.", "erro");
+    return;
+  }
+
+  const categoria = obterCategoria(passoExerciciosEl.dataset.categoria);
+  const padrao = categoria?.padrao || { repeticoes_alvo: "10-12", carga_alvo: "", intervalo_descanso: "60s" };
+  const diaIndex = DIAS_SEMANA.findIndex((d) => d.chave === montarTreinoDia);
+  const botao = $("[data-acao='confirmar-montar-treino']", modalMontarTreino);
+  botao.disabled = true;
+
+  try {
+    const treinoExistente = treinosCache.find((t) => t.dia_semana === montarTreinoDia);
+    const treino = treinoExistente
+      ? await api.atualizarTreino(treinoExistente.id, { nome })
+      : await api.criarTreino(alunoId, { nome, ordem: diaIndex, dia_semana: montarTreinoDia });
+    const treinoId = treinoExistente ? treinoExistente.id : treino.id;
+
+    for (let i = 0; i < selecionados.length; i++) {
+      const exercicio = await api.criarExercicio(treinoId, { nome: selecionados[i].nome, ordem: i });
+      await api.criarSerie(exercicio.id, {
+        ordem: 0,
+        repeticoes_alvo: padrao.repeticoes_alvo,
+        carga_alvo: padrao.carga_alvo || null,
+        intervalo_descanso: padrao.intervalo_descanso || null,
+      });
+    }
+
+    mostrarToast(`Treino de ${ROTULO_DIA[montarTreinoDia]} criado com ${selecionados.length} exercício(s)!`, "sucesso");
+    fecharModal(modalMontarTreino);
+    recarregarTreinos();
+  } catch (erro) {
+    mostrarToast(mensagemDeErro(erro), "erro");
+  } finally {
+    botao.disabled = false;
+  }
+}
+
+gradeCategoriasEl?.addEventListener("click", (evento) => {
+  const chip = evento.target.closest("[data-categoria]");
+  if (chip) selecionarCategoria(chip.dataset.categoria);
+});
+
+$("[data-acao='voltar-categoria']")?.addEventListener("click", () => {
+  passoExerciciosEl.hidden = true;
+  passoCategoriaEl.hidden = false;
+});
+
+listaExerciciosSugeridosEl?.addEventListener("change", (evento) => {
+  const checkbox = evento.target.closest("input[type='checkbox']");
+  if (!checkbox) return;
+  const indice = Number(checkbox.dataset.indice);
+  itensSelecionados[indice].incluido = checkbox.checked;
+  checkbox.closest(".exercicio-sugerido").classList.toggle("selecionado", checkbox.checked);
+});
+
+$("[data-acao='adicionar-outro-exercicio']")?.addEventListener("click", () => {
+  const nome = outroExercicioInput.value.trim();
+  if (!nome) return;
+  itensSelecionados.push({ nome, incluido: true });
+  outroExercicioInput.value = "";
+  renderizarChecklistExercicios();
+});
+
+document
+  .querySelectorAll("[data-acao='fechar-modal-montar']")
+  .forEach((el) => el.addEventListener("click", () => fecharModal(modalMontarTreino)));
+
+$("[data-acao='confirmar-montar-treino']")?.addEventListener("click", confirmarMontagemTreino);
+
 cabecalhoLinkEl?.addEventListener("click", () => {
-  if (cabecalhoLinkEl.dataset.link) copiarParaAreaDeTransferencia(cabecalhoLinkEl.dataset.link);
+  if (cabecalhoLinkEl.dataset.link) copiarParaAreaDeTransferencia(cabecalhoLinkEl.dataset.link, cabecalhoLinkEl);
 });
 
 gradeSemanaEl?.addEventListener("click", async (evento) => {
   const botao = evento.target.closest("button[data-acao]");
   if (!botao) return;
   const dia = botao.dataset.dia;
+
+  if (botao.dataset.acao === "montar-treino") {
+    abrirMontarTreino(dia);
+    return;
+  }
 
   if (botao.dataset.acao === "salvar-dia") {
     const linha = botao.closest(".dia-linha");
@@ -286,7 +431,8 @@ gradeSemanaEl?.addEventListener("click", async (evento) => {
     if (!nome) {
       // Campo vazio: se já existia um treino nesse dia, apaga (virou dia de descanso).
       if (treinoExistente) {
-        if (!confirm(`Remover o treino de ${ROTULO_DIA[dia]}?`)) return;
+        const confirmou = await confirmarAcao(`Remover o treino de ${ROTULO_DIA[dia]}?`, { titulo: "Remover treino", textoConfirmar: "Remover" });
+        if (!confirmou) return;
         try {
           await api.excluirTreino(treinoExistente.id);
           mostrarToast("Treino removido.", "sucesso");
@@ -312,7 +458,11 @@ gradeSemanaEl?.addEventListener("click", async (evento) => {
   }
 
   if (botao.dataset.acao === "excluir-dia") {
-    if (!confirm(`Remover o treino de ${ROTULO_DIA[dia]} e todos os seus exercícios/séries?`)) return;
+    const confirmou = await confirmarAcao(`Remover o treino de ${ROTULO_DIA[dia]} e todos os seus exercícios/séries?`, {
+      titulo: "Remover treino",
+      textoConfirmar: "Remover",
+    });
+    if (!confirmou) return;
     try {
       await api.excluirTreino(Number(botao.dataset.id));
       mostrarToast("Treino removido.", "sucesso");
@@ -345,9 +495,15 @@ listaTreinosEl?.addEventListener("submit", async (evento) => {
     const exercicioId = Number(alvo.dataset.exercicioId);
     const repeticoesAlvo = alvo.repeticoes_alvo.value.trim();
     const cargaAlvo = alvo.carga_alvo.value.trim() || null;
+    const intervaloDescanso = alvo.intervalo_descanso.value.trim() || null;
     if (!repeticoesAlvo) return;
     try {
-      await api.criarSerie(exercicioId, { ordem: 0, repeticoes_alvo: repeticoesAlvo, carga_alvo: cargaAlvo });
+      await api.criarSerie(exercicioId, {
+        ordem: 0,
+        repeticoes_alvo: repeticoesAlvo,
+        carga_alvo: cargaAlvo,
+        intervalo_descanso: intervaloDescanso,
+      });
       mostrarToast("Série adicionada!", "sucesso");
       recarregarTreinos();
     } catch (erro) {
@@ -371,7 +527,10 @@ listaTreinosEl?.addEventListener("click", async (evento) => {
     "excluir-exercicio": "Excluir este exercício e suas séries?",
     "excluir-serie": "Remover esta série?",
   };
-  if (confirmacoes[acao] && !confirm(confirmacoes[acao])) return;
+  if (confirmacoes[acao]) {
+    const confirmou = await confirmarAcao(confirmacoes[acao], { titulo: "Confirmar exclusão", textoConfirmar: "Excluir" });
+    if (!confirmou) return;
+  }
 
   try {
     if (acao === "excluir-treino") await api.excluirTreino(id);

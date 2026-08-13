@@ -7,12 +7,14 @@ class SerieCriar(BaseModel):
     ordem: int = 0
     repeticoes_alvo: str = Field(min_length=1, max_length=30)
     carga_alvo: str | None = Field(default=None, max_length=30)
+    intervalo_descanso: str | None = Field(default=None, max_length=20)
 
 
 class SerieAtualizar(BaseModel):
     ordem: int | None = None
     repeticoes_alvo: str | None = Field(default=None, min_length=1, max_length=30)
     carga_alvo: str | None = Field(default=None, max_length=30)
+    intervalo_descanso: str | None = Field(default=None, max_length=20)
 
 
 class SerieOut(OrmModel):
@@ -21,6 +23,7 @@ class SerieOut(OrmModel):
     ordem: int
     repeticoes_alvo: str
     carga_alvo: str | None
+    intervalo_descanso: str | None = None
 
 
 class SerieComExecucaoOut(SerieOut):

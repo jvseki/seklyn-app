@@ -117,7 +117,7 @@ function linhaSerie(serie) {
       </button>
       <div class="checklist-info">
         <div class="checklist-titulo">Série ${serie.ordem + 1}</div>
-        <div class="checklist-meta">${escaparHtml(serie.repeticoes_alvo)} repetições${serie.carga_alvo ? " · " + escaparHtml(serie.carga_alvo) : ""}</div>
+        <div class="checklist-meta">${escaparHtml(serie.repeticoes_alvo)} repetições${serie.carga_alvo ? " · " + escaparHtml(serie.carga_alvo) : ""}${serie.intervalo_descanso ? " · descanso " + escaparHtml(serie.intervalo_descanso) : ""}</div>
       </div>
     </div>
   `;

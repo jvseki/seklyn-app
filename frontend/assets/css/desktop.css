@@ -164,7 +164,7 @@
 
 .dia-linha {
   display: grid;
-  grid-template-columns: 110px 1fr auto auto;
+  grid-template-columns: 110px 1fr auto;
   align-items: center;
   gap: var(--espaco-3);
   padding: var(--espaco-3);
@@ -172,6 +172,12 @@
   border: 1px solid var(--cor-borda);
   border-radius: var(--raio-md);
   transition: border-color 0.15s ease;
+}
+
+.dia-linha .dia-acoes {
+  display: flex;
+  gap: var(--espaco-2);
+  flex-shrink: 0;
 }
 
 .dia-linha.tem-treino {
@@ -194,6 +200,70 @@
     display: flex;
     gap: var(--espaco-2);
   }
+}
+
+/* Montador assistido de treino (categorias + exercícios sugeridos) */
+.grade-categorias {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: var(--espaco-3);
+}
+
+.categoria-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--espaco-2);
+  padding: var(--espaco-4) var(--espaco-3);
+  background: var(--cor-fundo-alt);
+  border: 1.5px solid var(--cor-borda);
+  border-radius: var(--raio-md);
+  font-weight: 700;
+  color: var(--cor-texto);
+  transition: border-color 0.15s ease, transform 0.1s ease, background-color 0.15s ease;
+}
+
+.categoria-chip:hover {
+  border-color: var(--cor-primaria);
+  background: var(--cor-primaria-suave);
+  transform: translateY(-2px);
+}
+
+.categoria-chip .emoji {
+  font-size: 1.6rem;
+}
+
+.exercicio-sugerido {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-3);
+  padding: var(--espaco-3);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-sm);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.exercicio-sugerido:has(input:checked),
+.exercicio-sugerido.selecionado {
+  border-color: var(--cor-primaria-clara);
+  background: var(--cor-primaria-suave);
+}
+
+.exercicio-sugerido input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--cor-primaria);
+  flex-shrink: 0;
+}
+
+.exercicio-sugerido .exercicio-sugerido-nome {
+  font-weight: 600;
+  flex: 1;
+}
+
+.exercicio-sugerido .badge {
+  flex-shrink: 0;
 }
 
 /* Editor de treino (aluno-detalhe.html) */

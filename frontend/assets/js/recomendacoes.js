@@ -2,6 +2,7 @@
 import { api } from "./api.js";
 import { protegerPagina } from "./auth.js";
 import { $, escaparHtml, mensagemDeErro, mostrarToast } from "./utils.js";
+import { confirmarAcao } from "./confirmar.js";
 
 protegerPagina();
 
@@ -79,7 +80,8 @@ listaEl?.addEventListener("change", async (evento) => {
 listaEl?.addEventListener("click", async (evento) => {
   const botao = evento.target.closest("[data-acao='excluir']");
   if (!botao) return;
-  if (!confirm("Excluir esta recomendação?")) return;
+  const confirmou = await confirmarAcao("Excluir esta recomendação?", { titulo: "Excluir recomendação", textoConfirmar: "Excluir" });
+  if (!confirmou) return;
   try {
     await api.excluirRecomendacao(Number(botao.dataset.id));
     mostrarToast("Recomendação excluída.", "sucesso");

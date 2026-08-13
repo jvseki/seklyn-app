@@ -251,6 +251,7 @@ def criar_serie(
         ordem=dados.ordem,
         repeticoes_alvo=dados.repeticoes_alvo,
         carga_alvo=dados.carga_alvo,
+        intervalo_descanso=dados.intervalo_descanso,
     )
     db.add(serie)
     db.commit()

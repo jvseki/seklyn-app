@@ -35,13 +35,56 @@ export function mostrarToast(mensagem, tipo = "info") {
   setTimeout(() => toast.remove(), 4000);
 }
 
-export async function copiarParaAreaDeTransferencia(texto) {
-  try {
-    await navigator.clipboard.writeText(texto);
-    mostrarToast("Link copiado!", "sucesso");
-  } catch {
-    mostrarToast("Não foi possível copiar automaticamente. Copie manualmente.", "erro");
+/**
+ * Copia texto pra área de transferência. Tenta a API moderna primeiro; se
+ * falhar por qualquer motivo (permissão, contexto, navegador antigo), cai
+ * pro método antigo (textarea invisível + execCommand), que funciona quase
+ * sempre. Se passar o botão que disparou a cópia, mostra "Copiado!" nele
+ * por um instante — feedback visível ali mesmo, sem depender só do toast.
+ */
+export async function copiarParaAreaDeTransferencia(texto, botaoOrigem = null) {
+  let sucesso = false;
+
+  if (navigator.clipboard && window.isSecureContext) {
+    try {
+      await navigator.clipboard.writeText(texto);
+      sucesso = true;
+    } catch {
+      sucesso = false;
+    }
   }
+
+  if (!sucesso) {
+    try {
+      const campo = document.createElement("textarea");
+      campo.value = texto;
+      campo.style.position = "fixed";
+      campo.style.top = "-1000px";
+      campo.style.opacity = "0";
+      document.body.appendChild(campo);
+      campo.focus();
+      campo.select();
+      sucesso = document.execCommand("copy");
+      document.body.removeChild(campo);
+    } catch {
+      sucesso = false;
+    }
+  }
+
+  if (sucesso) {
+    mostrarToast("Link copiado!", "sucesso");
+    if (botaoOrigem) {
+      const conteudoOriginal = botaoOrigem.textContent;
+      botaoOrigem.textContent = "✅ Copiado!";
+      setTimeout(() => {
+        botaoOrigem.textContent = conteudoOriginal;
+      }, 1600);
+    }
+  } else {
+    mostrarToast("Não foi possível copiar automaticamente. Selecione o link e copie manualmente.", "erro");
+  }
+
+  return sucesso;
 }
 
 /**
