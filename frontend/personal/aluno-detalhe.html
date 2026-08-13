@@ -63,7 +63,10 @@
           <h1 id="aluno-nome">Carregando...</h1>
           <p>Monte e acompanhe os treinos deste aluno.</p>
         </div>
-        <a id="aluno-whatsapp" class="btn btn-secondary" href="#" target="_blank" rel="noopener noreferrer" hidden>💬 Chamar no WhatsApp</a>
+        <div style="display:flex;gap:var(--espaco-2);">
+          <button class="btn btn-ghost" type="button" data-acao="editar-aluno">✏️ Editar aluno</button>
+          <a id="aluno-whatsapp" class="btn btn-secondary" href="#" target="_blank" rel="noopener noreferrer" hidden>💬 Chamar no WhatsApp</a>
+        </div>
       </div>
 
       <div class="card" style="margin-bottom:var(--espaco-6);">
@@ -94,6 +97,49 @@
 
       <div class="editor-treinos" id="lista-treinos-editor"></div>
     </main>
+  </div>
+
+  <div class="modal-fundo" id="modal-editar-aluno" hidden>
+    <div class="modal">
+      <div class="modal-cabecalho">
+        <h3>Editar aluno</h3>
+        <button class="btn btn-ghost btn-icon" data-acao="fechar-modal-aluno">✕</button>
+      </div>
+      <form id="form-editar-aluno">
+        <div class="form-group">
+          <label class="label" for="editar-aluno-nome">Nome</label>
+          <input class="input" id="editar-aluno-nome" name="nome" required />
+        </div>
+        <div class="form-group">
+          <label class="label" for="editar-aluno-email">E-mail (opcional)</label>
+          <input class="input" id="editar-aluno-email" name="email" type="email" />
+        </div>
+        <div class="form-group">
+          <label class="label" for="editar-aluno-telefone">WhatsApp (opcional)</label>
+          <input class="input" id="editar-aluno-telefone" name="telefone" type="tel" placeholder="(18) 99999-0000" />
+        </div>
+        <div class="modal-acoes">
+          <button type="button" class="btn btn-ghost" data-acao="fechar-modal-aluno">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-fundo" id="modal-editar-item" hidden>
+    <div class="modal">
+      <div class="modal-cabecalho">
+        <h3 id="editar-item-titulo">Editar</h3>
+        <button class="btn btn-ghost btn-icon" data-acao="fechar-modal-item">✕</button>
+      </div>
+      <form id="form-editar-item">
+        <div id="editar-item-campos"></div>
+        <div class="modal-acoes">
+          <button type="button" class="btn btn-ghost" data-acao="fechar-modal-item">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <script type="module" src="../assets/js/tema.js"></script>

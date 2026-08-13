@@ -1,7 +1,16 @@
 // Seklyn — gestão de treinos/exercícios/séries de um aluno específico.
 import { api } from "./api.js";
 import { protegerPagina } from "./auth.js";
-import { $, escaparHtml, mensagemDeErro, mostrarToast, copiarParaAreaDeTransferencia, linkWhatsApp } from "./utils.js";
+import {
+  $,
+  escaparHtml,
+  mensagemDeErro,
+  mostrarToast,
+  copiarParaAreaDeTransferencia,
+  linkWhatsApp,
+  abrirModal,
+  fecharModal,
+} from "./utils.js";
 import { listaCompletaExercicios } from "./catalogo-exercicios.js";
 
 protegerPagina();
@@ -31,13 +40,21 @@ const whatsappEl = $("#aluno-whatsapp");
 const listaTreinosEl = $("#lista-treinos-editor");
 const formNovoTreino = $("#form-novo-treino");
 const analyticsEl = $("#analytics-resumo");
+const modalEditarAluno = $("#modal-editar-aluno");
+const formEditarAluno = $("#form-editar-aluno");
+const modalEditarItem = $("#modal-editar-item");
+const formEditarItem = $("#form-editar-item");
+const editarItemTitulo = $("#editar-item-titulo");
+const editarItemCampos = $("#editar-item-campos");
 
 let alunoAtual = null;
+let treinosCache = []; // guarda os dados carregados pra preencher os modais de edição sem outra chamada à API
 
 function linhaSerie(serie) {
   return `
     <div class="series-linha" data-serie-id="${serie.id}">
       <span>Série ${serie.ordem + 1}: ${escaparHtml(serie.repeticoes_alvo)} reps${serie.carga_alvo ? " · " + escaparHtml(serie.carga_alvo) : ""}</span>
+      <button class="btn btn-ghost btn-sm" data-acao="editar-serie" data-id="${serie.id}" type="button">Editar</button>
       <button class="btn btn-ghost btn-sm" data-acao="excluir-serie" data-id="${serie.id}" type="button">Remover</button>
     </div>
   `;
@@ -49,6 +66,7 @@ function blocoExercicio(exercicio) {
     <div class="exercicio-bloco" data-exercicio-id="${exercicio.id}">
       <div class="exercicio-linha">
         <span class="exercicio-nome">${escaparHtml(exercicio.nome)}</span>
+        <button class="btn btn-ghost btn-sm" data-acao="editar-exercicio" data-id="${exercicio.id}" type="button">Editar</button>
         <button class="btn btn-ghost btn-sm" data-acao="excluir-exercicio" data-id="${exercicio.id}" type="button">Remover exercício</button>
       </div>
       ${series}
@@ -67,7 +85,10 @@ function cardTreino(treino) {
     <div class="card treino-editor-card" data-treino-id="${treino.id}">
       <div class="modal-cabecalho">
         <h3>${escaparHtml(treino.nome)}</h3>
-        <button class="btn btn-danger btn-sm" data-acao="excluir-treino" data-id="${treino.id}" type="button">Excluir treino</button>
+        <div style="display:flex;gap:var(--espaco-2);">
+          <button class="btn btn-ghost btn-sm" data-acao="editar-treino" data-id="${treino.id}" type="button">Editar</button>
+          <button class="btn btn-danger btn-sm" data-acao="excluir-treino" data-id="${treino.id}" type="button">Excluir treino</button>
+        </div>
       </div>
       ${exercicios}
       <form class="form-row" data-acao="form-novo-exercicio" data-treino-id="${treino.id}" style="margin-top:var(--espaco-3);">
@@ -80,13 +101,87 @@ function cardTreino(treino) {
 
 async function recarregarTreinos() {
   try {
-    const treinos = await api.listarTreinos(alunoId);
+    treinosCache = await api.listarTreinos(alunoId);
     listaTreinosEl.innerHTML =
-      treinos.map(cardTreino).join("") ||
+      treinosCache.map(cardTreino).join("") ||
       `<div class="estado-vazio"><p>Nenhum treino cadastrado ainda. Crie o primeiro treino acima.</p></div>`;
   } catch (erro) {
     mostrarToast(mensagemDeErro(erro), "erro");
   }
+}
+
+/** Acha um treino/exercício/série no cache local pelo id, pra pré-preencher o modal de edição. */
+function encontrarNoCache(tipo, id) {
+  for (const treino of treinosCache) {
+    if (tipo === "treino" && treino.id === id) return treino;
+    for (const exercicio of treino.exercicios) {
+      if (tipo === "exercicio" && exercicio.id === id) return exercicio;
+      for (const serie of exercicio.series) {
+        if (tipo === "serie" && serie.id === id) return serie;
+      }
+    }
+  }
+  return null;
+}
+
+const CAMPOS_POR_TIPO = {
+  treino: {
+    titulo: "Editar treino",
+    campos: (item) => `
+      <div class="form-group">
+        <label class="label" for="editar-item-nome">Nome do treino</label>
+        <input class="input" id="editar-item-nome" name="nome" value="${escaparHtml(item.nome)}" required />
+      </div>
+    `,
+    montarPayload: (form) => ({ nome: form.nome.value.trim() }),
+    salvar: (id, payload) => api.atualizarTreino(id, payload),
+  },
+  exercicio: {
+    titulo: "Editar exercício",
+    campos: (item) => `
+      <div class="form-group">
+        <label class="label" for="editar-item-nome">Nome do exercício</label>
+        <input class="input" id="editar-item-nome" name="nome" list="lista-exercicios" value="${escaparHtml(item.nome)}" required />
+      </div>
+      <div class="form-group">
+        <label class="label" for="editar-item-observacoes">Observações (opcional)</label>
+        <textarea class="textarea" id="editar-item-observacoes" name="observacoes">${escaparHtml(item.observacoes || "")}</textarea>
+      </div>
+    `,
+    montarPayload: (form) => ({ nome: form.nome.value.trim(), observacoes: form.observacoes.value.trim() || null }),
+    salvar: (id, payload) => api.atualizarExercicio(id, payload),
+  },
+  serie: {
+    titulo: "Editar série",
+    campos: (item) => `
+      <div class="form-row">
+        <div class="form-group">
+          <label class="label" for="editar-item-repeticoes">Repetições</label>
+          <input class="input" id="editar-item-repeticoes" name="repeticoes_alvo" value="${escaparHtml(item.repeticoes_alvo)}" required />
+        </div>
+        <div class="form-group">
+          <label class="label" for="editar-item-carga">Carga (opcional)</label>
+          <input class="input" id="editar-item-carga" name="carga_alvo" value="${escaparHtml(item.carga_alvo || "")}" />
+        </div>
+      </div>
+    `,
+    montarPayload: (form) => ({
+      repeticoes_alvo: form.repeticoes_alvo.value.trim(),
+      carga_alvo: form.carga_alvo.value.trim() || null,
+    }),
+    salvar: (id, payload) => api.atualizarSerie(id, payload),
+  },
+};
+
+function abrirEdicaoItem(tipo, id) {
+  const item = encontrarNoCache(tipo, id);
+  if (!item) return;
+  const config = CAMPOS_POR_TIPO[tipo];
+  editarItemTitulo.textContent = config.titulo;
+  editarItemCampos.innerHTML = config.campos(item);
+  formEditarItem.dataset.tipo = tipo;
+  formEditarItem.dataset.id = id;
+  abrirModal(modalEditarItem);
 }
 
 async function carregarAluno() {
@@ -186,6 +281,10 @@ listaTreinosEl?.addEventListener("click", async (evento) => {
   const id = Number(botao.dataset.id);
   const acao = botao.dataset.acao;
 
+  if (acao === "editar-treino") return abrirEdicaoItem("treino", id);
+  if (acao === "editar-exercicio") return abrirEdicaoItem("exercicio", id);
+  if (acao === "editar-serie") return abrirEdicaoItem("serie", id);
+
   const confirmacoes = {
     "excluir-treino": "Excluir este treino e todos os seus exercícios/séries?",
     "excluir-exercicio": "Excluir este exercício e suas séries?",
@@ -200,6 +299,68 @@ listaTreinosEl?.addEventListener("click", async (evento) => {
     recarregarTreinos();
   } catch (erro) {
     mostrarToast(mensagemDeErro(erro), "erro");
+  }
+});
+
+// --- Editar aluno (nome/e-mail/WhatsApp) ---
+$("[data-acao='editar-aluno']")?.addEventListener("click", () => {
+  if (!alunoAtual) return;
+  formEditarAluno.nome.value = alunoAtual.nome;
+  formEditarAluno.email.value = alunoAtual.email || "";
+  formEditarAluno.telefone.value = alunoAtual.telefone || "";
+  abrirModal(modalEditarAluno);
+});
+
+document.querySelectorAll("[data-acao='fechar-modal-aluno']").forEach((el) =>
+  el.addEventListener("click", () => fecharModal(modalEditarAluno))
+);
+
+formEditarAluno?.addEventListener("submit", async (evento) => {
+  evento.preventDefault();
+  const botao = $("button[type='submit']", formEditarAluno);
+  botao.disabled = true;
+  try {
+    const dados = {
+      nome: formEditarAluno.nome.value.trim(),
+      email: formEditarAluno.email.value.trim() || null,
+      telefone: formEditarAluno.telefone.value.trim() || null,
+    };
+    alunoAtual = await api.atualizarAluno(alunoId, dados);
+    cabecalhoNomeEl.textContent = alunoAtual.nome;
+
+    const whatsapp = linkWhatsApp(alunoAtual.telefone);
+    whatsappEl.hidden = !whatsapp;
+    if (whatsapp) whatsappEl.href = whatsapp;
+
+    mostrarToast("Dados do aluno atualizados!", "sucesso");
+    fecharModal(modalEditarAluno);
+  } catch (erro) {
+    mostrarToast(mensagemDeErro(erro), "erro");
+  } finally {
+    botao.disabled = false;
+  }
+});
+
+// --- Editar treino/exercício/série (modal genérico, campos montados por tipo) ---
+document.querySelectorAll("[data-acao='fechar-modal-item']").forEach((el) =>
+  el.addEventListener("click", () => fecharModal(modalEditarItem))
+);
+
+formEditarItem?.addEventListener("submit", async (evento) => {
+  evento.preventDefault();
+  const { tipo, id } = formEditarItem.dataset;
+  const config = CAMPOS_POR_TIPO[tipo];
+  const botao = $("button[type='submit']", formEditarItem);
+  botao.disabled = true;
+  try {
+    await config.salvar(Number(id), config.montarPayload(formEditarItem));
+    mostrarToast("Alterações salvas!", "sucesso");
+    fecharModal(modalEditarItem);
+    recarregarTreinos();
+  } catch (erro) {
+    mostrarToast(mensagemDeErro(erro), "erro");
+  } finally {
+    botao.disabled = false;
   }
 });
 

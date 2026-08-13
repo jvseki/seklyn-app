@@ -161,11 +161,13 @@ formAluno?.addEventListener("submit", async (evento) => {
       email: formAluno.email.value.trim() || null,
       telefone: formAluno.telefone.value.trim() || null,
     };
-    await api.criarAluno(dados);
-    mostrarToast("Aluno cadastrado!", "sucesso");
+    const aluno = await api.criarAluno(dados);
+    mostrarToast("Aluno cadastrado! Agora monte o treino dele.", "sucesso");
     formAluno.reset();
     fecharModal(modalAluno);
-    carregarAlunos();
+    // Segue direto pra tela de montar o treino — fluxo contínuo: cadastrar → configurar.
+    window.location.href = `aluno-detalhe.html?id=${aluno.id}`;
+    return;
   } catch (erro) {
     mostrarToast(mensagemDeErro(erro), "erro");
   } finally {
