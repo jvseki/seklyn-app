@@ -30,6 +30,14 @@ svg {
   max-width: 100%;
 }
 
+/* Garante que o atributo `hidden` sempre esconda o elemento, mesmo quando
+   uma classe (ex: .alerta, .modal-fundo) ou style inline define `display`
+   próprio — sem isso, essas regras vencem o [hidden] do navegador e o
+   elemento continua visível mesmo com hidden=true. */
+[hidden] {
+  display: none !important;
+}
+
 a {
   color: var(--cor-primaria);
   text-decoration: none;
