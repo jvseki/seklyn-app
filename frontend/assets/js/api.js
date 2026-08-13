@@ -30,7 +30,7 @@ async function apiFetch(caminho, opcoes = {}) {
 
   let resposta;
   try {
-    resposta = await fetch(`${API_BASE_URL}${caminho}`, { ...opcoes, headers });
+    resposta = await fetch(`${API_BASE_URL}${caminho}`, { cache: "no-store", ...opcoes, headers });
   } catch {
     throw new Error("Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.");
   }
