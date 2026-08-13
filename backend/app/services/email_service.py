@@ -5,6 +5,7 @@ lógica usada no v1, pra não precisar de provedor real rodando localmente.
 """
 import json
 import logging
+import urllib.error
 import urllib.request
 
 from app.core.config import get_settings
@@ -31,13 +32,20 @@ def enviar_email(destinatario: str, assunto: str, html: str) -> None:
         headers={
             "Authorization": f"Bearer {settings.resend_api_key}",
             "Content-Type": "application/json",
+            # Sem um User-Agent "de navegador", o Cloudflare na frente da API
+            # do Resend bloqueia a requisição (erro 1010) por parecer bot.
+            "User-Agent": "Mozilla/5.0 (compatible; SeklynAPI/1.0; +https://seklyn.com.br)",
         },
     )
     try:
         with urllib.request.urlopen(requisicao, timeout=10) as resposta:
             resposta.read()
+    except urllib.error.HTTPError as erro:
+        # Falha no envio de e-mail não pode derrubar o cadastro/login do Personal,
+        # mas logamos o corpo da resposta do Resend (traz o motivo real do erro).
+        corpo_erro = erro.read().decode("utf-8", errors="replace")
+        logger.error("Falha ao enviar e-mail via Resend para %s: HTTP %s -> %s", destinatario, erro.code, corpo_erro)
     except Exception:
-        # Falha no envio de e-mail não pode derrubar o cadastro/login do Personal.
         logger.exception("Falha ao enviar e-mail via Resend para %s", destinatario)
 
 

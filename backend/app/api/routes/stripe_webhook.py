@@ -23,7 +23,18 @@ def criar_checkout_session(
     personal: Personal = Depends(get_current_personal),
     db: Session = Depends(get_db),
 ) -> CheckoutSessionOut:
-    url = criar_checkout_session_url(db, personal)
+    if not settings.stripe_secret_key or not settings.stripe_price_id:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Assinatura via cartão ainda não está disponível. Fale com o suporte.",
+        )
+    try:
+        url = criar_checkout_session_url(db, personal)
+    except stripe.error.StripeError as erro:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Não foi possível iniciar o checkout agora. Tente novamente em instantes.",
+        ) from erro
     return CheckoutSessionOut(checkout_url=url)
 
 
