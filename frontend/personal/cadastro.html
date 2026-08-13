@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <script>
+    (function () {
+      if (localStorage.getItem("pv_tema") === "escuro") document.documentElement.dataset.theme = "escuro";
+    })();
+  </script>
+  <script src="../assets/js/config.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Criar conta — Seklyn</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='128' y2='128' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0' stop-color='%234c1d95'/%3E%3Cstop offset='1' stop-color='%232e1065'/%3E%3C/linearGradient%3E%3ClinearGradient id='a' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23c4b5fd'/%3E%3Cstop offset='1' stop-color='%238b5cf6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='128' height='128' rx='30' fill='url(%23g)'/%3E%3Ccircle cx='93' cy='35' r='7' fill='url(%23a)'/%3E%3Cpath d='M79 46c0-8-8-13-19-13-12 0-20 6-20 15 0 20 32 12 32 26 0 6-6 10-14 10-9 0-16-4-18-11' stroke='white' stroke-width='9' stroke-linecap='round' fill='none'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="../assets/css/variables.css" />
+  <link rel="stylesheet" href="../assets/css/base.css" />
+  <link rel="stylesheet" href="../assets/css/components.css" />
+  <link rel="stylesheet" href="../assets/css/auth.css" />
+</head>
+<body>
+  <div class="tela-auth">
+    <div class="blobs-fundo">
+      <div class="blob" style="top:-200px;right:-140px;width:480px;height:480px;background:radial-gradient(circle, #8b5cf6 0%, transparent 70%);"></div>
+      <div class="blob" style="bottom:-200px;left:-160px;width:520px;height:520px;background:radial-gradient(circle, #4c1d95 0%, transparent 70%);animation-delay:-7s;"></div>
+      <div class="blob" style="top:30%;left:50%;width:380px;height:380px;background:radial-gradient(circle, #a78bfa 0%, transparent 70%);animation-delay:-14s;"></div>
+    </div>
+    <button class="botao-tema botao-tema-flutuante" type="button" data-acao="alternar-tema" aria-label="Alternar tema">🌙</button>
+    <div class="card-vidro auth-card">
+      <div class="auth-marca">
+        <a href="../index.html" class="marca-logo" style="color:inherit;text-decoration:none;">
+          <svg width="28" height="28" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <defs>
+              <linearGradient id="logoGradient" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stop-color="#4c1d95" />
+                <stop offset="1" stop-color="#2e1065" />
+              </linearGradient>
+              <linearGradient id="logoAccent" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#c4b5fd" />
+                <stop offset="1" stop-color="#8b5cf6" />
+              </linearGradient>
+            </defs>
+            <rect width="128" height="128" rx="30" fill="url(#logoGradient)" />
+            <circle cx="93" cy="35" r="7" fill="url(#logoAccent)" />
+            <path d="M79 46c0-8-8-13-19-13-12 0-20 6-20 15 0 20 32 12 32 26 0 6-6 10-14 10-9 0-16-4-18-11" stroke="white" stroke-width="9" stroke-linecap="round" fill="none" />
+          </svg>
+          <span class="marca-texto">Sek<span class="ponto">lyn</span></span>
+        </a>
+      </div>
+      <p class="auth-subtitulo">Crie sua conta de Personal Trainer</p>
+
+      <form id="form-cadastro" novalidate>
+        <div class="form-erro" hidden></div>
+
+        <div class="form-group">
+          <label class="label" for="nome">Nome completo</label>
+          <input class="input" type="text" id="nome" name="nome" required autocomplete="name" />
+        </div>
+
+        <div class="form-group">
+          <label class="label" for="email">E-mail</label>
+          <input class="input" type="email" id="email" name="email" required autocomplete="email" />
+        </div>
+
+        <div class="form-group">
+          <label class="label" for="telefone">Telefone (opcional)</label>
+          <input class="input" type="tel" id="telefone" name="telefone" autocomplete="tel" placeholder="(11) 90000-0000" />
+        </div>
+
+        <div class="form-group">
+          <label class="label" for="senha">Senha</label>
+          <input class="input" type="password" id="senha" name="senha" required autocomplete="new-password" minlength="8" />
+          <span class="hint-text">Mínimo de 8 caracteres.</span>
+        </div>
+
+        <div class="form-group">
+          <label class="label" for="confirmar-senha">Confirmar senha</label>
+          <input class="input" type="password" id="confirmar-senha" name="confirmar_senha" required autocomplete="new-password" minlength="8" />
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block">Criar conta</button>
+        <p class="hint-text" style="text-align:center;margin-top:var(--espaco-3);">
+          Ao criar sua conta, você concorda com os <a href="termos.html">Termos de Uso</a>.
+        </p>
+      </form>
+
+      <p class="auth-rodape">Já tem conta? <a href="login.html">Entrar</a></p>
+    </div>
+  </div>
+
+  <script type="module" src="../assets/js/tema.js"></script>
+  <script type="module" src="../assets/js/auth.js"></script>
+</body>
+</html>

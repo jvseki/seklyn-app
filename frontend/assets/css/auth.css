@@ -1,0 +1,69 @@
+/* Seklyn — telas de login/cadastro do Personal */
+
+.tela-auth {
+  position: relative;
+  overflow: hidden;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--espaco-5);
+  background: var(--cor-fundo-alt);
+}
+
+.auth-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 420px;
+}
+
+.botao-tema-flutuante {
+  position: absolute;
+  top: var(--espaco-5);
+  right: var(--espaco-5);
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+:root[data-theme="escuro"] .botao-tema-flutuante {
+  background: rgba(30, 41, 59, 0.6);
+}
+
+.auth-marca {
+  display: flex;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.3rem;
+  margin-bottom: var(--espaco-2);
+  color: var(--cor-texto);
+}
+
+.auth-marca .ponto {
+  color: var(--cor-primaria);
+}
+
+.auth-subtitulo {
+  text-align: center;
+  color: var(--cor-texto-muted);
+  margin-bottom: var(--espaco-6);
+  font-size: 0.92rem;
+}
+
+.auth-rodape {
+  text-align: center;
+  margin-top: var(--espaco-5);
+  font-size: 0.88rem;
+  color: var(--cor-texto-muted);
+}
+
+.form-erro {
+  background: var(--cor-perigo-clara);
+  color: var(--cor-perigo);
+  border-radius: var(--raio-sm);
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  margin-bottom: var(--espaco-4);
+}

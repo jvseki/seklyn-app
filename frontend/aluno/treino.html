@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <script>
+    (function () {
+      if (localStorage.getItem("pv_tema") === "escuro") document.documentElement.dataset.theme = "escuro";
+    })();
+  </script>
+  <script src="../assets/js/config.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meu treino — Seklyn</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='128' y2='128' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0' stop-color='%234c1d95'/%3E%3Cstop offset='1' stop-color='%232e1065'/%3E%3C/linearGradient%3E%3ClinearGradient id='a' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23c4b5fd'/%3E%3Cstop offset='1' stop-color='%238b5cf6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='128' height='128' rx='30' fill='url(%23g)'/%3E%3Ccircle cx='93' cy='35' r='7' fill='url(%23a)'/%3E%3Cpath d='M79 46c0-8-8-13-19-13-12 0-20 6-20 15 0 20 32 12 32 26 0 6-6 10-14 10-9 0-16-4-18-11' stroke='white' stroke-width='9' stroke-linecap='round' fill='none'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="../assets/css/variables.css" />
+  <link rel="stylesheet" href="../assets/css/base.css" />
+  <link rel="stylesheet" href="../assets/css/components.css" />
+  <link rel="stylesheet" href="../assets/css/mobile.css" />
+</head>
+<body>
+  <div class="app-aluno">
+
+    <div id="carregando" style="display:flex;align-items:center;justify-content:center;flex:1;">
+      <div class="spinner"></div>
+    </div>
+
+    <div id="erro-link" class="aluno-conteudo" hidden>
+      <div class="estado-vazio">
+        <div class="icone">🔒</div>
+        <p>Este link não é válido ou não está mais ativo. Peça um novo link ao seu Personal.</p>
+      </div>
+    </div>
+
+    <div id="app-conteudo" hidden style="display:flex;flex-direction:column;flex:1;">
+      <header class="aluno-topo">
+        <div class="aluno-topo-linha">
+          <div class="aluno-saudacao">
+            <h1 id="saudacao-nome">Olá!</h1>
+            <p id="saudacao-personal"></p>
+          </div>
+          <button class="botao-tema" type="button" data-acao="alternar-tema" aria-label="Alternar tema">🌙</button>
+        </div>
+      </header>
+
+      <main class="aluno-conteudo">
+        <!-- Lista de treinos -->
+        <section id="secao-lista">
+          <div class="lista-treinos-aluno" id="lista-treinos-aluno"></div>
+        </section>
+
+        <!-- Execução (checklist) de um treino -->
+        <section id="secao-execucao" hidden>
+          <button class="btn btn-ghost btn-sm" id="botao-voltar-execucao" type="button" style="margin-bottom:var(--espaco-4);">← Voltar aos treinos</button>
+
+          <div class="treino-execucao-cabecalho">
+            <h2 id="execucao-titulo">Treino</h2>
+            <div class="progresso">
+              <div class="progresso-preenchimento" id="execucao-progresso-barra" style="width:0%;"></div>
+            </div>
+            <p class="hint-text" id="execucao-progresso-texto" style="margin-top:6px;">0% concluído hoje</p>
+          </div>
+
+          <div class="faixa-concluido" id="execucao-faixa-concluido" hidden>
+            <span>🎉</span>
+            <span>Treino concluído hoje! Mande ver amanhã também.</span>
+          </div>
+
+          <div id="execucao-exercicios"></div>
+        </section>
+
+        <!-- Dicas do seu Personal (aba não-invasiva de afiliados) -->
+        <section id="secao-dicas" hidden>
+          <div class="dicas-intro">
+            💡 Produtos e marcas recomendados pelo seu Personal. Totalmente opcional.
+          </div>
+          <div class="lista-recomendacoes" id="lista-recomendacoes-aluno"></div>
+          <div class="estado-vazio" id="estado-vazio-dicas" hidden>
+            <div class="icone">🛍️</div>
+            <p>Seu Personal ainda não cadastrou nenhuma dica.</p>
+          </div>
+        </section>
+      </main>
+
+      <nav class="tab-bar" id="tab-bar">
+        <button class="tab-bar-item ativa" id="tab-treinos" type="button">
+          <span class="emoji">🏋️</span>
+          <span>Treinos</span>
+        </button>
+        <button class="tab-bar-item" id="tab-dicas" type="button">
+          <span class="emoji">💡</span>
+          <span>Dicas</span>
+        </button>
+      </nav>
+    </div>
+  </div>
+
+  <script type="module" src="../assets/js/treino.js"></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+.venv_check/
+*.db
+
+# Ambiente
+.env
+!.env.example
+
+# Node (caso algum dia)
+node_modules/
+
+# Editor / SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+.claude/

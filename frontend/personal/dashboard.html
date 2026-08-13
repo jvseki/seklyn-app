@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <script>
+    (function () {
+      if (localStorage.getItem("pv_tema") === "escuro") document.documentElement.dataset.theme = "escuro";
+    })();
+  </script>
+  <script src="../assets/js/config.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meus alunos — Seklyn</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='128' y2='128' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0' stop-color='%234c1d95'/%3E%3Cstop offset='1' stop-color='%232e1065'/%3E%3C/linearGradient%3E%3ClinearGradient id='a' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23c4b5fd'/%3E%3Cstop offset='1' stop-color='%238b5cf6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='128' height='128' rx='30' fill='url(%23g)'/%3E%3Ccircle cx='93' cy='35' r='7' fill='url(%23a)'/%3E%3Cpath d='M79 46c0-8-8-13-19-13-12 0-20 6-20 15 0 20 32 12 32 26 0 6-6 10-14 10-9 0-16-4-18-11' stroke='white' stroke-width='9' stroke-linecap='round' fill='none'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="../assets/css/variables.css" />
+  <link rel="stylesheet" href="../assets/css/base.css" />
+  <link rel="stylesheet" href="../assets/css/components.css" />
+  <link rel="stylesheet" href="../assets/css/desktop.css" />
+</head>
+<body>
+  <div class="topbar-mobile">
+    <button class="botao-hamburguer" type="button" data-acao="abrir-menu" aria-label="Abrir menu">☰</button>
+    <span class="marca-texto" style="font-weight:800;">Sek<span class="ponto">lyn</span></span>
+    <span style="width:40px;"></span>
+  </div>
+  <div class="sidebar-overlay"></div>
+
+  <div class="app-personal">
+    <aside class="sidebar">
+      <div class="sidebar-marca marca-logo">
+        <svg width="24" height="24" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <linearGradient id="logoGradient" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stop-color="#4c1d95" />
+              <stop offset="1" stop-color="#2e1065" />
+            </linearGradient>
+            <linearGradient id="logoAccent" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#c4b5fd" />
+              <stop offset="1" stop-color="#8b5cf6" />
+            </linearGradient>
+          </defs>
+          <rect width="128" height="128" rx="30" fill="url(#logoGradient)" />
+          <circle cx="93" cy="35" r="7" fill="url(#logoAccent)" />
+          <path d="M79 46c0-8-8-13-19-13-12 0-20 6-20 15 0 20 32 12 32 26 0 6-6 10-14 10-9 0-16-4-18-11" stroke="white" stroke-width="9" stroke-linecap="round" fill="none" />
+        </svg>
+        <span class="marca-texto">Sek<span class="ponto">lyn</span></span>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="dashboard.html" class="sidebar-link ativo">👥 Alunos</a>
+        <a href="recomendacoes.html" class="sidebar-link">🛍️ Recomendações</a>
+        <a href="assinatura.html" class="sidebar-link">💳 Assinatura</a>
+      </nav>
+      <div class="sidebar-rodape">
+        <button class="botao-tema" type="button" data-acao="alternar-tema" aria-label="Alternar tema">🌙</button>
+        <button class="btn btn-ghost btn-sm" data-acao="sair">Sair</button>
+      </div>
+    </aside>
+
+    <main class="conteudo-personal">
+      <div class="alerta alerta-aviso" id="banner-email" hidden style="margin-bottom:var(--espaco-4);">
+        <span>✉️</span>
+        <div style="flex:1;">
+          Confirme seu e-mail para garantir o acesso à sua conta.
+          <button class="btn btn-ghost btn-sm" id="botao-reenviar-confirmacao" type="button" style="margin-left:var(--espaco-2);">Reenviar e-mail</button>
+        </div>
+      </div>
+
+      <div class="alerta alerta-aviso" id="banner-assinatura" hidden style="margin-bottom:var(--espaco-5);">
+        <span>⚠️</span>
+        <div>
+          Sua assinatura não está ativa. <a href="assinatura.html">Assine agora</a> para cadastrar alunos e treinos.
+        </div>
+      </div>
+
+      <div class="cabecalho-pagina">
+        <div>
+          <h1>Meus alunos</h1>
+          <p>Gerencie seus alunos e acompanhe a aderência aos treinos.</p>
+        </div>
+        <button class="btn btn-primary" data-acao="abrir-novo-aluno">+ Novo aluno</button>
+      </div>
+
+      <div class="grid-stats">
+        <div class="stat-tile">
+          <div class="valor" id="stat-total-alunos">–</div>
+          <div class="rotulo">Alunos cadastrados</div>
+        </div>
+      </div>
+
+      <div class="lista-alunos" id="lista-alunos"></div>
+
+      <div class="estado-vazio" id="estado-vazio-alunos" hidden>
+        <div class="icone">🧑‍🤝‍🧑</div>
+        <p>Você ainda não tem alunos cadastrados.</p>
+        <button class="btn btn-primary" style="margin-top:var(--espaco-4);" data-acao="abrir-novo-aluno">Cadastrar primeiro aluno</button>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-fundo" id="modal-aluno" hidden>
+    <div class="modal">
+      <div class="modal-cabecalho">
+        <h3>Novo aluno</h3>
+        <button class="btn btn-ghost btn-icon" data-acao="fechar-modal">✕</button>
+      </div>
+      <form id="form-aluno">
+        <div class="form-group">
+          <label class="label" for="aluno-nome-input">Nome do aluno</label>
+          <input class="input" id="aluno-nome-input" name="nome" required />
+        </div>
+        <div class="form-group">
+          <label class="label" for="aluno-email-input">E-mail (opcional)</label>
+          <input class="input" id="aluno-email-input" name="email" type="email" />
+        </div>
+        <div class="modal-acoes">
+          <button type="button" class="btn btn-ghost" data-acao="fechar-modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Cadastrar aluno</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module" src="../assets/js/tema.js"></script>
+  <script type="module" src="../assets/js/menu.js"></script>
+  <script type="module" src="../assets/js/dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <script>
+    (function () {
+      if (localStorage.getItem("pv_tema") === "escuro") document.documentElement.dataset.theme = "escuro";
+    })();
+  </script>
+  <script src="assets/js/config.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Seklyn — Acompanhamento de treinos para Personal Trainers</title>
+  <meta name="description" content="O Seklyn ajuda Personal Trainers a acompanhar a execução dos treinos dos alunos, série por série, e a recomendar produtos de confiança." />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='128' y2='128' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0' stop-color='%234c1d95'/%3E%3Cstop offset='1' stop-color='%232e1065'/%3E%3C/linearGradient%3E%3ClinearGradient id='a' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23c4b5fd'/%3E%3Cstop offset='1' stop-color='%238b5cf6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='128' height='128' rx='30' fill='url(%23g)'/%3E%3Ccircle cx='93' cy='35' r='7' fill='url(%23a)'/%3E%3Cpath d='M79 46c0-8-8-13-19-13-12 0-20 6-20 15 0 20 32 12 32 26 0 6-6 10-14 10-9 0-16-4-18-11' stroke='white' stroke-width='9' stroke-linecap='round' fill='none'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="assets/css/variables.css" />
+  <link rel="stylesheet" href="assets/css/base.css" />
+  <link rel="stylesheet" href="assets/css/components.css" />
+  <link rel="stylesheet" href="assets/css/landing.css" />
+</head>
+<body>
+  <div class="hero-fundo">
+    <div class="blobs-fundo">
+      <div class="blob" style="top:-160px;left:-120px;width:520px;height:520px;background:radial-gradient(circle, #8b5cf6 0%, transparent 70%);"></div>
+      <div class="blob" style="top:-100px;right:-160px;width:600px;height:600px;background:radial-gradient(circle, #4c1d95 0%, transparent 70%);animation-delay:-7s;"></div>
+      <div class="blob" style="bottom:-220px;left:25%;width:520px;height:520px;background:radial-gradient(circle, #a78bfa 0%, transparent 70%);animation-delay:-14s;"></div>
+    </div>
+
+    <header class="landing-header">
+    <nav class="landing-nav container">
+      <div class="landing-marca marca-logo">
+        <svg width="28" height="28" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <linearGradient id="logoGradient" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stop-color="#4c1d95" />
+              <stop offset="1" stop-color="#2e1065" />
+            </linearGradient>
+            <linearGradient id="logoAccent" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#c4b5fd" />
+              <stop offset="1" stop-color="#8b5cf6" />
+            </linearGradient>
+          </defs>
+          <rect width="128" height="128" rx="30" fill="url(#logoGradient)" />
+          <circle cx="93" cy="35" r="7" fill="url(#logoAccent)" />
+          <path d="M79 46c0-8-8-13-19-13-12 0-20 6-20 15 0 20 32 12 32 26 0 6-6 10-14 10-9 0-16-4-18-11" stroke="white" stroke-width="9" stroke-linecap="round" fill="none" />
+        </svg>
+        <span class="marca-texto">Sek<span class="ponto">lyn</span></span>
+      </div>
+      <div class="landing-nav-acoes">
+        <button class="botao-tema" type="button" data-acao="alternar-tema" aria-label="Alternar tema">🌙</button>
+        <a href="personal/login.html" class="btn btn-ghost btn-sm">Entrar</a>
+        <a href="personal/cadastro.html" class="btn btn-primary btn-sm">Criar conta grátis</a>
+      </div>
+    </nav>
+    </header>
+
+    <section class="container hero">
+      <span class="hero-selo">🟣 Feito para Personal Trainers</span>
+      <h1>Saiba exatamente <span class="destaque">quais séries</span> seus alunos treinaram — e quais eles pularam</h1>
+      <p>O Seklyn acompanha a execução dos treinos série por série, gera um link único para cada aluno acessar sem senha, e ainda te deixa recomendar seus produtos favoritos.</p>
+      <div class="hero-acoes">
+        <a href="personal/cadastro.html" class="btn btn-primary">Criar minha conta</a>
+        <a href="#como-funciona" class="btn btn-secondary">Ver como funciona</a>
+      </div>
+    </section>
+  </div>
+
+  <main>
+    <section class="container secao">
+      <div class="secao-titulo">
+        <h2>Tudo o que você precisa para acompanhar de verdade</h2>
+        <p>Sem planilhas, sem grupos de WhatsApp perdidos. Cada série marcada vira dado.</p>
+      </div>
+      <div class="grid-recursos">
+        <div class="card recurso-card">
+          <div class="recurso-icone">✅</div>
+          <h3>Conclusão hierárquica</h3>
+          <p>Um treino só é considerado "feito" quando todas as séries de todos os exercícios foram marcadas pelo aluno.</p>
+        </div>
+        <div class="card recurso-card">
+          <div class="recurso-icone">🔗</div>
+          <h3>Acesso sem fricção</h3>
+          <p>Cada aluno recebe um link único. Sem senha, sem cadastro — é só abrir e treinar.</p>
+        </div>
+        <div class="card recurso-card">
+          <div class="recurso-icone">📊</div>
+          <h3>Analytics de aderência</h3>
+          <p>Descubra quais exercícios costumam ser pulados e ajuste o plano antes que o aluno desista.</p>
+        </div>
+        <div class="card recurso-card">
+          <div class="recurso-icone">🛍️</div>
+          <h3>Dicas do Personal</h3>
+          <p>Cadastre seus links de afiliado (Amazon, Growth, etc). Aparecem numa aba separada, sem interromper o treino.</p>
+        </div>
+        <div class="card recurso-card">
+          <div class="recurso-icone">📱</div>
+          <h3>Mobile-first para o aluno</h3>
+          <p>Interface limpa, com modo escuro opcional, pensada para ser usada na academia, com uma mão só.</p>
+        </div>
+        <div class="card recurso-card">
+          <div class="recurso-icone">🖥️</div>
+          <h3>Painel completo pro Personal</h3>
+          <p>Gerencie todos os seus alunos, treinos e séries em um painel desktop feito para o seu dia a dia.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="container secao" id="como-funciona">
+      <div class="secao-titulo">
+        <h2>Como funciona</h2>
+        <p>Três passos entre você se cadastrar e o aluno treinar.</p>
+      </div>
+      <div class="como-funciona">
+        <div class="passo-card">
+          <div class="passo-numero">1</div>
+          <h3>Monte o treino</h3>
+          <p>Cadastre o aluno e monte os treinos com exercícios, séries e repetições.</p>
+        </div>
+        <div class="passo-card">
+          <div class="passo-numero">2</div>
+          <h3>Envie o link</h3>
+          <p>Compartilhe o link único do aluno por WhatsApp — sem senha para lembrar.</p>
+        </div>
+        <div class="passo-card">
+          <div class="passo-numero">3</div>
+          <h3>Acompanhe</h3>
+          <p>Veja em tempo real o que foi treinado e o que ficou pra trás.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="container secao">
+      <div class="secao-preco">
+        <div class="card-vidro preco-card">
+          <span class="badge badge-neutro">Comece agora</span>
+          <h2 style="margin-top:var(--espaco-3);">Pronto para acompanhar seus alunos de verdade?</h2>
+          <p class="hint-text" style="margin-top:var(--espaco-2);">Fale com a gente para conhecer as condições para o seu negócio.</p>
+          <ul class="preco-lista">
+            <li><span class="check">✓</span> Alunos e treinos ilimitados</li>
+            <li><span class="check">✓</span> Link de acesso único por aluno</li>
+            <li><span class="check">✓</span> Analytics de aderência</li>
+            <li><span class="check">✓</span> Aba de recomendações com afiliados</li>
+            <li><span class="check">✓</span> Suporte em português</li>
+          </ul>
+          <a href="personal/cadastro.html" class="btn btn-primary btn-block">Criar minha conta</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="container landing-rodape">
+    <span>© 2026 Seklyn · seklyn.com.br</span>
+    <span><a href="personal/termos.html">Termos de Uso</a> · Feito para Personal Trainers brasileiros 🇧🇷</span>
+  </footer>
+
+  <script type="module" src="assets/js/tema.js"></script>
+</body>
+</html>

@@ -1,0 +1,266 @@
+/* Seklyn — layout da área do Personal (desktop-first, responsivo) */
+
+.app-personal {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: 100vh;
+}
+
+.sidebar {
+  background: var(--cor-superficie);
+  border-right: 1px solid var(--cor-borda);
+  padding: var(--espaco-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-6);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.sidebar-marca {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-2);
+  font-weight: 800;
+  font-size: 1.15rem;
+  color: var(--cor-texto);
+}
+
+.sidebar-marca .ponto {
+  color: var(--cor-primaria);
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-3);
+  padding: 12px var(--espaco-3);
+  border-radius: var(--raio-md);
+  color: var(--cor-texto-muted);
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.sidebar-link:hover {
+  background: var(--cor-fundo-alt);
+  color: var(--cor-texto);
+  text-decoration: none;
+}
+
+.sidebar-link.ativo {
+  background: var(--cor-primaria-suave);
+  color: var(--cor-primaria-ativa);
+}
+
+.sidebar-rodape {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-3);
+}
+
+.conteudo-personal {
+  padding: var(--espaco-6) var(--espaco-7);
+  max-width: 1120px;
+}
+
+.cabecalho-pagina {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-4);
+  margin-bottom: var(--espaco-6);
+  flex-wrap: wrap;
+}
+
+.cabecalho-pagina h1 {
+  font-size: 1.6rem;
+}
+
+.cabecalho-pagina p {
+  color: var(--cor-texto-muted);
+  margin-top: 4px;
+}
+
+.grid-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--espaco-4);
+  margin-bottom: var(--espaco-6);
+}
+
+.lista-alunos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--espaco-4);
+}
+
+.aluno-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+}
+
+.aluno-card-topo {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-3);
+}
+
+.aluno-card-acoes {
+  display: flex;
+  gap: var(--espaco-2);
+  margin-top: var(--espaco-2);
+}
+
+.link-copiavel {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-2);
+  background: var(--cor-fundo-alt);
+  border: 1px dashed var(--cor-borda-forte);
+  border-radius: var(--raio-sm);
+  padding: 10px 12px;
+  font-size: 0.8rem;
+  color: var(--cor-texto-muted);
+  overflow: hidden;
+}
+
+.link-copiavel span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Editor de treino (aluno-detalhe.html) */
+.editor-treinos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-4);
+}
+
+.treino-editor-card .exercicio-linha {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-3);
+  padding: var(--espaco-3) 0;
+  border-top: 1px solid var(--cor-borda);
+}
+
+.treino-editor-card .exercicio-linha:first-of-type {
+  border-top: none;
+}
+
+.exercicio-linha .exercicio-nome {
+  font-weight: 600;
+  flex: 1;
+}
+
+.series-linha {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-3);
+  padding-left: var(--espaco-6);
+  color: var(--cor-texto-muted);
+  font-size: 0.88rem;
+  padding-block: 4px;
+}
+
+/* Barra superior + menu hambúrguer — só existem em telas estreitas */
+.topbar-mobile {
+  display: none;
+}
+
+.botao-hamburguer {
+  display: none;
+  background: var(--cor-fundo-alt);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-sm);
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.sidebar-overlay {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .app-personal {
+    grid-template-columns: 1fr;
+  }
+
+  .topbar-mobile {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--espaco-3);
+    padding: var(--espaco-4) var(--espaco-5);
+    background: var(--cor-superficie);
+    border-bottom: 1px solid var(--cor-borda);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+
+  .botao-hamburguer {
+    display: flex;
+  }
+
+  /* Sidebar vira uma gaveta (drawer) que desliza por cima do conteúdo */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(300px, 85vw);
+    height: 100vh;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    z-index: 50;
+    box-shadow: var(--sombra-lg);
+  }
+
+  .sidebar.aberta {
+    transform: translateX(0);
+  }
+
+  .sidebar-nav {
+    flex-direction: column;
+  }
+
+  .sidebar-rodape {
+    flex-direction: row;
+  }
+
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+    z-index: 40;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+
+  .sidebar-overlay.visivel {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .conteudo-personal {
+    padding: var(--espaco-5);
+  }
+}

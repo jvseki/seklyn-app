@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: seklyn-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: seklyn
+      POSTGRES_PASSWORD: seklyn
+      POSTGRES_DB: seklyn
+    ports:
+      - "5432:5432"
+    volumes:
+      - seklyn_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U seklyn"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  seklyn_db_data:

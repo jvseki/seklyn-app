@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <script>
+    (function () {
+      if (localStorage.getItem("pv_tema") === "escuro") document.documentElement.dataset.theme = "escuro";
+    })();
+  </script>
+  <script src="../assets/js/config.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Termos de Uso — Seklyn</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='128' y2='128' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0' stop-color='%234c1d95'/%3E%3Cstop offset='1' stop-color='%232e1065'/%3E%3C/linearGradient%3E%3ClinearGradient id='a' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23c4b5fd'/%3E%3Cstop offset='1' stop-color='%238b5cf6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='128' height='128' rx='30' fill='url(%23g)'/%3E%3Ccircle cx='93' cy='35' r='7' fill='url(%23a)'/%3E%3Cpath d='M79 46c0-8-8-13-19-13-12 0-20 6-20 15 0 20 32 12 32 26 0 6-6 10-14 10-9 0-16-4-18-11' stroke='white' stroke-width='9' stroke-linecap='round' fill='none'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="../assets/css/variables.css" />
+  <link rel="stylesheet" href="../assets/css/base.css" />
+  <link rel="stylesheet" href="../assets/css/components.css" />
+  <link rel="stylesheet" href="../assets/css/landing.css" />
+  <style>
+    .termos-conteudo {
+      max-width: 720px;
+      margin-inline: auto;
+      padding-block: var(--espaco-7) var(--espaco-8);
+    }
+    .termos-conteudo section {
+      margin-bottom: var(--espaco-6);
+    }
+    .termos-conteudo h2 {
+      font-size: 1.05rem;
+      margin-bottom: var(--espaco-2);
+    }
+    .termos-conteudo p {
+      color: var(--cor-texto-muted);
+      font-size: 0.92rem;
+      line-height: 1.7;
+    }
+  </style>
+</head>
+<body>
+  <header class="landing-header">
+    <nav class="landing-nav container">
+      <a href="../index.html" class="landing-marca marca-logo" style="color:inherit;text-decoration:none;">
+        <svg width="26" height="26" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <linearGradient id="logoGradient" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stop-color="#4c1d95" />
+              <stop offset="1" stop-color="#2e1065" />
+            </linearGradient>
+            <linearGradient id="logoAccent" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#c4b5fd" />
+              <stop offset="1" stop-color="#8b5cf6" />
+            </linearGradient>
+          </defs>
+          <rect width="128" height="128" rx="30" fill="url(#logoGradient)" />
+          <circle cx="93" cy="35" r="7" fill="url(#logoAccent)" />
+          <path d="M79 46c0-8-8-13-19-13-12 0-20 6-20 15 0 20 32 12 32 26 0 6-6 10-14 10-9 0-16-4-18-11" stroke="white" stroke-width="9" stroke-linecap="round" fill="none" />
+        </svg>
+        <span class="marca-texto">Sek<span class="ponto">lyn</span></span>
+      </a>
+      <button class="botao-tema" type="button" data-acao="alternar-tema" aria-label="Alternar tema"></button>
+    </nav>
+  </header>
+
+  <main class="container termos-conteudo">
+    <h1 style="margin-bottom:4px;">Termos de Uso</h1>
+    <p class="hint-text" style="margin-bottom:var(--espaco-6);">Última atualização: agosto de 2026</p>
+
+    <section>
+      <h2>1. Sobre o Seklyn</h2>
+      <p>
+        O Seklyn é uma plataforma que ajuda Personal Trainers a montar fichas de treino, acompanhar a execução
+        série por série pelos seus alunos e organizar sua carteira de atendimento. Ao criar uma conta, você
+        concorda com estes termos.
+      </p>
+    </section>
+
+    <section>
+      <h2>2. Sua conta</h2>
+      <p>
+        Você é responsável por manter suas credenciais de acesso em sigilo e por todas as atividades realizadas
+        na sua conta. As informações cadastradas (nome, e-mail, telefone) devem ser verdadeiras.
+      </p>
+    </section>
+
+    <section>
+      <h2>3. Dados dos seus alunos</h2>
+      <p>
+        Ao usar o Seklyn, você cadastra dados dos seus alunos (nome, e-mail opcional, treinos, histórico de
+        execução de séries) para gerenciar o acompanhamento deles. Você é responsável por ter autorização para
+        tratar esses dados e por cumprir a legislação de proteção de dados aplicável (LGPD). O link de acesso do
+        aluno é pessoal e você é responsável por não compartilhá-lo indevidamente.
+      </p>
+    </section>
+
+    <section>
+      <h2>4. Uso aceitável</h2>
+      <p>
+        Não é permitido usar o Seklyn para atividades ilegais, envio de spam, ou para cadastrar informações
+        falsas. Podemos suspender contas que violem estes termos.
+      </p>
+    </section>
+
+    <section>
+      <h2>5. Disponibilidade do serviço</h2>
+      <p>
+        Fazemos o possível para manter a plataforma disponível, mas não garantimos operação ininterrupta. O
+        Seklyn pode ficar temporariamente indisponível por manutenção, falhas técnicas ou motivos fora do nosso
+        controle, e podemos alterar, suspender ou encerrar o serviço, no todo ou em parte, a qualquer momento.
+        <strong>O Seklyn e seus responsáveis não se responsabilizam por perdas, danos ou lucros cessantes
+        decorrentes da indisponibilidade, alteração ou descontinuação do serviço.</strong> Sempre que possível,
+        avisaremos com antecedência razoável antes de qualquer encerramento definitivo.
+      </p>
+    </section>
+
+    <section>
+      <h2>6. Assinatura, pagamento e exclusão por inadimplência</h2>
+      <p>
+        O uso completo do Seklyn (cadastro de alunos, treinos e recomendações) depende de uma assinatura ativa.
+        Se a cobrança não for paga até a data de vencimento, o acesso a essas funcionalidades pode ser suspenso
+        imediatamente. <strong>Caso o pagamento não seja regularizado em até 7 (sete) dias corridos após o
+        vencimento, o Seklyn se reserva o direito de excluir permanentemente todos os dados da conta — incluindo
+        alunos, fichas de treino, histórico de execuções e recomendações cadastradas — sem necessidade de aviso
+        adicional.</strong> Recomendamos manter seus dados de pagamento em dia para evitar a perda dessas
+        informações.
+      </p>
+    </section>
+
+    <section>
+      <h2>7. Cancelamento</h2>
+      <p>
+        Você pode encerrar sua conta a qualquer momento entrando em contato com o suporte. Ao excluir a conta,
+        os dados dos seus alunos, treinos e histórico são removidos permanentemente.
+      </p>
+    </section>
+
+    <section>
+      <h2>8. Alterações nestes termos</h2>
+      <p>
+        Podemos atualizar estes termos periodicamente. Mudanças relevantes serão comunicadas por e-mail ou
+        dentro da plataforma.
+      </p>
+    </section>
+  </main>
+
+  <footer class="container landing-rodape">
+    <span>© 2026 Seklyn · seklyn.com.br</span>
+    <a href="../index.html">Voltar ao início</a>
+  </footer>
+
+  <script type="module" src="../assets/js/tema.js"></script>
+</body>
+</html>

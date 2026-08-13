@@ -1,0 +1,252 @@
+/* Seklyn — landing page (marketing) */
+
+.landing-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+:root[data-theme="escuro"] .landing-header {
+  background: rgba(15, 23, 42, 0.6);
+}
+
+.landing-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-block: var(--espaco-4);
+}
+
+.landing-marca {
+  font-weight: 800;
+  font-size: 1.25rem;
+  color: var(--cor-texto);
+}
+
+.landing-marca .ponto {
+  color: var(--cor-primaria);
+}
+
+.landing-nav-acoes {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-4);
+}
+
+@media (max-width: 480px) {
+  .landing-nav {
+    padding-block: var(--espaco-3);
+  }
+
+  .landing-marca {
+    font-size: 1.05rem;
+  }
+
+  .landing-nav-acoes {
+    gap: 6px;
+  }
+
+  .landing-nav-acoes .btn {
+    padding: 8px 10px;
+    font-size: 0.78rem;
+  }
+
+  .landing-nav-acoes .botao-tema {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+.hero-fundo {
+  position: relative;
+  overflow: hidden;
+}
+
+.landing-nav,
+.hero {
+  position: relative;
+  z-index: 1;
+}
+
+.hero {
+  padding-block: var(--espaco-8) var(--espaco-7);
+  text-align: center;
+}
+
+.hero-selo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--cor-primaria-suave);
+  color: var(--cor-primaria-ativa);
+  border-radius: var(--raio-total);
+  padding: 6px 16px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin-bottom: var(--espaco-5);
+}
+
+.hero h1 {
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  max-width: 780px;
+  margin-inline: auto;
+  margin-bottom: var(--espaco-4);
+}
+
+.hero h1 .destaque {
+  color: var(--cor-primaria);
+}
+
+.hero p {
+  font-size: 1.1rem;
+  color: var(--cor-texto-muted);
+  max-width: 620px;
+  margin-inline: auto;
+  margin-bottom: var(--espaco-6);
+}
+
+.hero-acoes {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espaco-3);
+  flex-wrap: wrap;
+}
+
+.secao {
+  padding-block: var(--espaco-8);
+}
+
+.secao-titulo {
+  text-align: center;
+  max-width: 640px;
+  margin-inline: auto;
+  margin-bottom: var(--espaco-7);
+}
+
+.secao-titulo h2 {
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  margin-bottom: var(--espaco-3);
+}
+
+.secao-titulo p {
+  color: var(--cor-texto-muted);
+}
+
+.grid-recursos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--espaco-5);
+}
+
+.recurso-card {
+  padding: var(--espaco-5);
+}
+
+.recurso-icone {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--raio-md);
+  background: var(--cor-primaria-suave);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  margin-bottom: var(--espaco-4);
+}
+
+.recurso-card h3 {
+  font-size: 1.05rem;
+  margin-bottom: var(--espaco-2);
+}
+
+.recurso-card p {
+  color: var(--cor-texto-muted);
+  font-size: 0.92rem;
+}
+
+.como-funciona {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--espaco-5);
+}
+
+.passo-card {
+  text-align: center;
+}
+
+.passo-numero {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--raio-total);
+  background: var(--cor-primaria);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  margin-inline: auto var(--espaco-3);
+}
+
+.secao-preco {
+  background: linear-gradient(135deg, var(--cor-primaria-suave), var(--cor-fundo-alt));
+  border-radius: var(--raio-lg);
+  padding: var(--espaco-8) var(--espaco-5);
+}
+
+.preco-card {
+  max-width: 420px;
+  margin-inline: auto;
+  text-align: center;
+  padding: var(--espaco-7) var(--espaco-6);
+}
+
+.preco-valor {
+  font-size: 3rem;
+  font-weight: 800;
+  color: var(--cor-primaria);
+  margin-block: var(--espaco-3);
+}
+
+.preco-valor span {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--cor-texto-muted);
+}
+
+.preco-lista {
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+  margin-block: var(--espaco-6);
+}
+
+.preco-lista li {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-3);
+  color: var(--cor-texto);
+  font-size: 0.92rem;
+}
+
+.preco-lista .check {
+  color: var(--cor-sucesso);
+  font-weight: 800;
+}
+
+.landing-rodape {
+  border-top: 1px solid var(--cor-borda);
+  padding-block: var(--espaco-6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--espaco-3);
+  color: var(--cor-texto-muted);
+  font-size: 0.85rem;
+}
