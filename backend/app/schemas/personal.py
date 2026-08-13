@@ -23,6 +23,7 @@ class PersonalOut(OrmModel):
     email: EmailStr
     telefone: str | None
     email_verificado: bool
+    tema_personalizado: str | None
     criado_em: datetime
 
 

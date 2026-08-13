@@ -22,6 +22,21 @@
   opacity: 0.65;
 }
 
+/* Variantes que puxam a cor do tema atual (padrão ou personalizado, ex: rosa) —
+   usadas na decoração do painel do Personal, ao contrário dos blobs da landing/auth
+   que têm cor fixa (marca pública, não muda por conta). */
+.blob-1 {
+  background: radial-gradient(circle, var(--cor-blob-1) 0%, transparent 70%);
+}
+
+.blob-2 {
+  background: radial-gradient(circle, var(--cor-blob-2) 0%, transparent 70%);
+}
+
+.blob-3 {
+  background: radial-gradient(circle, var(--cor-blob-3) 0%, transparent 70%);
+}
+
 @keyframes flutuar-blob {
   0%, 100% {
     transform: translate(0, 0) scale(1);

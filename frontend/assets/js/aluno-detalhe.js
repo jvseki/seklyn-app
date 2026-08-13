@@ -1,9 +1,22 @@
 // Seklyn — gestão de treinos/exercícios/séries de um aluno específico.
 import { api } from "./api.js";
 import { protegerPagina } from "./auth.js";
-import { $, escaparHtml, mensagemDeErro, mostrarToast, copiarParaAreaDeTransferencia } from "./utils.js";
+import { $, escaparHtml, mensagemDeErro, mostrarToast, copiarParaAreaDeTransferencia, linkWhatsApp } from "./utils.js";
+import { listaCompletaExercicios } from "./catalogo-exercicios.js";
 
 protegerPagina();
+
+// <datalist> com sugestões de exercícios comuns de academia — o Personal
+// continua podendo digitar qualquer nome que não esteja na lista.
+function criarDatalistExercicios() {
+  const datalist = document.createElement("datalist");
+  datalist.id = "lista-exercicios";
+  datalist.innerHTML = listaCompletaExercicios()
+    .map((nome) => `<option value="${escaparHtml(nome)}"></option>`)
+    .join("");
+  document.body.appendChild(datalist);
+}
+criarDatalistExercicios();
 
 const parametros = new URLSearchParams(window.location.search);
 const alunoId = Number(parametros.get("id"));
@@ -14,6 +27,7 @@ if (!alunoId) {
 
 const cabecalhoNomeEl = $("#aluno-nome");
 const cabecalhoLinkEl = $("#aluno-link");
+const whatsappEl = $("#aluno-whatsapp");
 const listaTreinosEl = $("#lista-treinos-editor");
 const formNovoTreino = $("#form-novo-treino");
 const analyticsEl = $("#analytics-resumo");
@@ -57,7 +71,7 @@ function cardTreino(treino) {
       </div>
       ${exercicios}
       <form class="form-row" data-acao="form-novo-exercicio" data-treino-id="${treino.id}" style="margin-top:var(--espaco-3);">
-        <div class="form-group" style="flex:1;"><input class="input" name="nome" placeholder="Nome do exercício (ex: Supino reto)" required /></div>
+        <div class="form-group" style="flex:1;"><input class="input" name="nome" list="lista-exercicios" placeholder="Nome do exercício (ex: Supino reto)" required /></div>
         <div class="form-group" style="flex:0;"><button class="btn btn-secondary btn-sm" type="submit">+ Exercício</button></div>
       </form>
     </div>
@@ -81,6 +95,12 @@ async function carregarAluno() {
     cabecalhoNomeEl.textContent = alunoAtual.nome;
     cabecalhoLinkEl.textContent = alunoAtual.link_acesso;
     cabecalhoLinkEl.dataset.link = alunoAtual.link_acesso;
+
+    const whatsapp = linkWhatsApp(alunoAtual.telefone);
+    if (whatsapp) {
+      whatsappEl.href = whatsapp;
+      whatsappEl.hidden = false;
+    }
   } catch (erro) {
     mostrarToast(mensagemDeErro(erro), "erro");
   }

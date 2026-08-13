@@ -24,6 +24,10 @@ class Personal(Base):
     token_verificacao: Mapped[str | None] = mapped_column(String(64), nullable=True)
     token_verificacao_expira: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
+    # Tema visual exclusivo do painel deste Personal (ex: "rosa"). None = tema padrão (roxo).
+    # Também é refletido na área do aluno, pra manter a identidade visual consistente.
+    tema_personalizado: Mapped[str | None] = mapped_column(String(30), nullable=True)
+
     alunos: Mapped[list["Aluno"]] = relationship(back_populates="personal", cascade="all, delete-orphan")
     assinatura: Mapped["Assinatura | None"] = relationship(
         back_populates="personal", uselist=False, cascade="all, delete-orphan"

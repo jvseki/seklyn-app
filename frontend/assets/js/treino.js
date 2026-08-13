@@ -4,6 +4,7 @@
 import { api } from "./api.js";
 import { $, $all, escaparHtml, mensagemDeErro, mostrarToast } from "./utils.js";
 import "./tema.js"; // liga o botão de alternar tema (data-acao="alternar-tema") desta página
+import { aplicarTemaPersonalizado } from "./tema-personalizado.js";
 
 const parametros = new URLSearchParams(window.location.search);
 const token = parametros.get("t");
@@ -223,6 +224,7 @@ async function iniciar() {
     painelCache = await api.painelAluno(token);
     els.saudacaoNome.textContent = `Olá, ${painelCache.aluno.nome.split(" ")[0]}!`;
     els.saudacaoPersonal.textContent = `Treinos por ${painelCache.aluno.personal_nome}`;
+    aplicarTemaPersonalizado(painelCache.aluno.personal_tema);
     renderizarListaTreinos(painelCache.treinos);
 
     els.carregando.hidden = true;

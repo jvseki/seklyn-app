@@ -44,6 +44,19 @@ export async function copiarParaAreaDeTransferencia(texto) {
   }
 }
 
+/**
+ * Monta o link de WhatsApp (wa.me) a partir de um telefone com DDD.
+ * Assume Brasil (+55) quando o número não vem com código do país.
+ * Retorna null se não houver dígitos suficientes pra ser um telefone válido.
+ */
+export function linkWhatsApp(telefone) {
+  if (!telefone) return null;
+  const digitos = telefone.replace(/\D/g, "");
+  if (digitos.length < 10) return null;
+  const comCodigoPais = digitos.startsWith("55") ? digitos : `55${digitos}`;
+  return `https://wa.me/${comCodigoPais}`;
+}
+
 /** Extrai a mensagem de erro amigável de um erro lançado pelo api.js. */
 export function mensagemDeErro(erro) {
   return erro?.message || "Ocorreu um erro inesperado. Tente novamente.";

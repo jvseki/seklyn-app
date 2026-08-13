@@ -1,12 +1,22 @@
 /* Seklyn — layout da área do Aluno (mobile-first) */
 
 .app-aluno {
+  position: relative;
+  overflow: hidden;
   max-width: 560px;
   margin-inline: auto;
   min-height: 100vh;
   background: var(--cor-fundo);
   display: flex;
   flex-direction: column;
+}
+
+/* Fica acima dos blobs decorativos (só existem quando há tema personalizado) */
+.aluno-topo,
+.aluno-conteudo,
+.tab-bar {
+  position: relative;
+  z-index: 1;
 }
 
 .aluno-topo {

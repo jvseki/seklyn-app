@@ -9,11 +9,13 @@ from app.schemas.treino import TreinoResumoOut
 class AlunoCriar(BaseModel):
     nome: str = Field(min_length=2, max_length=120)
     email: EmailStr | None = None
+    telefone: str | None = Field(default=None, max_length=30)
 
 
 class AlunoAtualizar(BaseModel):
     nome: str | None = Field(default=None, min_length=2, max_length=120)
     email: EmailStr | None = None
+    telefone: str | None = Field(default=None, max_length=30)
     ativo: bool | None = None
 
 
@@ -21,6 +23,7 @@ class AlunoOut(OrmModel):
     id: int
     nome: str
     email: EmailStr | None
+    telefone: str | None
     hash_token: str
     ativo: bool
     criado_em: datetime
@@ -33,6 +36,7 @@ class AlunoPublicoOut(BaseModel):
     id: int
     nome: str
     personal_nome: str
+    personal_tema: str | None = None
 
 
 class AlunoPainelOut(BaseModel):

@@ -1,12 +1,21 @@
 // Seklyn — login e cadastro do Personal.
 import { api, salvarToken, limparToken, estaAutenticado } from "./api.js";
 import { $, mensagemDeErro } from "./utils.js";
+import { aplicarTemaPersonalizado } from "./tema-personalizado.js";
 
-/** Usado no topo das páginas protegidas do Personal: redireciona para o login se necessário. */
+/**
+ * Usado no topo das páginas protegidas do Personal: redireciona pro login se
+ * necessário e já aplica o tema visual exclusivo da conta (se houver).
+ */
 export function protegerPagina() {
   if (!estaAutenticado()) {
     window.location.href = "login.html";
+    return;
   }
+  api
+    .me()
+    .then((personal) => aplicarTemaPersonalizado(personal.tema_personalizado))
+    .catch(() => {});
 }
 
 export function sair() {

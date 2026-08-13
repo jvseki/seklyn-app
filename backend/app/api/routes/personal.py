@@ -61,6 +61,7 @@ def criar_aluno(
         personal_id=personal.id,
         nome=dados.nome,
         email=dados.email,
+        telefone=dados.telefone,
         hash_token=gerar_hash_token(),
     )
     db.add(aluno)

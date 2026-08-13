@@ -10,6 +10,7 @@ import {
   copiarParaAreaDeTransferencia,
   abrirModal,
   fecharModal,
+  linkWhatsApp,
 } from "./utils.js";
 
 protegerPagina();
@@ -33,6 +34,7 @@ function iniciais(nome) {
 }
 
 function cardAluno(aluno) {
+  const whatsapp = linkWhatsApp(aluno.telefone);
   return `
     <div class="card card-hover aluno-card" data-id="${aluno.id}">
       <a href="aluno-detalhe.html?id=${aluno.id}" class="aluno-card-topo" style="text-decoration:none;color:inherit;">
@@ -47,6 +49,7 @@ function cardAluno(aluno) {
       </div>
       <div class="aluno-card-acoes">
         <button class="btn btn-secondary btn-sm" data-acao="copiar" data-link="${escaparHtml(aluno.link_acesso)}">Copiar link</button>
+        ${whatsapp ? `<a class="btn btn-secondary btn-sm" href="${whatsapp}" target="_blank" rel="noopener noreferrer">💬 WhatsApp</a>` : ""}
         <button class="btn btn-ghost btn-sm" data-acao="regenerar" data-id="${aluno.id}">Novo link</button>
         <button class="btn btn-danger btn-sm" data-acao="excluir" data-id="${aluno.id}">Excluir</button>
       </div>
@@ -156,6 +159,7 @@ formAluno?.addEventListener("submit", async (evento) => {
     const dados = {
       nome: formAluno.nome.value.trim(),
       email: formAluno.email.value.trim() || null,
+      telefone: formAluno.telefone.value.trim() || null,
     };
     await api.criarAluno(dados);
     mostrarToast("Aluno cadastrado!", "sucesso");

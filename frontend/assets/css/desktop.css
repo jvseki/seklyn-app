@@ -16,6 +16,15 @@
   position: sticky;
   top: 0;
   height: 100vh;
+  overflow: hidden;
+}
+
+/* Fica acima dos blobs decorativos (só existem quando há tema personalizado) */
+.sidebar-marca,
+.sidebar-nav,
+.sidebar-rodape {
+  position: relative;
+  z-index: 1;
 }
 
 .sidebar-marca {
@@ -117,8 +126,13 @@
 
 .aluno-card-acoes {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--espaco-2);
   margin-top: var(--espaco-2);
+}
+
+.aluno-card-acoes .btn {
+  white-space: nowrap;
 }
 
 .link-copiavel {

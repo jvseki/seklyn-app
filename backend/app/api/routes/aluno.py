@@ -34,7 +34,12 @@ def painel_aluno(
         .all()
     )
     return AlunoPainelOut(
-        aluno=AlunoPublicoOut(id=aluno.id, nome=aluno.nome, personal_nome=aluno.personal.nome),
+        aluno=AlunoPublicoOut(
+            id=aluno.id,
+            nome=aluno.nome,
+            personal_nome=aluno.personal.nome,
+            personal_tema=aluno.personal.tema_personalizado,
+        ),
         treinos=[montar_treino_resumo(db, t) for t in treinos],
     )
 
