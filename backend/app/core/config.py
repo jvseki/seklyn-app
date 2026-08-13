@@ -32,6 +32,10 @@ class Settings(BaseSettings):
     resend_api_key: str = ""
     email_from: str = "Seklyn <nao-responda@seklyn.com.br>"
 
+    # Chave simples pra ativar/desativar assinatura manualmente (enquanto o
+    # pagamento é combinado fora do site, sem checkout automático ainda).
+    admin_secret_key: str = ""
+
 
 @lru_cache
 def get_settings() -> Settings:
