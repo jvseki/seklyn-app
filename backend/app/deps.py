@@ -11,6 +11,7 @@ from app.core.database import get_db
 from app.core.security import decodificar_token_acesso
 from app.models.aluno import Aluno
 from app.models.assinatura import Assinatura
+from app.models.avaliacao_fisica import AvaliacaoFisica
 from app.models.exercicio import Exercicio
 from app.models.personal import Personal
 from app.models.serie import Serie
@@ -94,3 +95,11 @@ def obter_serie_do_personal(serie_id: int, personal: Personal, db: Session) -> S
     if serie is None or serie.exercicio.treino.aluno.personal_id != personal.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Série não encontrada.")
     return serie
+
+
+def obter_avaliacao_do_personal(avaliacao_id: int, personal: Personal, db: Session) -> AvaliacaoFisica:
+    """Garante que a avaliação física pertence a um aluno do Personal autenticado."""
+    avaliacao = db.get(AvaliacaoFisica, avaliacao_id)
+    if avaliacao is None or avaliacao.aluno.personal_id != personal.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Avaliação não encontrada.")
+    return avaliacao

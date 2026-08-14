@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String, func
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -20,6 +20,10 @@ class Aluno(Base):
     hash_token: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
     email: Mapped[str | None] = mapped_column(String(255), nullable=True)
     telefone: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    cpf: Mapped[str | None] = mapped_column(String(14), nullable=True)
+    # Meta de peso em kg (ex: aluno tem 100kg, quer chegar a 90kg) — usada
+    # pra calcular o progresso mostrado a partir do histórico de avaliações.
+    peso_meta_kg: Mapped[float | None] = mapped_column(Float, nullable=True)
     ativo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
@@ -28,3 +32,6 @@ class Aluno(Base):
         back_populates="aluno", cascade="all, delete-orphan", order_by="Treino.ordem"
     )
     execucoes: Mapped[list["Execucao"]] = relationship(back_populates="aluno", cascade="all, delete-orphan")
+    avaliacoes: Mapped[list["AvaliacaoFisica"]] = relationship(
+        back_populates="aluno", cascade="all, delete-orphan", order_by="AvaliacaoFisica.data.desc()"
+    )

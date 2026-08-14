@@ -77,6 +77,12 @@ export const api = {
   analyticsAluno: (id, periodoDias = 30) =>
     apiFetch(`/personal/alunos/${id}/analytics?periodo_dias=${periodoDias}`),
 
+  // --- Avaliações físicas (peso ao longo do tempo) ---
+  listarAvaliacoes: (alunoId) => apiFetch(`/personal/alunos/${alunoId}/avaliacoes`),
+  criarAvaliacao: (alunoId, dados) =>
+    apiFetch(`/personal/alunos/${alunoId}/avaliacoes`, { method: "POST", body: JSON.stringify(dados) }),
+  excluirAvaliacao: (id) => apiFetch(`/personal/avaliacoes/${id}`, { method: "DELETE" }),
+
   // --- Treinos ---
   listarTreinos: (alunoId) => apiFetch(`/personal/alunos/${alunoId}/treinos`),
   criarTreino: (alunoId, dados) =>

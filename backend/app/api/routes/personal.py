@@ -6,6 +6,8 @@ criação/edição/exclusão exige assinatura ativa.
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session, joinedload
 
+from datetime import date
+
 from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.security import gerar_hash_token
@@ -13,17 +15,20 @@ from app.deps import (
     exigir_assinatura_ativa,
     get_current_personal,
     obter_aluno_do_personal,
+    obter_avaliacao_do_personal,
     obter_exercicio_do_personal,
     obter_serie_do_personal,
     obter_treino_do_personal,
 )
 from app.models.aluno import Aluno
+from app.models.avaliacao_fisica import AvaliacaoFisica
 from app.models.exercicio import Exercicio
 from app.models.personal import Personal
 from app.models.serie import Serie
 from app.models.treino import Treino
 from app.schemas.aluno import AlunoAtualizar, AlunoCriar, AlunoOut
 from app.schemas.analytics import AderenciaOut
+from app.schemas.avaliacao_fisica import AvaliacaoFisicaCriar, AvaliacaoFisicaOut
 from app.schemas.exercicio import ExercicioAtualizar, ExercicioCriar, ExercicioOut
 from app.schemas.serie import SerieAtualizar, SerieCriar, SerieOut
 from app.schemas.treino import MontarTreinoIn, TreinoAtualizar, TreinoCriar, TreinoOut
@@ -62,6 +67,7 @@ def criar_aluno(
         nome=dados.nome,
         email=dados.email,
         telefone=dados.telefone,
+        cpf=dados.cpf,
         hash_token=gerar_hash_token(),
     )
     db.add(aluno)
@@ -339,4 +345,55 @@ def excluir_serie(
 ) -> None:
     serie = obter_serie_do_personal(serie_id, personal, db)
     db.delete(serie)
+    db.commit()
+
+
+# ---------- Avaliações físicas (peso ao longo do tempo, pra medir a meta) ----------
+
+
+@router.get("/alunos/{aluno_id}/avaliacoes", response_model=list[AvaliacaoFisicaOut])
+def listar_avaliacoes(
+    aluno_id: int,
+    personal: Personal = Depends(get_current_personal),
+    db: Session = Depends(get_db),
+) -> list[AvaliacaoFisica]:
+    aluno = obter_aluno_do_personal(aluno_id, personal, db)
+    return (
+        db.query(AvaliacaoFisica)
+        .filter(AvaliacaoFisica.aluno_id == aluno.id)
+        .order_by(AvaliacaoFisica.data.desc())
+        .all()
+    )
+
+
+@router.post(
+    "/alunos/{aluno_id}/avaliacoes", response_model=AvaliacaoFisicaOut, status_code=status.HTTP_201_CREATED
+)
+def criar_avaliacao(
+    aluno_id: int,
+    dados: AvaliacaoFisicaCriar,
+    personal: Personal = Depends(exigir_assinatura_ativa),
+    db: Session = Depends(get_db),
+) -> AvaliacaoFisica:
+    aluno = obter_aluno_do_personal(aluno_id, personal, db)
+    avaliacao = AvaliacaoFisica(
+        aluno_id=aluno.id,
+        data=dados.data or date.today(),
+        peso_kg=dados.peso_kg,
+        observacoes=dados.observacoes,
+    )
+    db.add(avaliacao)
+    db.commit()
+    db.refresh(avaliacao)
+    return avaliacao
+
+
+@router.delete("/avaliacoes/{avaliacao_id}", status_code=status.HTTP_204_NO_CONTENT)
+def excluir_avaliacao(
+    avaliacao_id: int,
+    personal: Personal = Depends(exigir_assinatura_ativa),
+    db: Session = Depends(get_db),
+) -> None:
+    avaliacao = obter_avaliacao_do_personal(avaliacao_id, personal, db)
+    db.delete(avaliacao)
     db.commit()

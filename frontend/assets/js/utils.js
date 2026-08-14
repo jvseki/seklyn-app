@@ -92,12 +92,13 @@ export async function copiarParaAreaDeTransferencia(texto, botaoOrigem = null) {
  * Assume Brasil (+55) quando o número não vem com código do país.
  * Retorna null se não houver dígitos suficientes pra ser um telefone válido.
  */
-export function linkWhatsApp(telefone) {
+export function linkWhatsApp(telefone, mensagem = null) {
   if (!telefone) return null;
   const digitos = telefone.replace(/\D/g, "");
   if (digitos.length < 10) return null;
   const comCodigoPais = digitos.startsWith("55") ? digitos : `55${digitos}`;
-  return `https://wa.me/${comCodigoPais}`;
+  const texto = mensagem ? `?text=${encodeURIComponent(mensagem)}` : "";
+  return `https://wa.me/${comCodigoPais}${texto}`;
 }
 
 /** Extrai a mensagem de erro amigável de um erro lançado pelo api.js. */

@@ -39,9 +39,14 @@ if (!alunoId) {
 const cabecalhoNomeEl = $("#aluno-nome");
 const cabecalhoLinkEl = $("#aluno-link");
 const whatsappEl = $("#aluno-whatsapp");
+const linkWhatsappEl = $("#aluno-link-whatsapp");
 const listaTreinosEl = $("#lista-treinos-editor");
 const gradeSemanaEl = $("#grade-semana");
 const analyticsEl = $("#analytics-resumo");
+const avaliacaoProgressoEl = $("#avaliacao-progresso");
+const avaliacaoHistoricoEl = $("#avaliacao-historico");
+const modalNovaAvaliacao = $("#modal-nova-avaliacao");
+const formNovaAvaliacao = $("#form-nova-avaliacao");
 const modalEditarAluno = $("#modal-editar-aluno");
 const formEditarAluno = $("#form-editar-aluno");
 const modalEditarItem = $("#modal-editar-item");
@@ -58,19 +63,15 @@ const gradeCategoriasEl = $("#grade-categorias");
 const montarTreinoNomeInput = $("#montar-treino-nome");
 const listaExerciciosSugeridosEl = $("#lista-exercicios-sugeridos");
 const outroExercicioInput = $("#montar-treino-outro-exercicio");
-const chipsSeriesEl = $("#chips-series");
-const chipsRepeticoesEl = $("#chips-repeticoes");
-const chipsDescansoEl = $("#chips-descanso");
-const repeticoesPersonalizadoEl = $("#config-repeticoes-personalizado");
-const descansoPersonalizadoEl = $("#config-descanso-personalizado");
-const configCargaEl = $("#config-carga");
+const configGruposEl = $("#config-grupos");
 
 let alunoAtual = null;
 let treinosCache = []; // guarda os dados carregados pra preencher os modais de edição sem outra chamada à API
+let avaliacoesCache = []; // histórico de peso do aluno, mais recente primeiro (vem assim da API)
 let montarTreinoDia = null; // dia da semana sendo montado no modal assistido
 let categoriasSelecionadas = []; // chaves das categorias escolhidas no passo 1 (pode ser mais de uma)
-let itensSelecionados = []; // [{ nome, incluido, categoria }] — exercícios sugeridos das categorias escolhidas
-let configAtual = { series: 3, repeticoes: "10-12", descanso: "60s" };
+let itensSelecionados = []; // [{ nome, incluido, categoria, categoriaChave }] — exercícios sugeridos das categorias escolhidas
+let configPorGrupo = {}; // chave da categoria (ou "manual") → { series, repeticoes, descanso }
 
 const OPCOES_SERIES = [2, 3, 4, 5, 6];
 const OPCOES_REPETICOES = ["6-8", "8-10", "10-12", "12-15", "15-20"];
@@ -265,15 +266,22 @@ async function carregarAluno() {
     cabecalhoNomeEl.textContent = alunoAtual.nome;
     cabecalhoLinkEl.textContent = alunoAtual.link_acesso;
     cabecalhoLinkEl.dataset.link = alunoAtual.link_acesso;
-
-    const whatsapp = linkWhatsApp(alunoAtual.telefone);
-    if (whatsapp) {
-      whatsappEl.href = whatsapp;
-      whatsappEl.hidden = false;
-    }
+    atualizarBotoesWhatsapp();
   } catch (erro) {
     mostrarToast(mensagemDeErro(erro), "erro");
   }
+}
+
+/** Atualiza os dois botões de WhatsApp (chamar direto / mandar o link do treino) com os dados atuais do aluno. */
+function atualizarBotoesWhatsapp() {
+  const whatsapp = linkWhatsApp(alunoAtual.telefone);
+  whatsappEl.hidden = !whatsapp;
+  if (whatsapp) whatsappEl.href = whatsapp;
+
+  const mensagemLink = `Oi ${alunoAtual.nome}! Aqui está o link do seu treino: ${alunoAtual.link_acesso}`;
+  const linkComMensagem = linkWhatsApp(alunoAtual.telefone, mensagemLink);
+  linkWhatsappEl.hidden = !linkComMensagem;
+  if (linkComMensagem) linkWhatsappEl.href = linkComMensagem;
 }
 
 async function carregarAnalytics() {
@@ -298,6 +306,141 @@ async function carregarAnalytics() {
     analyticsEl.innerHTML = `<p class="hint-text">Não foi possível carregar os analytics agora.</p>`;
   }
 }
+
+// --- Peso e meta: histórico de avaliações + progresso até a meta cadastrada no aluno ---
+
+function formatarData(isoData) {
+  const [ano, mes, dia] = isoData.split("-");
+  return `${dia}/${mes}/${ano}`;
+}
+
+/** A partir do histórico (mais antigo → mais recente), calcula quanto já foi andado até a meta. */
+function calcularProgressoPeso(avaliacoes, metaKg) {
+  if (avaliacoes.length === 0) return null;
+  const ordenadas = [...avaliacoes].sort((a, b) => a.data.localeCompare(b.data));
+  const inicial = ordenadas[0].peso_kg;
+  const atual = ordenadas[ordenadas.length - 1].peso_kg;
+  if (!metaKg) return { atual, inicial, meta: null, percentual: null };
+
+  const totalNecessario = inicial - metaKg; // positivo = meta é emagrecer, negativo = meta é ganhar peso
+  const jaAndado = inicial - atual;
+  const percentual = totalNecessario !== 0 ? (jaAndado / totalNecessario) * 100 : atual === metaKg ? 100 : 0;
+  return { atual, inicial, meta: metaKg, percentual: Math.max(0, Math.min(100, percentual)) };
+}
+
+function renderizarAvaliacaoProgresso() {
+  const meta = alunoAtual?.peso_meta_kg ?? null;
+  const progresso = calcularProgressoPeso(avaliacoesCache, meta);
+
+  if (!progresso) {
+    avaliacaoProgressoEl.innerHTML = `<p class="hint-text">Nenhum peso registrado ainda.${meta ? ` Meta cadastrada: ${meta}kg.` : " Registre o peso atual e, se quiser, uma meta em \"Editar aluno\"."}</p>`;
+    return;
+  }
+
+  if (progresso.meta === null) {
+    avaliacaoProgressoEl.innerHTML = `
+      <p><strong>${progresso.atual}kg</strong> registrado por último.</p>
+      <p class="hint-text">Defina uma meta de peso em "Editar aluno" pra acompanhar o progresso aqui.</p>
+    `;
+    return;
+  }
+
+  const diferenca = Math.round(Math.abs(progresso.atual - progresso.meta) * 10) / 10;
+  const faltaTexto = diferenca === 0 ? "Meta alcançada! 🎉" : `Faltam ${diferenca}kg para a meta de ${progresso.meta}kg.`;
+
+  avaliacaoProgressoEl.innerHTML = `
+    <p><strong>${progresso.atual}kg</strong> atualmente <span class="hint-text">(começou com ${progresso.inicial}kg)</span></p>
+    <div class="barra-progresso"><div class="barra-progresso-preenchida" style="width:${progresso.percentual}%;"></div></div>
+    <p class="hint-text" style="margin-top:var(--espaco-2);">${faltaTexto}</p>
+  `;
+}
+
+function renderizarAvaliacaoHistorico() {
+  if (avaliacoesCache.length === 0) {
+    avaliacaoHistoricoEl.innerHTML = "";
+    return;
+  }
+  avaliacaoHistoricoEl.innerHTML = `
+    <details>
+      <summary class="hint-text" style="cursor:pointer;font-weight:700;">Ver histórico (${avaliacoesCache.length})</summary>
+      <div style="display:flex;flex-direction:column;gap:var(--espaco-2);margin-top:var(--espaco-2);">
+        ${avaliacoesCache
+          .map(
+            (a) => `
+              <div class="series-linha" data-avaliacao-id="${a.id}">
+                <span>${formatarData(a.data)} — <strong>${a.peso_kg}kg</strong>${a.observacoes ? " · " + escaparHtml(a.observacoes) : ""}</span>
+                <button class="btn btn-ghost btn-sm" data-acao="excluir-avaliacao" data-id="${a.id}" type="button">🗑️</button>
+              </div>
+            `
+          )
+          .join("")}
+      </div>
+    </details>
+  `;
+}
+
+let avaliacoesRequisicaoId = 0; // evita que uma resposta antiga (fora de ordem) sobrescreva uma mais nova
+
+async function carregarAvaliacoes() {
+  const idDestaRequisicao = ++avaliacoesRequisicaoId;
+  try {
+    const dados = await api.listarAvaliacoes(alunoId);
+    if (idDestaRequisicao !== avaliacoesRequisicaoId) return; // chegou depois de uma requisição mais nova, ignora
+    avaliacoesCache = dados;
+    renderizarAvaliacaoProgresso();
+    renderizarAvaliacaoHistorico();
+  } catch (erro) {
+    if (idDestaRequisicao !== avaliacoesRequisicaoId) return;
+    avaliacaoProgressoEl.innerHTML = `<p class="hint-text">Não foi possível carregar o histórico de peso agora.</p>`;
+  }
+}
+
+$("[data-acao='abrir-nova-avaliacao']")?.addEventListener("click", () => {
+  formNovaAvaliacao.reset();
+  formNovaAvaliacao.data.value = new Date().toISOString().slice(0, 10);
+  abrirModal(modalNovaAvaliacao);
+});
+
+document
+  .querySelectorAll("[data-acao='fechar-modal-avaliacao']")
+  .forEach((el) => el.addEventListener("click", () => fecharModal(modalNovaAvaliacao)));
+
+formNovaAvaliacao?.addEventListener("submit", async (evento) => {
+  evento.preventDefault();
+  const botao = $("button[type='submit']", formNovaAvaliacao);
+  botao.disabled = true;
+  try {
+    await api.criarAvaliacao(alunoId, {
+      data: formNovaAvaliacao.data.value || null,
+      peso_kg: Number(formNovaAvaliacao.peso_kg.value),
+      observacoes: formNovaAvaliacao.observacoes.value.trim() || null,
+    });
+    mostrarToast("Peso registrado!", "sucesso");
+    fecharModal(modalNovaAvaliacao);
+    carregarAvaliacoes();
+  } catch (erro) {
+    mostrarToast(mensagemDeErro(erro), "erro");
+  } finally {
+    botao.disabled = false;
+  }
+});
+
+avaliacaoHistoricoEl?.addEventListener("click", async (evento) => {
+  const botao = evento.target.closest("[data-acao='excluir-avaliacao']");
+  if (!botao) return;
+  const confirmou = await confirmarAcao("Remover esse registro de peso?", {
+    titulo: "Remover registro",
+    textoConfirmar: "Remover",
+  });
+  if (!confirmou) return;
+  try {
+    await api.excluirAvaliacao(Number(botao.dataset.id));
+    mostrarToast("Registro removido.", "sucesso");
+    carregarAvaliacoes();
+  } catch (erro) {
+    mostrarToast(mensagemDeErro(erro), "erro");
+  }
+});
 
 // --- Montador assistido de treino: 1) categorias (pode escolher várias) →
 // 2) exercícios sugeridos → 3) séries/repetições/descanso em botões prontos.
@@ -334,10 +477,24 @@ function montarItensDasCategorias() {
     for (const ex of categoria.exercicios) {
       if (vistos.has(ex.nome)) continue;
       vistos.add(ex.nome);
-      itens.push({ nome: ex.nome, incluido: ex.recomendado, categoria: categoria.rotulo });
+      itens.push({ nome: ex.nome, incluido: ex.recomendado, categoria: categoria.rotulo, categoriaChave: chave });
     }
   }
   return itens;
+}
+
+/** Agrupa os exercícios marcados por categoria, na ordem em que foram escolhidas (manuais por último). */
+function gruposAtivos() {
+  const porChave = new Map();
+  itensSelecionados.forEach((item) => {
+    if (!item.incluido) return;
+    const chave = item.categoriaChave || "manual";
+    const rotulo = item.categoria || "Adicionados manualmente";
+    if (!porChave.has(chave)) porChave.set(chave, { chave, rotulo, itens: [] });
+    porChave.get(chave).itens.push(item);
+  });
+  const ordem = [...categoriasSelecionadas, "manual"];
+  return Array.from(porChave.values()).sort((a, b) => ordem.indexOf(a.chave) - ordem.indexOf(b.chave));
 }
 
 function renderizarChecklistExercicios() {
@@ -383,19 +540,81 @@ function renderizarChipsConfig(container, opcoes, valorAtual, grupo, permitirPer
 }
 
 function renderizarPassoConfig() {
-  const primeiraCategoria = obterCategoria(categoriasSelecionadas[0]);
-  const padrao = primeiraCategoria?.padrao || { repeticoes_alvo: "10-12", intervalo_descanso: "60s" };
-  configAtual = { series: 3, repeticoes: padrao.repeticoes_alvo, descanso: padrao.intervalo_descanso || "60s" };
+  const grupos = gruposAtivos();
+  configPorGrupo = {};
 
   const rotulos = categoriasSelecionadas.map((c) => obterCategoria(c)?.rotulo).filter(Boolean);
   montarTreinoNomeInput.value = `Treino - ${rotulos.join(" e ")}`;
 
-  renderizarChipsConfig(chipsSeriesEl, OPCOES_SERIES, configAtual.series, "series", false);
-  renderizarChipsConfig(chipsRepeticoesEl, OPCOES_REPETICOES, configAtual.repeticoes, "repeticoes");
-  renderizarChipsConfig(chipsDescansoEl, OPCOES_DESCANSO, configAtual.descanso, "descanso");
-  repeticoesPersonalizadoEl.hidden = true;
-  descansoPersonalizadoEl.hidden = true;
-  configCargaEl.value = "";
+  configGruposEl.innerHTML = grupos
+    .map(
+      ({ chave, rotulo, itens }) => `
+        <div class="config-grupo">
+          <p class="config-grupo-titulo">${escaparHtml(rotulo)} <span class="hint-text">(${itens.length} exercício${itens.length > 1 ? "s" : ""})</span></p>
+          <div class="form-group">
+            <span class="label">Quantas séries</span>
+            <div class="grade-chips" data-chips="series" data-grupo-config="${chave}"></div>
+          </div>
+          <div class="form-group">
+            <span class="label">Repetições por série</span>
+            <div class="grade-chips" data-chips="repeticoes" data-grupo-config="${chave}"></div>
+            <input class="input" data-campo="repeticoes-personalizado" data-grupo-config="${chave}" placeholder="Ex: 10-12" hidden style="margin-top:var(--espaco-2);" />
+          </div>
+          <div class="form-group">
+            <span class="label">Descanso entre séries</span>
+            <div class="grade-chips" data-chips="descanso" data-grupo-config="${chave}"></div>
+            <input class="input" data-campo="descanso-personalizado" data-grupo-config="${chave}" placeholder="Ex: 60s" hidden style="margin-top:var(--espaco-2);" />
+          </div>
+          <div class="form-group">
+            <label class="label">Carga (opcional)</label>
+            <input class="input" data-campo="carga" data-grupo-config="${chave}" placeholder="Deixe em branco se variar por aluno" />
+          </div>
+        </div>
+      `
+    )
+    .join("");
+
+  grupos.forEach(({ chave }) => {
+    const categoria = chave === "manual" ? null : obterCategoria(chave);
+    const padrao = categoria?.padrao || { repeticoes_alvo: "10-12", intervalo_descanso: "60s" };
+    configPorGrupo[chave] = { series: 3, repeticoes: padrao.repeticoes_alvo, descanso: padrao.intervalo_descanso || "60s" };
+
+    renderizarChipsConfig(
+      configGruposEl.querySelector(`[data-chips="series"][data-grupo-config="${chave}"]`),
+      OPCOES_SERIES,
+      configPorGrupo[chave].series,
+      `${chave}__series`,
+      false
+    );
+    renderizarChipsConfig(
+      configGruposEl.querySelector(`[data-chips="repeticoes"][data-grupo-config="${chave}"]`),
+      OPCOES_REPETICOES,
+      configPorGrupo[chave].repeticoes,
+      `${chave}__repeticoes`
+    );
+    renderizarChipsConfig(
+      configGruposEl.querySelector(`[data-chips="descanso"][data-grupo-config="${chave}"]`),
+      OPCOES_DESCANSO,
+      configPorGrupo[chave].descanso,
+      `${chave}__descanso`
+    );
+  });
+}
+
+/** Lê a config de uma categoria no momento de salvar, resolvendo os campos "Personalizado". */
+function resolverConfigGrupo(chave) {
+  const cfg = configPorGrupo[chave];
+  const repeticoes =
+    cfg.repeticoes === "outro"
+      ? (configGruposEl.querySelector(`[data-campo="repeticoes-personalizado"][data-grupo-config="${chave}"]`)?.value.trim() || "")
+      : String(cfg.repeticoes);
+  const descanso =
+    cfg.descanso === "outro"
+      ? (configGruposEl.querySelector(`[data-campo="descanso-personalizado"][data-grupo-config="${chave}"]`)?.value.trim() || "")
+      : String(cfg.descanso);
+  const numeroSeries = Number(cfg.series) || 3;
+  const carga = configGruposEl.querySelector(`[data-campo="carga"][data-grupo-config="${chave}"]`)?.value.trim() || null;
+  return { repeticoes, descanso, numeroSeries, carga };
 }
 
 function abrirMontarTreino(dia) {
@@ -419,15 +638,15 @@ async function confirmarMontagemTreino() {
     return;
   }
 
-  const repeticoes =
-    configAtual.repeticoes === "outro" ? repeticoesPersonalizadoEl.value.trim() : String(configAtual.repeticoes);
-  const descanso = configAtual.descanso === "outro" ? descansoPersonalizadoEl.value.trim() : String(configAtual.descanso);
-  const numeroSeries = Number(configAtual.series) || 3;
-  const carga = configCargaEl.value.trim() || null;
-
-  if (!repeticoes) {
-    mostrarToast("Informe as repetições.", "erro");
-    return;
+  const grupos = gruposAtivos();
+  const configResolvida = new Map();
+  for (const { chave, rotulo } of grupos) {
+    const resolvido = resolverConfigGrupo(chave);
+    if (!resolvido.repeticoes) {
+      mostrarToast(`Informe as repetições de "${rotulo}".`, "erro");
+      return;
+    }
+    configResolvida.set(chave, resolvido);
   }
 
   const diaIndex = DIAS_SEMANA.findIndex((d) => d.chave === montarTreinoDia);
@@ -437,16 +656,16 @@ async function confirmarMontagemTreino() {
   botao.textContent = "Salvando...";
 
   try {
-    // Uma linha de série por série de verdade (ex: "4 séries" = 4 linhas o aluno marca uma a uma).
-    const serieRepetida = { repeticoes_alvo: repeticoes, carga_alvo: carga, intervalo_descanso: descanso || null };
     await api.montarTreino(alunoId, {
       nome,
       ordem: diaIndex,
       dia_semana: montarTreinoDia,
-      exercicios: selecionados.map((item) => ({
-        nome: item.nome,
-        series: Array.from({ length: numeroSeries }, () => serieRepetida),
-      })),
+      exercicios: selecionados.map((item) => {
+        const { repeticoes, descanso, numeroSeries, carga } = configResolvida.get(item.categoriaChave || "manual");
+        // Uma linha de série por série de verdade (ex: "4 séries" = 4 linhas o aluno marca uma a uma).
+        const serieRepetida = { repeticoes_alvo: repeticoes, carga_alvo: carga, intervalo_descanso: descanso || null };
+        return { nome: item.nome, series: Array.from({ length: numeroSeries }, () => serieRepetida) };
+      }),
     });
 
     mostrarToast(`Treino de ${ROTULO_DIA[montarTreinoDia]} criado com ${selecionados.length} exercício(s)!`, "sucesso");
@@ -505,28 +724,27 @@ listaExerciciosSugeridosEl?.addEventListener("change", (evento) => {
 $("[data-acao='adicionar-outro-exercicio']")?.addEventListener("click", () => {
   const nome = outroExercicioInput.value.trim();
   if (!nome) return;
-  itensSelecionados.push({ nome, incluido: true, categoria: null });
+  itensSelecionados.push({ nome, incluido: true, categoria: null, categoriaChave: null });
   outroExercicioInput.value = "";
   renderizarChecklistExercicios();
 });
 
-passoConfigEl?.addEventListener("click", (evento) => {
+configGruposEl?.addEventListener("click", (evento) => {
   const chip = evento.target.closest(".chip-opcao");
   if (!chip) return;
-  const grupo = chip.dataset.grupo;
+  const [chaveGrupo, campo] = chip.dataset.grupo.split("__");
   const valor = chip.dataset.valor;
   const bruto = valor === "outro" ? "outro" : isNaN(Number(valor)) ? valor : Number(valor);
-  configAtual[grupo] = bruto;
+  configPorGrupo[chaveGrupo][campo] = bruto;
 
-  $all(`.chip-opcao[data-grupo="${grupo}"]`, passoConfigEl).forEach((c) => c.classList.toggle("selecionado", c === chip));
+  $all(`.chip-opcao[data-grupo="${chip.dataset.grupo}"]`, configGruposEl).forEach((c) => c.classList.toggle("selecionado", c === chip));
 
-  if (grupo === "repeticoes") {
-    repeticoesPersonalizadoEl.hidden = valor !== "outro";
-    if (valor === "outro") repeticoesPersonalizadoEl.focus();
-  }
-  if (grupo === "descanso") {
-    descansoPersonalizadoEl.hidden = valor !== "outro";
-    if (valor === "outro") descansoPersonalizadoEl.focus();
+  if (campo === "repeticoes" || campo === "descanso") {
+    const personalizadoEl = configGruposEl.querySelector(`[data-campo="${campo}-personalizado"][data-grupo-config="${chaveGrupo}"]`);
+    if (personalizadoEl) {
+      personalizadoEl.hidden = valor !== "outro";
+      if (valor === "outro") personalizadoEl.focus();
+    }
   }
 });
 
@@ -635,12 +853,14 @@ listaTreinosEl?.addEventListener("click", async (evento) => {
   }
 });
 
-// --- Editar aluno (nome/e-mail/WhatsApp) ---
+// --- Editar aluno (nome/e-mail/WhatsApp/CPF/meta de peso) ---
 $("[data-acao='editar-aluno']")?.addEventListener("click", () => {
   if (!alunoAtual) return;
   formEditarAluno.nome.value = alunoAtual.nome;
   formEditarAluno.email.value = alunoAtual.email || "";
   formEditarAluno.telefone.value = alunoAtual.telefone || "";
+  formEditarAluno.cpf.value = alunoAtual.cpf || "";
+  formEditarAluno.peso_meta_kg.value = alunoAtual.peso_meta_kg ?? "";
   abrirModal(modalEditarAluno);
 });
 
@@ -657,13 +877,13 @@ formEditarAluno?.addEventListener("submit", async (evento) => {
       nome: formEditarAluno.nome.value.trim(),
       email: formEditarAluno.email.value.trim() || null,
       telefone: formEditarAluno.telefone.value.trim() || null,
+      cpf: formEditarAluno.cpf.value.trim() || null,
+      peso_meta_kg: formEditarAluno.peso_meta_kg.value ? Number(formEditarAluno.peso_meta_kg.value) : null,
     };
     alunoAtual = await api.atualizarAluno(alunoId, dados);
     cabecalhoNomeEl.textContent = alunoAtual.nome;
-
-    const whatsapp = linkWhatsApp(alunoAtual.telefone);
-    whatsappEl.hidden = !whatsapp;
-    if (whatsapp) whatsappEl.href = whatsapp;
+    atualizarBotoesWhatsapp();
+    renderizarAvaliacaoProgresso(); // a meta pode ter mudado
 
     mostrarToast("Dados do aluno atualizados!", "sucesso");
     fecharModal(modalEditarAluno);
@@ -700,3 +920,4 @@ formEditarItem?.addEventListener("submit", async (evento) => {
 carregarAluno();
 recarregarTreinos();
 carregarAnalytics();
+carregarAvaliacoes();

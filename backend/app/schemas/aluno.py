@@ -10,12 +10,15 @@ class AlunoCriar(BaseModel):
     nome: str = Field(min_length=2, max_length=120)
     email: EmailStr | None = None
     telefone: str | None = Field(default=None, max_length=30)
+    cpf: str | None = Field(default=None, max_length=14)
 
 
 class AlunoAtualizar(BaseModel):
     nome: str | None = Field(default=None, min_length=2, max_length=120)
     email: EmailStr | None = None
     telefone: str | None = Field(default=None, max_length=30)
+    cpf: str | None = Field(default=None, max_length=14)
+    peso_meta_kg: float | None = None
     ativo: bool | None = None
 
 
@@ -24,6 +27,8 @@ class AlunoOut(OrmModel):
     nome: str
     email: EmailStr | None
     telefone: str | None
+    cpf: str | None
+    peso_meta_kg: float | None
     hash_token: str
     ativo: bool
     criado_em: datetime

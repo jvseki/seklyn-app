@@ -128,3 +128,31 @@
   --cor-primaria-suave: #341527;
   --cor-primaria-contraste: #2b1220;
 }
+
+/* Tema personalizado "verde" — mesmo esquema, exclusivo de outra conta. */
+:root[data-tema-personalizado="verde"] {
+  --cor-primaria: #16a34a; /* green-600 */
+  --cor-primaria-hover: #15803d; /* green-700 */
+  --cor-primaria-ativa: #166534; /* green-800 */
+  --cor-primaria-forte: #14532d; /* green-900 */
+  --cor-primaria-clara: #dcfce7; /* green-100 */
+  --cor-primaria-suave: #f0fdf4; /* green-50 */
+  --cor-primaria-contraste: #ffffff;
+
+  --cor-blob-1: #86efac; /* green-300 */
+  --cor-blob-2: #16a34a; /* green-600 */
+  --cor-blob-3: #4ade80; /* green-400 */
+
+  --sombra-botao: 0 2px 4px rgba(22, 163, 74, 0.3), 0 10px 20px rgba(20, 83, 45, 0.25);
+  --sombra-botao-hover: 0 4px 8px rgba(22, 163, 74, 0.35), 0 14px 28px rgba(20, 83, 45, 0.3);
+}
+
+:root[data-tema-personalizado="verde"][data-theme="escuro"] {
+  --cor-primaria: #86efac; /* green-300 */
+  --cor-primaria-hover: #bbf7d0; /* green-200 */
+  --cor-primaria-ativa: #dcfce7; /* green-100 */
+  --cor-primaria-forte: #dcfce7;
+  --cor-primaria-clara: #1f3d2a;
+  --cor-primaria-suave: #16291c;
+  --cor-primaria-contraste: #0d1f14;
+}
