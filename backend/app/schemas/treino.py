@@ -22,6 +22,30 @@ class TreinoAtualizar(BaseModel):
     ativo: bool | None = None
 
 
+class SerieRapidaIn(BaseModel):
+    repeticoes_alvo: str = Field(min_length=1, max_length=30)
+    carga_alvo: str | None = Field(default=None, max_length=30)
+    intervalo_descanso: str | None = Field(default=None, max_length=20)
+
+
+class ExercicioRapidoIn(BaseModel):
+    nome: str = Field(min_length=1, max_length=120)
+    series: list[SerieRapidaIn] = Field(min_length=1)
+
+
+class MontarTreinoIn(BaseModel):
+    """
+    Cria (ou substitui) o treino de um dia da semana inteiro numa tacada só —
+    usado pelo montador assistido por categoria, pra não precisar de uma
+    chamada de API por exercício/série (lento e arriscado de ficar pela metade).
+    """
+
+    nome: str = Field(min_length=1, max_length=120)
+    ordem: int = 0
+    dia_semana: DiaSemana | None = None
+    exercicios: list[ExercicioRapidoIn] = Field(min_length=1)
+
+
 class TreinoOut(OrmModel):
     id: int
     aluno_id: int

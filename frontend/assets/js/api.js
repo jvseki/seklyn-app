@@ -83,6 +83,8 @@ export const api = {
     apiFetch(`/personal/alunos/${alunoId}/treinos`, { method: "POST", body: JSON.stringify(dados) }),
   atualizarTreino: (id, dados) => apiFetch(`/personal/treinos/${id}`, { method: "PUT", body: JSON.stringify(dados) }),
   excluirTreino: (id) => apiFetch(`/personal/treinos/${id}`, { method: "DELETE" }),
+  montarTreino: (alunoId, dados) =>
+    apiFetch(`/personal/alunos/${alunoId}/treinos/montar`, { method: "POST", body: JSON.stringify(dados) }),
 
   // --- Exercícios ---
   criarExercicio: (treinoId, dados) =>

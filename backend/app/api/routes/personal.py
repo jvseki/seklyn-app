@@ -26,7 +26,7 @@ from app.schemas.aluno import AlunoAtualizar, AlunoCriar, AlunoOut
 from app.schemas.analytics import AderenciaOut
 from app.schemas.exercicio import ExercicioAtualizar, ExercicioCriar, ExercicioOut
 from app.schemas.serie import SerieAtualizar, SerieCriar, SerieOut
-from app.schemas.treino import TreinoAtualizar, TreinoCriar, TreinoOut
+from app.schemas.treino import MontarTreinoIn, TreinoAtualizar, TreinoCriar, TreinoOut
 from app.services.progresso import calcular_aderencia
 
 router = APIRouter(prefix="/api/personal", tags=["Personal"])
@@ -160,6 +160,63 @@ def criar_treino(
     aluno = obter_aluno_do_personal(aluno_id, personal, db)
     treino = Treino(aluno_id=aluno.id, nome=dados.nome, ordem=dados.ordem, dia_semana=dados.dia_semana)
     db.add(treino)
+    db.commit()
+    db.refresh(treino)
+    return treino
+
+
+@router.post(
+    "/alunos/{aluno_id}/treinos/montar",
+    response_model=TreinoOut,
+    status_code=status.HTTP_201_CREATED,
+)
+def montar_treino(
+    aluno_id: int,
+    dados: MontarTreinoIn,
+    personal: Personal = Depends(exigir_assinatura_ativa),
+    db: Session = Depends(get_db),
+) -> Treino:
+    """
+    Cria (ou refaz do zero) o treino de um dia inteiro numa única requisição:
+    usado pelo montador assistido por categoria. Se já existir um treino
+    nesse dia, os exercícios/séries antigos são substituídos pelos novos.
+    """
+    aluno = obter_aluno_do_personal(aluno_id, personal, db)
+
+    treino = None
+    if dados.dia_semana:
+        treino = (
+            db.query(Treino)
+            .filter(Treino.aluno_id == aluno.id, Treino.dia_semana == dados.dia_semana)
+            .first()
+        )
+
+    if treino:
+        treino.nome = dados.nome
+        treino.ordem = dados.ordem
+        # Cascade da relação já apaga exercícios/séries antigos ao limpar a lista.
+        treino.exercicios.clear()
+        db.flush()
+    else:
+        treino = Treino(aluno_id=aluno.id, nome=dados.nome, ordem=dados.ordem, dia_semana=dados.dia_semana)
+        db.add(treino)
+        db.flush()
+
+    for ordem_exercicio, exercicio_in in enumerate(dados.exercicios):
+        exercicio = Exercicio(treino_id=treino.id, nome=exercicio_in.nome, ordem=ordem_exercicio)
+        db.add(exercicio)
+        db.flush()
+        for ordem_serie, serie_in in enumerate(exercicio_in.series):
+            db.add(
+                Serie(
+                    exercicio_id=exercicio.id,
+                    ordem=ordem_serie,
+                    repeticoes_alvo=serie_in.repeticoes_alvo,
+                    carga_alvo=serie_in.carga_alvo,
+                    intervalo_descanso=serie_in.intervalo_descanso,
+                )
+            )
+
     db.commit()
     db.refresh(treino)
     return treino

@@ -138,26 +138,34 @@
   </div>
 
   <div class="modal-fundo" id="modal-montar-treino" hidden>
-    <div class="modal" style="max-width:540px;">
+    <div class="modal" style="max-width:560px;">
       <div class="modal-cabecalho">
         <h3 id="montar-treino-titulo">Montar treino</h3>
         <button class="btn btn-ghost btn-icon" data-acao="fechar-modal-montar">✕</button>
       </div>
 
-      <div id="montar-treino-passo-categoria">
-        <p class="hint-text" style="margin-bottom:var(--espaco-4);">O que vai ser o treino desse dia? Eu já sugiro os exercícios.</p>
-        <div class="grade-categorias" id="grade-categorias"></div>
+      <div class="passos-indicador" id="passos-indicador">
+        <span class="passo-bolha ativo" data-passo="1">1</span>
+        <span class="passo-linha"></span>
+        <span class="passo-bolha" data-passo="2">2</span>
+        <span class="passo-linha"></span>
+        <span class="passo-bolha" data-passo="3">3</span>
       </div>
 
+      <!-- Passo 1: categorias (pode escolher mais de uma, ex: Peito + Tríceps) -->
+      <div id="montar-treino-passo-categoria">
+        <p class="hint-text" style="margin-bottom:var(--espaco-4);">O que vai ser o treino desse dia? Pode escolher mais de uma categoria.</p>
+        <div class="grade-categorias" id="grade-categorias"></div>
+        <div class="modal-acoes">
+          <button class="btn btn-ghost" type="button" data-acao="fechar-modal-montar">Cancelar</button>
+          <button class="btn btn-primary" type="button" data-acao="ir-para-exercicios">Próximo →</button>
+        </div>
+      </div>
+
+      <!-- Passo 2: exercícios sugeridos das categorias escolhidas -->
       <div id="montar-treino-passo-exercicios" hidden>
         <button class="btn btn-ghost btn-sm" type="button" data-acao="voltar-categoria" style="margin-bottom:var(--espaco-3);">← Trocar categoria</button>
-
-        <div class="form-group">
-          <label class="label" for="montar-treino-nome">Nome do treino</label>
-          <input class="input" id="montar-treino-nome" />
-        </div>
-
-        <p class="hint-text" style="margin-bottom:var(--espaco-2);">Marque os exercícios que quer incluir — dá pra ajustar séries, repetições e descanso depois.</p>
+        <p class="hint-text" style="margin-bottom:var(--espaco-2);">Marque os exercícios que quer incluir no treino.</p>
         <div id="lista-exercicios-sugeridos" style="display:flex;flex-direction:column;gap:var(--espaco-2);max-height:300px;overflow-y:auto;padding-right:4px;"></div>
 
         <div class="form-row" style="margin-top:var(--espaco-4);">
@@ -170,8 +178,47 @@
         </div>
 
         <div class="modal-acoes">
+          <button class="btn btn-ghost" type="button" data-acao="voltar-categoria">← Voltar</button>
+          <button class="btn btn-primary" type="button" data-acao="ir-para-config">Próximo →</button>
+        </div>
+      </div>
+
+      <!-- Passo 3: quantas séries, repetições e descanso — tudo em botões prontos -->
+      <div id="montar-treino-passo-config" hidden>
+        <button class="btn btn-ghost btn-sm" type="button" data-acao="voltar-exercicios" style="margin-bottom:var(--espaco-3);">← Voltar aos exercícios</button>
+
+        <div class="form-group">
+          <label class="label" for="montar-treino-nome">Nome do treino</label>
+          <input class="input" id="montar-treino-nome" />
+        </div>
+
+        <p class="hint-text" style="margin-bottom:var(--espaco-4);">Vale pra todos os exercícios marcados. Dá pra ajustar um por um depois, se precisar.</p>
+
+        <div class="form-group">
+          <span class="label">Quantas séries</span>
+          <div class="grade-chips" id="chips-series" data-grupo="series"></div>
+        </div>
+
+        <div class="form-group">
+          <span class="label">Repetições por série</span>
+          <div class="grade-chips" id="chips-repeticoes" data-grupo="repeticoes"></div>
+          <input class="input" id="config-repeticoes-personalizado" placeholder="Ex: 10-12" hidden style="margin-top:var(--espaco-2);" />
+        </div>
+
+        <div class="form-group">
+          <span class="label">Descanso entre séries</span>
+          <div class="grade-chips" id="chips-descanso" data-grupo="descanso"></div>
+          <input class="input" id="config-descanso-personalizado" placeholder="Ex: 60s" hidden style="margin-top:var(--espaco-2);" />
+        </div>
+
+        <div class="form-group">
+          <label class="label" for="config-carga">Carga (opcional)</label>
+          <input class="input" id="config-carga" placeholder="Deixe em branco se variar por aluno" />
+        </div>
+
+        <div class="modal-acoes">
           <button class="btn btn-ghost" type="button" data-acao="fechar-modal-montar">Cancelar</button>
-          <button class="btn btn-primary" type="button" data-acao="confirmar-montar-treino">Criar treino</button>
+          <button class="btn btn-primary" type="button" data-acao="confirmar-montar-treino">Salvar treino</button>
         </div>
       </div>
     </div>

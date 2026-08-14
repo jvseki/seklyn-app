@@ -229,8 +229,84 @@
   transform: translateY(-2px);
 }
 
+.categoria-chip.selecionada {
+  border-color: var(--cor-primaria);
+  background: var(--cor-primaria-suave);
+  box-shadow: 0 0 0 2px var(--cor-primaria-clara);
+}
+
 .categoria-chip .emoji {
   font-size: 1.6rem;
+}
+
+/* Indicador "passo 1 de 3" no topo do montador assistido */
+.passos-indicador {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espaco-2);
+  margin-bottom: var(--espaco-5);
+}
+
+.passo-bolha {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--raio-total);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  background: var(--cor-fundo-alt);
+  color: var(--cor-texto-muted);
+  border: 1.5px solid var(--cor-borda);
+  transition: all 0.2s ease;
+}
+
+.passo-bolha.ativo {
+  background: var(--cor-primaria);
+  color: var(--cor-primaria-contraste);
+  border-color: var(--cor-primaria);
+}
+
+.passo-bolha.concluido {
+  background: var(--cor-primaria-clara);
+  color: var(--cor-primaria-ativa);
+  border-color: var(--cor-primaria-clara);
+}
+
+.passo-linha {
+  width: 40px;
+  height: 2px;
+  background: var(--cor-borda);
+}
+
+/* Botões prontos de série/repetição/descanso — clica e já era, sem digitar */
+.grade-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-2);
+}
+
+.chip-opcao {
+  padding: 8px 16px;
+  border-radius: var(--raio-total);
+  border: 1.5px solid var(--cor-borda);
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
+  font-weight: 600;
+  font-size: 0.88rem;
+  transition: all 0.15s ease;
+}
+
+.chip-opcao:hover {
+  border-color: var(--cor-primaria-clara);
+}
+
+.chip-opcao.selecionado {
+  background: var(--cor-primaria);
+  border-color: var(--cor-primaria);
+  color: var(--cor-primaria-contraste);
 }
 
 .exercicio-sugerido {

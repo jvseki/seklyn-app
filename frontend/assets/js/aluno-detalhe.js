@@ -3,6 +3,7 @@ import { api } from "./api.js";
 import { protegerPagina } from "./auth.js";
 import {
   $,
+  $all,
   escaparHtml,
   mensagemDeErro,
   mostrarToast,
@@ -49,17 +50,31 @@ const editarItemTitulo = $("#editar-item-titulo");
 const editarItemCampos = $("#editar-item-campos");
 const modalMontarTreino = $("#modal-montar-treino");
 const montarTreinoTitulo = $("#montar-treino-titulo");
+const passosIndicadorEl = $("#passos-indicador");
 const passoCategoriaEl = $("#montar-treino-passo-categoria");
 const passoExerciciosEl = $("#montar-treino-passo-exercicios");
+const passoConfigEl = $("#montar-treino-passo-config");
 const gradeCategoriasEl = $("#grade-categorias");
 const montarTreinoNomeInput = $("#montar-treino-nome");
 const listaExerciciosSugeridosEl = $("#lista-exercicios-sugeridos");
 const outroExercicioInput = $("#montar-treino-outro-exercicio");
+const chipsSeriesEl = $("#chips-series");
+const chipsRepeticoesEl = $("#chips-repeticoes");
+const chipsDescansoEl = $("#chips-descanso");
+const repeticoesPersonalizadoEl = $("#config-repeticoes-personalizado");
+const descansoPersonalizadoEl = $("#config-descanso-personalizado");
+const configCargaEl = $("#config-carga");
 
 let alunoAtual = null;
 let treinosCache = []; // guarda os dados carregados pra preencher os modais de edição sem outra chamada à API
 let montarTreinoDia = null; // dia da semana sendo montado no modal assistido
-let itensSelecionados = []; // [{ nome, incluido }] — exercícios sugeridos pra categoria escolhida
+let categoriasSelecionadas = []; // chaves das categorias escolhidas no passo 1 (pode ser mais de uma)
+let itensSelecionados = []; // [{ nome, incluido, categoria }] — exercícios sugeridos das categorias escolhidas
+let configAtual = { series: 3, repeticoes: "10-12", descanso: "60s" };
+
+const OPCOES_SERIES = [2, 3, 4, 5, 6];
+const OPCOES_REPETICOES = ["6-8", "8-10", "10-12", "12-15", "15-20"];
+const OPCOES_DESCANSO = ["30s", "45s", "60s", "90s", "2min"];
 
 const DIAS_SEMANA = [
   { chave: "segunda", rotulo: "Segunda" },
@@ -285,12 +300,24 @@ async function carregarAnalytics() {
   }
 }
 
-// --- Montador assistido de treino (categoria → exercícios sugeridos → cria tudo de uma vez) ---
+// --- Montador assistido de treino: 1) categorias (pode escolher várias) →
+// 2) exercícios sugeridos → 3) séries/repetições/descanso em botões prontos.
+
+function mostrarPassoMontagem(numero) {
+  passoCategoriaEl.hidden = numero !== 1;
+  passoExerciciosEl.hidden = numero !== 2;
+  passoConfigEl.hidden = numero !== 3;
+  $all(".passo-bolha", passosIndicadorEl).forEach((bolha) => {
+    const n = Number(bolha.dataset.passo);
+    bolha.classList.toggle("ativo", n === numero);
+    bolha.classList.toggle("concluido", n < numero);
+  });
+}
 
 function renderizarGradeCategorias() {
   gradeCategoriasEl.innerHTML = CATEGORIAS_TREINO.map(
     (cat) => `
-      <button class="categoria-chip" type="button" data-categoria="${cat.chave}">
+      <button class="categoria-chip ${categoriasSelecionadas.includes(cat.chave) ? "selecionada" : ""}" type="button" data-categoria="${cat.chave}">
         <span class="emoji">${cat.emoji}</span>
         <span>${cat.rotulo}</span>
       </button>
@@ -298,39 +325,87 @@ function renderizarGradeCategorias() {
   ).join("");
 }
 
+/** Junta os exercícios de todas as categorias escolhidas, sem repetir nome. */
+function montarItensDasCategorias() {
+  const vistos = new Set();
+  const itens = [];
+  for (const chave of categoriasSelecionadas) {
+    const categoria = obterCategoria(chave);
+    if (!categoria) continue;
+    for (const ex of categoria.exercicios) {
+      if (vistos.has(ex.nome)) continue;
+      vistos.add(ex.nome);
+      itens.push({ nome: ex.nome, incluido: ex.recomendado, categoria: categoria.rotulo });
+    }
+  }
+  return itens;
+}
+
 function renderizarChecklistExercicios() {
-  listaExerciciosSugeridosEl.innerHTML = itensSelecionados
+  const grupos = new Map();
+  itensSelecionados.forEach((item, indice) => {
+    const chaveGrupo = item.categoria || "Adicionados manualmente";
+    if (!grupos.has(chaveGrupo)) grupos.set(chaveGrupo, []);
+    grupos.get(chaveGrupo).push({ ...item, indice });
+  });
+
+  listaExerciciosSugeridosEl.innerHTML = Array.from(grupos.entries())
     .map(
-      (item, indice) => `
-        <label class="exercicio-sugerido ${item.incluido ? "selecionado" : ""}">
-          <input type="checkbox" data-indice="${indice}" ${item.incluido ? "checked" : ""} />
-          <span class="exercicio-sugerido-nome">${escaparHtml(item.nome)}</span>
-        </label>
+      ([grupo, itens]) => `
+        <div>
+          <p class="hint-text" style="font-weight:700;margin:var(--espaco-2) 0 4px;">${escaparHtml(grupo)}</p>
+          ${itens
+            .map(
+              (item) => `
+                <label class="exercicio-sugerido ${item.incluido ? "selecionado" : ""}" style="margin-bottom:var(--espaco-2);">
+                  <input type="checkbox" data-indice="${item.indice}" ${item.incluido ? "checked" : ""} />
+                  <span class="exercicio-sugerido-nome">${escaparHtml(item.nome)}</span>
+                </label>
+              `
+            )
+            .join("")}
+        </div>
       `
     )
     .join("");
 }
 
-function selecionarCategoria(chave) {
-  const categoria = obterCategoria(chave);
-  if (!categoria) return;
+function renderizarChipsConfig(container, opcoes, valorAtual, grupo, permitirPersonalizado = true) {
+  const chipsPreset = opcoes
+    .map(
+      (op) =>
+        `<button class="chip-opcao ${String(op) === String(valorAtual) ? "selecionado" : ""}" type="button" data-grupo="${grupo}" data-valor="${op}">${op}</button>`
+    )
+    .join("");
+  const chipOutro = permitirPersonalizado
+    ? `<button class="chip-opcao ${valorAtual === "outro" ? "selecionado" : ""}" type="button" data-grupo="${grupo}" data-valor="outro">Personalizado</button>`
+    : "";
+  container.innerHTML = chipsPreset + chipOutro;
+}
 
-  montarTreinoNomeInput.value = `Treino - ${categoria.rotulo}`;
-  itensSelecionados = categoria.exercicios.map((ex) => ({ nome: ex.nome, incluido: ex.recomendado }));
-  renderizarChecklistExercicios();
+function renderizarPassoConfig() {
+  const primeiraCategoria = obterCategoria(categoriasSelecionadas[0]);
+  const padrao = primeiraCategoria?.padrao || { repeticoes_alvo: "10-12", intervalo_descanso: "60s" };
+  configAtual = { series: 3, repeticoes: padrao.repeticoes_alvo, descanso: padrao.intervalo_descanso || "60s" };
 
-  passoCategoriaEl.hidden = true;
-  passoExerciciosEl.hidden = false;
-  passoExerciciosEl.dataset.categoria = chave;
+  const rotulos = categoriasSelecionadas.map((c) => obterCategoria(c)?.rotulo).filter(Boolean);
+  montarTreinoNomeInput.value = `Treino - ${rotulos.join(" e ")}`;
+
+  renderizarChipsConfig(chipsSeriesEl, OPCOES_SERIES, configAtual.series, "series", false);
+  renderizarChipsConfig(chipsRepeticoesEl, OPCOES_REPETICOES, configAtual.repeticoes, "repeticoes");
+  renderizarChipsConfig(chipsDescansoEl, OPCOES_DESCANSO, configAtual.descanso, "descanso");
+  repeticoesPersonalizadoEl.hidden = true;
+  descansoPersonalizadoEl.hidden = true;
+  configCargaEl.value = "";
 }
 
 function abrirMontarTreino(dia) {
   montarTreinoDia = dia;
   montarTreinoTitulo.textContent = `Montar treino de ${ROTULO_DIA[dia]}`;
+  categoriasSelecionadas = [];
   itensSelecionados = [];
-  passoCategoriaEl.hidden = false;
-  passoExerciciosEl.hidden = true;
   renderizarGradeCategorias();
+  mostrarPassoMontagem(1);
   abrirModal(modalMontarTreino);
 }
 
@@ -342,28 +417,35 @@ async function confirmarMontagemTreino() {
     return;
   }
 
-  const categoria = obterCategoria(passoExerciciosEl.dataset.categoria);
-  const padrao = categoria?.padrao || { repeticoes_alvo: "10-12", carga_alvo: "", intervalo_descanso: "60s" };
+  const repeticoes =
+    configAtual.repeticoes === "outro" ? repeticoesPersonalizadoEl.value.trim() : String(configAtual.repeticoes);
+  const descanso = configAtual.descanso === "outro" ? descansoPersonalizadoEl.value.trim() : String(configAtual.descanso);
+  const numeroSeries = Number(configAtual.series) || 3;
+  const carga = configCargaEl.value.trim() || null;
+
+  if (!repeticoes) {
+    mostrarToast("Informe as repetições.", "erro");
+    return;
+  }
+
   const diaIndex = DIAS_SEMANA.findIndex((d) => d.chave === montarTreinoDia);
   const botao = $("[data-acao='confirmar-montar-treino']", modalMontarTreino);
+  const textoOriginalBotao = botao.textContent;
   botao.disabled = true;
+  botao.textContent = "Salvando...";
 
   try {
-    const treinoExistente = treinosCache.find((t) => t.dia_semana === montarTreinoDia);
-    const treino = treinoExistente
-      ? await api.atualizarTreino(treinoExistente.id, { nome })
-      : await api.criarTreino(alunoId, { nome, ordem: diaIndex, dia_semana: montarTreinoDia });
-    const treinoId = treinoExistente ? treinoExistente.id : treino.id;
-
-    for (let i = 0; i < selecionados.length; i++) {
-      const exercicio = await api.criarExercicio(treinoId, { nome: selecionados[i].nome, ordem: i });
-      await api.criarSerie(exercicio.id, {
-        ordem: 0,
-        repeticoes_alvo: padrao.repeticoes_alvo,
-        carga_alvo: padrao.carga_alvo || null,
-        intervalo_descanso: padrao.intervalo_descanso || null,
-      });
-    }
+    // Uma linha de série por série de verdade (ex: "4 séries" = 4 linhas o aluno marca uma a uma).
+    const serieRepetida = { repeticoes_alvo: repeticoes, carga_alvo: carga, intervalo_descanso: descanso || null };
+    await api.montarTreino(alunoId, {
+      nome,
+      ordem: diaIndex,
+      dia_semana: montarTreinoDia,
+      exercicios: selecionados.map((item) => ({
+        nome: item.nome,
+        series: Array.from({ length: numeroSeries }, () => serieRepetida),
+      })),
+    });
 
     mostrarToast(`Treino de ${ROTULO_DIA[montarTreinoDia]} criado com ${selecionados.length} exercício(s)!`, "sucesso");
     fecharModal(modalMontarTreino);
@@ -372,17 +454,42 @@ async function confirmarMontagemTreino() {
     mostrarToast(mensagemDeErro(erro), "erro");
   } finally {
     botao.disabled = false;
+    botao.textContent = textoOriginalBotao;
   }
 }
 
 gradeCategoriasEl?.addEventListener("click", (evento) => {
   const chip = evento.target.closest("[data-categoria]");
-  if (chip) selecionarCategoria(chip.dataset.categoria);
+  if (!chip) return;
+  const chave = chip.dataset.categoria;
+  if (categoriasSelecionadas.includes(chave)) {
+    categoriasSelecionadas = categoriasSelecionadas.filter((c) => c !== chave);
+  } else {
+    categoriasSelecionadas.push(chave);
+  }
+  renderizarGradeCategorias();
 });
 
-$("[data-acao='voltar-categoria']")?.addEventListener("click", () => {
-  passoExerciciosEl.hidden = true;
-  passoCategoriaEl.hidden = false;
+$("[data-acao='ir-para-exercicios']")?.addEventListener("click", () => {
+  if (categoriasSelecionadas.length === 0) {
+    mostrarToast("Escolha pelo menos uma categoria.", "erro");
+    return;
+  }
+  itensSelecionados = montarItensDasCategorias();
+  renderizarChecklistExercicios();
+  mostrarPassoMontagem(2);
+});
+
+$all("[data-acao='voltar-categoria']").forEach((el) => el.addEventListener("click", () => mostrarPassoMontagem(1)));
+$all("[data-acao='voltar-exercicios']").forEach((el) => el.addEventListener("click", () => mostrarPassoMontagem(2)));
+
+$("[data-acao='ir-para-config']")?.addEventListener("click", () => {
+  if (!itensSelecionados.some((item) => item.incluido)) {
+    mostrarToast("Marque pelo menos um exercício.", "erro");
+    return;
+  }
+  renderizarPassoConfig();
+  mostrarPassoMontagem(3);
 });
 
 listaExerciciosSugeridosEl?.addEventListener("change", (evento) => {
@@ -396,9 +503,29 @@ listaExerciciosSugeridosEl?.addEventListener("change", (evento) => {
 $("[data-acao='adicionar-outro-exercicio']")?.addEventListener("click", () => {
   const nome = outroExercicioInput.value.trim();
   if (!nome) return;
-  itensSelecionados.push({ nome, incluido: true });
+  itensSelecionados.push({ nome, incluido: true, categoria: null });
   outroExercicioInput.value = "";
   renderizarChecklistExercicios();
+});
+
+passoConfigEl?.addEventListener("click", (evento) => {
+  const chip = evento.target.closest(".chip-opcao");
+  if (!chip) return;
+  const grupo = chip.dataset.grupo;
+  const valor = chip.dataset.valor;
+  const bruto = valor === "outro" ? "outro" : isNaN(Number(valor)) ? valor : Number(valor);
+  configAtual[grupo] = bruto;
+
+  $all(`.chip-opcao[data-grupo="${grupo}"]`, passoConfigEl).forEach((c) => c.classList.toggle("selecionado", c === chip));
+
+  if (grupo === "repeticoes") {
+    repeticoesPersonalizadoEl.hidden = valor !== "outro";
+    if (valor === "outro") repeticoesPersonalizadoEl.focus();
+  }
+  if (grupo === "descanso") {
+    descansoPersonalizadoEl.hidden = valor !== "outro";
+    if (valor === "outro") descansoPersonalizadoEl.focus();
+  }
 });
 
 document
