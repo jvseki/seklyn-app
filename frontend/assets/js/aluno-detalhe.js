@@ -146,17 +146,16 @@ function linhaDiaSemana(dia, treinoDoDia) {
   return `
     <div class="dia-linha ${temTreino ? "tem-treino" : ""}" data-dia="${dia.chave}">
       <span class="dia-nome">${dia.rotulo}</span>
-      <input
-        class="input"
-        type="text"
-        placeholder="Dia de descanso (deixe em branco)"
-        value="${temTreino ? escaparHtml(treinoDoDia.nome) : ""}"
-        data-campo-nome-dia="${dia.chave}"
-      />
+      <span class="dia-treino-nome ${temTreino ? "" : "dia-treino-vazio"}">${
+        temTreino ? escaparHtml(treinoDoDia.nome) : "Dia de descanso"
+      }</span>
       <div class="dia-acoes">
-        <button class="btn btn-ghost btn-sm" data-acao="montar-treino" data-dia="${dia.chave}" type="button" title="Montar com sugestões de exercícios">🏋️ Montar</button>
-        <button class="btn btn-secondary btn-sm" data-acao="salvar-dia" data-dia="${dia.chave}" type="button">Salvar</button>
-        ${temTreino ? `<button class="btn btn-ghost btn-sm" data-acao="excluir-dia" data-dia="${dia.chave}" data-id="${treinoDoDia.id}" type="button">🗑️</button>` : ""}
+        ${
+          temTreino
+            ? `<button class="btn btn-ghost btn-sm" data-acao="montar-treino" data-dia="${dia.chave}" type="button" title="Refazer este dia com o montador">🏋️ Refazer</button>
+               <button class="btn btn-ghost btn-sm" data-acao="excluir-dia" data-dia="${dia.chave}" data-id="${treinoDoDia.id}" type="button" title="Remover treino deste dia">🗑️</button>`
+            : `<button class="btn btn-primary btn-sm" data-acao="montar-treino" data-dia="${dia.chave}" type="button">🏋️ Montar treino</button>`
+        }
       </div>
     </div>
   `;
@@ -401,7 +400,10 @@ function renderizarPassoConfig() {
 
 function abrirMontarTreino(dia) {
   montarTreinoDia = dia;
-  montarTreinoTitulo.textContent = `Montar treino de ${ROTULO_DIA[dia]}`;
+  const jaTemTreino = treinosCache.some((t) => t.dia_semana === dia);
+  montarTreinoTitulo.textContent = jaTemTreino
+    ? `Refazer treino de ${ROTULO_DIA[dia]}`
+    : `Montar treino de ${ROTULO_DIA[dia]}`;
   categoriasSelecionadas = [];
   itensSelecionados = [];
   renderizarGradeCategorias();
@@ -546,42 +548,6 @@ gradeSemanaEl?.addEventListener("click", async (evento) => {
   if (botao.dataset.acao === "montar-treino") {
     abrirMontarTreino(dia);
     return;
-  }
-
-  if (botao.dataset.acao === "salvar-dia") {
-    const linha = botao.closest(".dia-linha");
-    const input = linha.querySelector("[data-campo-nome-dia]");
-    const nome = input.value.trim();
-    const diaIndex = DIAS_SEMANA.findIndex((d) => d.chave === dia);
-    const treinoExistente = treinosCache.find((t) => t.dia_semana === dia);
-
-    if (!nome) {
-      // Campo vazio: se já existia um treino nesse dia, apaga (virou dia de descanso).
-      if (treinoExistente) {
-        const confirmou = await confirmarAcao(`Remover o treino de ${ROTULO_DIA[dia]}?`, { titulo: "Remover treino", textoConfirmar: "Remover" });
-        if (!confirmou) return;
-        try {
-          await api.excluirTreino(treinoExistente.id);
-          mostrarToast("Treino removido.", "sucesso");
-          recarregarTreinos();
-        } catch (erro) {
-          mostrarToast(mensagemDeErro(erro), "erro");
-        }
-      }
-      return;
-    }
-
-    try {
-      if (treinoExistente) {
-        await api.atualizarTreino(treinoExistente.id, { nome });
-      } else {
-        await api.criarTreino(alunoId, { nome, ordem: diaIndex, dia_semana: dia });
-      }
-      mostrarToast(`Treino de ${ROTULO_DIA[dia]} salvo!`, "sucesso");
-      recarregarTreinos();
-    } catch (erro) {
-      mostrarToast(mensagemDeErro(erro), "erro");
-    }
   }
 
   if (botao.dataset.acao === "excluir-dia") {

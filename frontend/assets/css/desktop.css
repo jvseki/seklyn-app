@@ -190,10 +190,27 @@
   font-size: 0.9rem;
 }
 
+.dia-linha .dia-treino-nome {
+  font-size: 0.9rem;
+  color: var(--cor-texto);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dia-linha .dia-treino-vazio {
+  color: var(--cor-texto-muted);
+  font-style: italic;
+}
+
 @media (max-width: 640px) {
   .dia-linha {
     grid-template-columns: 1fr;
     gap: var(--espaco-2);
+  }
+
+  .dia-linha .dia-treino-nome {
+    white-space: normal;
   }
 
   .dia-linha .dia-acoes {
