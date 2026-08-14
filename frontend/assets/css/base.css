@@ -102,25 +102,24 @@ h4 {
 
 /* ---------- Ficha impressa do aluno (treinos + peso) ----------
    Cores fixas (não usam os tokens de tema) de propósito: o papel
-   impresso precisa ficar legível igual em qualquer tema/modo. */
+   impresso precisa ficar legível igual em qualquer tema/modo.
+
+   Importante: usamos display:none (não visibility:hidden) pra esconder o
+   resto da página — visibility preserva a altura no layout, então a página
+   inteira (sidebar + conteúdo, bem mais alta que uma folha) continuava
+   "ocupando espaço" na hora de paginar a impressão, gerando várias folhas
+   em branco. display:none remove o espaço de verdade. Por isso #ficha-impressao
+   precisa ser filha direta do <body> (ver aluno-detalhe.html). */
 .print-only {
   display: none;
 }
 
 @media print {
-  body * {
-    visibility: hidden;
-  }
-  .print-only,
-  .print-only * {
-    visibility: visible;
+  body > *:not(.print-only) {
+    display: none !important;
   }
   .print-only {
-    display: block;
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
+    display: block !important;
   }
 }
 

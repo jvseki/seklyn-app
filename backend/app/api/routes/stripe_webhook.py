@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.core.database import get_db
 from app.deps import get_current_personal
+from app.models.aluno import Aluno
 from app.models.assinatura import Assinatura
 from app.models.personal import Personal
 from app.schemas.assinatura import AssinaturaOut, CheckoutSessionOut
@@ -42,14 +43,21 @@ def criar_checkout_session(
 def status_assinatura(
     personal: Personal = Depends(get_current_personal),
     db: Session = Depends(get_db),
-) -> Assinatura:
+) -> AssinaturaOut:
     assinatura = db.query(Assinatura).filter(Assinatura.personal_id == personal.id).first()
     if assinatura is None:
         assinatura = Assinatura(personal_id=personal.id, status="inativa")
         db.add(assinatura)
         db.commit()
         db.refresh(assinatura)
-    return assinatura
+    alunos_cadastrados = db.query(Aluno).filter(Aluno.personal_id == personal.id).count()
+    return AssinaturaOut(
+        status=assinatura.status,
+        ativa=assinatura.ativa,
+        current_period_end=assinatura.current_period_end,
+        limite_alunos=assinatura.limite_alunos,
+        alunos_cadastrados=alunos_cadastrados,
+    )
 
 
 @router.post("/api/stripe/webhook", status_code=status.HTTP_200_OK)

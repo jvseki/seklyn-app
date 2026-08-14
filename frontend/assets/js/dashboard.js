@@ -58,8 +58,16 @@ function cardAluno(aluno) {
   `;
 }
 
+let totalAlunosAtual = 0;
+let limiteAlunosAtual = null; // null = sem limite no plano
+
+function renderizarStatAlunos() {
+  statTotalEl.textContent = limiteAlunosAtual != null ? `${totalAlunosAtual} / ${limiteAlunosAtual}` : String(totalAlunosAtual);
+}
+
 function renderizarAlunos(alunos) {
-  statTotalEl.textContent = alunos.length;
+  totalAlunosAtual = alunos.length;
+  renderizarStatAlunos();
   if (alunos.length === 0) {
     listaEl.innerHTML = "";
     estadoVazioEl.hidden = false;
@@ -84,6 +92,8 @@ async function verificarAssinatura() {
     if (!assinatura.ativa) {
       bannerAssinatura.hidden = false;
     }
+    limiteAlunosAtual = assinatura.limite_alunos ?? null;
+    renderizarStatAlunos();
   } catch {
     // silencioso — a rota protegida vai barrar a criação de alunos se necessário
   }

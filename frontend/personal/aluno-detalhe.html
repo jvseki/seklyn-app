@@ -67,12 +67,10 @@
           <button class="btn btn-ghost" type="button" data-acao="editar-aluno">✏️ Editar aluno</button>
           <button class="btn btn-ghost" type="button" data-acao="imprimir-ficha">🖨️ Imprimir ficha</button>
           <button class="btn btn-ghost" type="button" data-acao="baixar-excel">📊 Baixar Excel</button>
+          <a id="aluno-ficha-whatsapp" class="btn btn-ghost" href="#" target="_blank" rel="noopener noreferrer" hidden>📤 Mandar no WhatsApp</a>
           <a id="aluno-whatsapp" class="btn btn-secondary" href="#" target="_blank" rel="noopener noreferrer" hidden>💬 Chamar no WhatsApp</a>
         </div>
       </div>
-
-      <!-- Só aparece na hora de imprimir (Ctrl+P) — ver #imprimir-ficha em aluno-detalhe.js -->
-      <div class="print-only" id="ficha-impressao"></div>
 
       <div class="card" style="margin-bottom:var(--espaco-6);">
         <div class="cabecalho-pagina" style="margin-bottom:0;">
@@ -137,6 +135,7 @@
         <div class="form-group">
           <label class="label" for="editar-aluno-peso-meta">Meta de peso em kg (opcional)</label>
           <input class="input" id="editar-aluno-peso-meta" name="peso_meta_kg" type="number" step="0.1" min="0" placeholder="Ex: 90" />
+          <p class="hint-text" id="aviso-meta-sem-peso" hidden>Registre o peso atual do aluno (card "Peso e meta") antes de definir uma meta.</p>
         </div>
         <div class="modal-acoes">
           <button type="button" class="btn btn-ghost" data-acao="fechar-modal-aluno">Cancelar</button>
@@ -255,6 +254,11 @@
       </div>
     </div>
   </div>
+
+  <!-- Filha direta do <body> de propósito: no @media print, tudo que NÃO é
+       .print-only vira display:none (ver base.css), então essa div precisa
+       estar fora de qualquer container que o CSS de impressão vá esconder. -->
+  <div class="print-only" id="ficha-impressao"></div>
 
   <script type="module" src="../assets/js/tema.js"></script>
   <script type="module" src="../assets/js/menu.js"></script>

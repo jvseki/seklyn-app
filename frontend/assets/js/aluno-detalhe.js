@@ -40,6 +40,7 @@ const cabecalhoNomeEl = $("#aluno-nome");
 const cabecalhoLinkEl = $("#aluno-link");
 const whatsappEl = $("#aluno-whatsapp");
 const linkWhatsappEl = $("#aluno-link-whatsapp");
+const fichaWhatsappEl = $("#aluno-ficha-whatsapp");
 const listaTreinosEl = $("#lista-treinos-editor");
 const gradeSemanaEl = $("#grade-semana");
 const analyticsEl = $("#analytics-resumo");
@@ -50,6 +51,7 @@ const modalNovaAvaliacao = $("#modal-nova-avaliacao");
 const formNovaAvaliacao = $("#form-nova-avaliacao");
 const modalEditarAluno = $("#modal-editar-aluno");
 const formEditarAluno = $("#form-editar-aluno");
+const avisoMetaSemPesoEl = $("#aviso-meta-sem-peso");
 const modalEditarItem = $("#modal-editar-item");
 const formEditarItem = $("#form-editar-item");
 const editarItemTitulo = $("#editar-item-titulo");
@@ -77,6 +79,7 @@ let configPorGrupo = {}; // chave da categoria (ou "manual") → { series, repet
 const OPCOES_SERIES = [2, 3, 4, 5, 6];
 const OPCOES_REPETICOES = ["6-8", "8-10", "10-12", "12-15", "15-20"];
 const OPCOES_DESCANSO = ["30s", "45s", "60s", "90s", "2min"];
+const OPCOES_TEMPO = ["10 min", "15 min", "20 min", "30 min", "45 min"];
 
 const DIAS_SEMANA = [
   { chave: "segunda", rotulo: "Segunda" },
@@ -283,6 +286,12 @@ function atualizarBotoesWhatsapp() {
   const linkComMensagem = linkWhatsApp(alunoAtual.telefone, mensagemLink);
   linkWhatsappEl.hidden = !linkComMensagem;
   if (linkComMensagem) linkWhatsappEl.href = linkComMensagem;
+
+  // Mesmo link, só que no grupo de botões ao lado de Imprimir/Excel — o
+  // WhatsApp não deixa anexar arquivo por link (wa.me só manda texto), então
+  // a "ficha" que dá pra mandar por lá é o link de acesso mesmo.
+  fichaWhatsappEl.hidden = !linkComMensagem;
+  if (linkComMensagem) fichaWhatsappEl.href = linkComMensagem;
 }
 
 async function carregarAnalytics() {
@@ -445,6 +454,31 @@ avaliacaoHistoricoEl?.addEventListener("click", async (evento) => {
 
 // --- Imprimir ficha (janela de impressão) e baixar Excel profissional ---
 
+/**
+ * Agrupa séries idênticas (mesma repetição/carga/descanso) numa linha só —
+ * ex: 4 séries de "10-12" viram "4x 10-12" em vez de 4 linhas repetidas.
+ * Deixa a ficha impressa curta (poucas páginas) mesmo com o treino inteiro.
+ */
+function agruparSeriesParaImpressao(series) {
+  const grupos = [];
+  for (const serie of series) {
+    const chave = `${serie.repeticoes_alvo}|${serie.carga_alvo || ""}|${serie.intervalo_descanso || ""}`;
+    const ultimo = grupos[grupos.length - 1];
+    if (ultimo && ultimo.chave === chave) {
+      ultimo.quantidade += 1;
+    } else {
+      grupos.push({
+        chave,
+        quantidade: 1,
+        repeticoes: serie.repeticoes_alvo,
+        carga: serie.carga_alvo,
+        descanso: serie.intervalo_descanso,
+      });
+    }
+  }
+  return grupos;
+}
+
 function montarFichaImpressao() {
   const dataEmissao = new Date().toLocaleDateString("pt-BR");
 
@@ -454,26 +488,29 @@ function montarFichaImpressao() {
       .sort((a, b) => a.ordem - b.ordem)
       .map((treino) => {
         const linhas = treino.exercicios
-          .flatMap((exercicio) =>
-            (exercicio.series.length ? exercicio.series : [null]).map(
-              (serie, indice) => `
+          .flatMap((exercicio) => {
+            const grupos = agruparSeriesParaImpressao(exercicio.series);
+            if (grupos.length === 0) {
+              return [`<tr><td>${escaparHtml(exercicio.nome)}</td><td colspan="3">Sem séries cadastradas.</td></tr>`];
+            }
+            return grupos.map(
+              (g, indice) => `
                 <tr>
                   <td>${indice === 0 ? escaparHtml(exercicio.nome) : ""}</td>
-                  <td>${serie ? `Série ${serie.ordem + 1}` : "—"}</td>
-                  <td>${serie ? escaparHtml(serie.repeticoes_alvo) : "—"}</td>
-                  <td>${serie?.carga_alvo ? escaparHtml(serie.carga_alvo) : "—"}</td>
-                  <td>${serie?.intervalo_descanso ? escaparHtml(serie.intervalo_descanso) : "—"}</td>
+                  <td>${g.quantidade > 1 ? `${g.quantidade}x ` : ""}${escaparHtml(g.repeticoes)}</td>
+                  <td>${g.carga ? escaparHtml(g.carga) : "—"}</td>
+                  <td>${g.descanso ? escaparHtml(g.descanso) : "—"}</td>
                 </tr>
               `
-            )
-          )
+            );
+          })
           .join("");
         return `
           <div class="ficha-treino">
             <h3>${treino.dia_semana ? ROTULO_DIA[treino.dia_semana] + " — " : ""}${escaparHtml(treino.nome)}</h3>
             <table class="ficha-tabela">
-              <thead><tr><th>Exercício</th><th>Série</th><th>Repetições</th><th>Carga</th><th>Descanso</th></tr></thead>
-              <tbody>${linhas || `<tr><td colspan="5">Sem exercícios cadastrados.</td></tr>`}</tbody>
+              <thead><tr><th>Exercício</th><th>Séries x Repetições</th><th>Carga</th><th>Descanso</th></tr></thead>
+              <tbody>${linhas || `<tr><td colspan="4">Sem exercícios cadastrados.</td></tr>`}</tbody>
             </table>
           </div>
         `;
@@ -639,10 +676,27 @@ function renderizarPassoConfig() {
   montarTreinoNomeInput.value = `Treino - ${rotulos.join(" e ")}`;
 
   configGruposEl.innerHTML = grupos
-    .map(
-      ({ chave, rotulo, itens }) => `
+    .map(({ chave, rotulo, itens }) => {
+      const tipoConfig = chave === "manual" ? "series" : obterCategoria(chave)?.tipoConfig || "series";
+      const contagem = `<span class="hint-text">(${itens.length} exercício${itens.length > 1 ? "s" : ""})</span>`;
+
+      if (tipoConfig === "tempo") {
+        // Cardio não tem série/repetição — só o tempo do exercício.
+        return `
+          <div class="config-grupo">
+            <p class="config-grupo-titulo">${escaparHtml(rotulo)} ${contagem}</p>
+            <div class="form-group">
+              <span class="label">Tempo</span>
+              <div class="grade-chips" data-chips="tempo" data-grupo-config="${chave}"></div>
+              <input class="input" data-campo="tempo-personalizado" data-grupo-config="${chave}" placeholder="Ex: 25 min" hidden style="margin-top:var(--espaco-2);" />
+            </div>
+          </div>
+        `;
+      }
+
+      return `
         <div class="config-grupo">
-          <p class="config-grupo-titulo">${escaparHtml(rotulo)} <span class="hint-text">(${itens.length} exercício${itens.length > 1 ? "s" : ""})</span></p>
+          <p class="config-grupo-titulo">${escaparHtml(rotulo)} ${contagem}</p>
           <div class="form-group">
             <span class="label">Quantas séries</span>
             <div class="grade-chips" data-chips="series" data-grupo-config="${chave}"></div>
@@ -662,14 +716,32 @@ function renderizarPassoConfig() {
             <input class="input" data-campo="carga" data-grupo-config="${chave}" placeholder="Deixe em branco se variar por aluno" />
           </div>
         </div>
-      `
-    )
+      `;
+    })
     .join("");
 
   grupos.forEach(({ chave }) => {
     const categoria = chave === "manual" ? null : obterCategoria(chave);
+    const tipoConfig = categoria?.tipoConfig || "series";
     const padrao = categoria?.padrao || { repeticoes_alvo: "10-12", intervalo_descanso: "60s" };
-    configPorGrupo[chave] = { series: 3, repeticoes: padrao.repeticoes_alvo, descanso: padrao.intervalo_descanso || "60s" };
+
+    if (tipoConfig === "tempo") {
+      configPorGrupo[chave] = { tipo: "tempo", tempo: padrao.repeticoes_alvo };
+      renderizarChipsConfig(
+        configGruposEl.querySelector(`[data-chips="tempo"][data-grupo-config="${chave}"]`),
+        OPCOES_TEMPO,
+        configPorGrupo[chave].tempo,
+        `${chave}__tempo`
+      );
+      return;
+    }
+
+    configPorGrupo[chave] = {
+      tipo: "series",
+      series: 3,
+      repeticoes: padrao.repeticoes_alvo,
+      descanso: padrao.intervalo_descanso || "60s",
+    };
 
     renderizarChipsConfig(
       configGruposEl.querySelector(`[data-chips="series"][data-grupo-config="${chave}"]`),
@@ -696,6 +768,15 @@ function renderizarPassoConfig() {
 /** Lê a config de uma categoria no momento de salvar, resolvendo os campos "Personalizado". */
 function resolverConfigGrupo(chave) {
   const cfg = configPorGrupo[chave];
+
+  if (cfg.tipo === "tempo") {
+    const tempo =
+      cfg.tempo === "outro"
+        ? (configGruposEl.querySelector(`[data-campo="tempo-personalizado"][data-grupo-config="${chave}"]`)?.value.trim() || "")
+        : String(cfg.tempo);
+    return { repeticoes: tempo, descanso: null, numeroSeries: 1, carga: null };
+  }
+
   const repeticoes =
     cfg.repeticoes === "outro"
       ? (configGruposEl.querySelector(`[data-campo="repeticoes-personalizado"][data-grupo-config="${chave}"]`)?.value.trim() || "")
@@ -735,7 +816,8 @@ async function confirmarMontagemTreino() {
   for (const { chave, rotulo } of grupos) {
     const resolvido = resolverConfigGrupo(chave);
     if (!resolvido.repeticoes) {
-      mostrarToast(`Informe as repetições de "${rotulo}".`, "erro");
+      const campo = configPorGrupo[chave]?.tipo === "tempo" ? "o tempo" : "as repetições";
+      mostrarToast(`Informe ${campo} de "${rotulo}".`, "erro");
       return;
     }
     configResolvida.set(chave, resolvido);
@@ -831,7 +913,7 @@ configGruposEl?.addEventListener("click", (evento) => {
 
   $all(`.chip-opcao[data-grupo="${chip.dataset.grupo}"]`, configGruposEl).forEach((c) => c.classList.toggle("selecionado", c === chip));
 
-  if (campo === "repeticoes" || campo === "descanso") {
+  if (campo === "repeticoes" || campo === "descanso" || campo === "tempo") {
     const personalizadoEl = configGruposEl.querySelector(`[data-campo="${campo}-personalizado"][data-grupo-config="${chaveGrupo}"]`);
     if (personalizadoEl) {
       personalizadoEl.hidden = valor !== "outro";
@@ -953,6 +1035,13 @@ $("[data-acao='editar-aluno']")?.addEventListener("click", () => {
   formEditarAluno.telefone.value = alunoAtual.telefone || "";
   formEditarAluno.cpf.value = alunoAtual.cpf || "";
   formEditarAluno.peso_meta_kg.value = alunoAtual.peso_meta_kg ?? "";
+
+  // Só faz sentido definir uma meta depois de ter pelo menos um peso registrado
+  // (é a partir dele que a barra de progresso calcula o ponto de partida).
+  const temPeso = avaliacoesCache.length > 0;
+  formEditarAluno.peso_meta_kg.disabled = !temPeso;
+  avisoMetaSemPesoEl.hidden = temPeso;
+
   abrirModal(modalEditarAluno);
 });
 

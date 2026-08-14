@@ -120,6 +120,8 @@ export const CATEGORIAS_TREINO = [
     chave: "cardio",
     rotulo: "Cardio",
     emoji: "🏃",
+    // Cardio não tem "séries/repetições" — só tempo. O montador detecta isso pela chave.
+    tipoConfig: "tempo",
     padrao: { repeticoes_alvo: "20 min", carga_alvo: "", intervalo_descanso: "" },
     exercicios: [
       { nome: "Esteira", recomendado: true },

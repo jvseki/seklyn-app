@@ -9,6 +9,8 @@ class AssinaturaOut(OrmModel):
     status: str
     ativa: bool
     current_period_end: datetime | None
+    limite_alunos: int | None = None
+    alunos_cadastrados: int = 0
 
 
 class CheckoutSessionOut(BaseModel):

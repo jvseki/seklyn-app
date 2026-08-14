@@ -13,7 +13,7 @@ from app.core.config import get_settings
 from app.core.database import get_db
 from app.models.assinatura import Assinatura
 from app.models.personal import Personal
-from app.schemas.admin import AdminAssinaturaOut, AdminEmailIn
+from app.schemas.admin import AdminAssinaturaOut, AdminAtivarIn, AdminEmailIn
 
 router = APIRouter(prefix="/api/admin", tags=["Admin"])
 settings = get_settings()
@@ -42,12 +42,14 @@ def _obter_personal_por_email(db: Session, email: str) -> Personal:
 
 
 @router.post("/ativar-assinatura", response_model=AdminAssinaturaOut, dependencies=[Depends(exigir_chave_admin)])
-def ativar_assinatura(dados: AdminEmailIn, db: Session = Depends(get_db)) -> AdminAssinaturaOut:
+def ativar_assinatura(dados: AdminAtivarIn, db: Session = Depends(get_db)) -> AdminAssinaturaOut:
     personal = _obter_personal_por_email(db, dados.email)
     assinatura = _obter_ou_criar_assinatura(db, personal)
     assinatura.status = "active"
+    if dados.limite_alunos is not None:
+        assinatura.limite_alunos = dados.limite_alunos
     db.commit()
-    return AdminAssinaturaOut(email=personal.email, status=assinatura.status)
+    return AdminAssinaturaOut(email=personal.email, status=assinatura.status, limite_alunos=assinatura.limite_alunos)
 
 
 @router.post("/desativar-assinatura", response_model=AdminAssinaturaOut, dependencies=[Depends(exigir_chave_admin)])

@@ -5,7 +5,7 @@ criação/edição/exclusão exige assinatura ativa.
 """
 from datetime import date
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import Response
 from sqlalchemy.orm import Session, joinedload
 
@@ -22,6 +22,7 @@ from app.deps import (
     obter_treino_do_personal,
 )
 from app.models.aluno import Aluno
+from app.models.assinatura import Assinatura
 from app.models.avaliacao_fisica import AvaliacaoFisica
 from app.models.exercicio import Exercicio
 from app.models.personal import Personal
@@ -64,6 +65,15 @@ def criar_aluno(
     personal: Personal = Depends(exigir_assinatura_ativa),
     db: Session = Depends(get_db),
 ) -> AlunoOut:
+    assinatura = db.query(Assinatura).filter(Assinatura.personal_id == personal.id).first()
+    if assinatura and assinatura.limite_alunos is not None:
+        total_atual = db.query(Aluno).filter(Aluno.personal_id == personal.id).count()
+        if total_atual >= assinatura.limite_alunos:
+            raise HTTPException(
+                status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                detail=f"Seu plano permite até {assinatura.limite_alunos} alunos. Fale com o suporte pra aumentar o limite.",
+            )
+
     aluno = Aluno(
         personal_id=personal.id,
         nome=dados.nome,
