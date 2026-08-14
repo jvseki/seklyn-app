@@ -1,5 +1,5 @@
 // Seklyn — gestão de treinos/exercícios/séries de um aluno específico.
-import { api } from "./api.js";
+import { api, API_BASE_URL, obterToken } from "./api.js";
 import { protegerPagina } from "./auth.js";
 import {
   $,
@@ -45,6 +45,7 @@ const gradeSemanaEl = $("#grade-semana");
 const analyticsEl = $("#analytics-resumo");
 const avaliacaoProgressoEl = $("#avaliacao-progresso");
 const avaliacaoHistoricoEl = $("#avaliacao-historico");
+const fichaImpressaoEl = $("#ficha-impressao");
 const modalNovaAvaliacao = $("#modal-nova-avaliacao");
 const formNovaAvaliacao = $("#form-nova-avaliacao");
 const modalEditarAluno = $("#modal-editar-aluno");
@@ -439,6 +440,97 @@ avaliacaoHistoricoEl?.addEventListener("click", async (evento) => {
     carregarAvaliacoes();
   } catch (erro) {
     mostrarToast(mensagemDeErro(erro), "erro");
+  }
+});
+
+// --- Imprimir ficha (janela de impressão) e baixar Excel profissional ---
+
+function montarFichaImpressao() {
+  const dataEmissao = new Date().toLocaleDateString("pt-BR");
+
+  const blocosTreino =
+    treinosCache
+      .slice()
+      .sort((a, b) => a.ordem - b.ordem)
+      .map((treino) => {
+        const linhas = treino.exercicios
+          .flatMap((exercicio) =>
+            (exercicio.series.length ? exercicio.series : [null]).map(
+              (serie, indice) => `
+                <tr>
+                  <td>${indice === 0 ? escaparHtml(exercicio.nome) : ""}</td>
+                  <td>${serie ? `Série ${serie.ordem + 1}` : "—"}</td>
+                  <td>${serie ? escaparHtml(serie.repeticoes_alvo) : "—"}</td>
+                  <td>${serie?.carga_alvo ? escaparHtml(serie.carga_alvo) : "—"}</td>
+                  <td>${serie?.intervalo_descanso ? escaparHtml(serie.intervalo_descanso) : "—"}</td>
+                </tr>
+              `
+            )
+          )
+          .join("");
+        return `
+          <div class="ficha-treino">
+            <h3>${treino.dia_semana ? ROTULO_DIA[treino.dia_semana] + " — " : ""}${escaparHtml(treino.nome)}</h3>
+            <table class="ficha-tabela">
+              <thead><tr><th>Exercício</th><th>Série</th><th>Repetições</th><th>Carga</th><th>Descanso</th></tr></thead>
+              <tbody>${linhas || `<tr><td colspan="5">Sem exercícios cadastrados.</td></tr>`}</tbody>
+            </table>
+          </div>
+        `;
+      })
+      .join("") || "<p>Nenhum treino cadastrado ainda.</p>";
+
+  const ultimoPeso = [...avaliacoesCache].sort((a, b) => b.data.localeCompare(a.data))[0];
+  const infoPeso = ultimoPeso
+    ? `<p class="ficha-peso"><strong>Peso atual:</strong> ${ultimoPeso.peso_kg}kg (registrado em ${formatarData(ultimoPeso.data)})${
+        alunoAtual.peso_meta_kg ? ` &nbsp;·&nbsp; <strong>Meta:</strong> ${alunoAtual.peso_meta_kg}kg` : ""
+      }</p>`
+    : "";
+
+  fichaImpressaoEl.innerHTML = `
+    <div class="ficha-cabecalho">
+      <div class="ficha-logo">Sek<span>lyn</span></div>
+      <div class="ficha-meta">
+        <p><strong>Aluno:</strong> ${escaparHtml(alunoAtual.nome)}</p>
+        <p><strong>Emitido em:</strong> ${dataEmissao}</p>
+      </div>
+    </div>
+    ${infoPeso}
+    ${blocosTreino}
+    <p class="ficha-rodape">Ficha gerada pelo Seklyn — seklyn.com.br</p>
+  `;
+}
+
+$("[data-acao='imprimir-ficha']")?.addEventListener("click", () => {
+  if (!alunoAtual) return;
+  montarFichaImpressao();
+  window.print();
+});
+
+$("[data-acao='baixar-excel']")?.addEventListener("click", async (evento) => {
+  const botao = evento.currentTarget;
+  const textoOriginal = botao.textContent;
+  botao.disabled = true;
+  botao.textContent = "Gerando...";
+  try {
+    const resposta = await fetch(`${API_BASE_URL}/personal/alunos/${alunoId}/exportar-excel`, {
+      headers: { Authorization: `Bearer ${obterToken()}` },
+    });
+    if (!resposta.ok) throw new Error("Não foi possível gerar o Excel agora. Tente de novo em instantes.");
+    const blob = await resposta.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `seklyn-${(alunoAtual?.nome || "aluno").toLowerCase().replace(/\s+/g, "-")}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  } catch (erro) {
+    mostrarToast(mensagemDeErro(erro), "erro");
+  } finally {
+    botao.disabled = false;
+    botao.textContent = textoOriginal;
   }
 });
 

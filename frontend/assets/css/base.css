@@ -99,3 +99,97 @@ h4 {
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+/* ---------- Ficha impressa do aluno (treinos + peso) ----------
+   Cores fixas (não usam os tokens de tema) de propósito: o papel
+   impresso precisa ficar legível igual em qualquer tema/modo. */
+.print-only {
+  display: none;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-only,
+  .print-only * {
+    visibility: visible;
+  }
+  .print-only {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+}
+
+.ficha-cabecalho {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 3px solid #7c3aed;
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+}
+
+.ficha-logo {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #2e1065;
+}
+
+.ficha-logo span {
+  color: #7c3aed;
+}
+
+.ficha-meta p {
+  margin: 2px 0;
+  font-size: 0.85rem;
+  color: #444;
+}
+
+.ficha-peso {
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.ficha-treino {
+  margin-bottom: 20px;
+  page-break-inside: avoid;
+}
+
+.ficha-treino h3 {
+  background: #ede9fe;
+  color: #4c1d95;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  margin-bottom: 8px;
+}
+
+.ficha-tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.ficha-tabela th,
+.ficha-tabela td {
+  border: 1px solid #ddd;
+  padding: 5px 8px;
+  text-align: left;
+}
+
+.ficha-tabela th {
+  background: #f7f5ff;
+  color: #4c1d95;
+}
+
+.ficha-rodape {
+  margin-top: 24px;
+  font-size: 0.75rem;
+  color: #999;
+  text-align: center;
+}

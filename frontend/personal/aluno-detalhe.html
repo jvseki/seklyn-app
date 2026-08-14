@@ -63,11 +63,16 @@
           <h1 id="aluno-nome">Carregando...</h1>
           <p>Monte e acompanhe os treinos deste aluno.</p>
         </div>
-        <div style="display:flex;gap:var(--espaco-2);">
+        <div style="display:flex;gap:var(--espaco-2);flex-wrap:wrap;">
           <button class="btn btn-ghost" type="button" data-acao="editar-aluno">✏️ Editar aluno</button>
+          <button class="btn btn-ghost" type="button" data-acao="imprimir-ficha">🖨️ Imprimir ficha</button>
+          <button class="btn btn-ghost" type="button" data-acao="baixar-excel">📊 Baixar Excel</button>
           <a id="aluno-whatsapp" class="btn btn-secondary" href="#" target="_blank" rel="noopener noreferrer" hidden>💬 Chamar no WhatsApp</a>
         </div>
       </div>
+
+      <!-- Só aparece na hora de imprimir (Ctrl+P) — ver #imprimir-ficha em aluno-detalhe.js -->
+      <div class="print-only" id="ficha-impressao"></div>
 
       <div class="card" style="margin-bottom:var(--espaco-6);">
         <div class="cabecalho-pagina" style="margin-bottom:0;">

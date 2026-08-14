@@ -3,10 +3,11 @@ Rotas de gestão do Personal: alunos, treinos, exercícios, séries e
 analytics de aderência. Leitura é liberada para qualquer Personal logado;
 criação/edição/exclusão exige assinatura ativa.
 """
-from fastapi import APIRouter, Depends, status
-from sqlalchemy.orm import Session, joinedload
-
 from datetime import date
+
+from fastapi import APIRouter, Depends, status
+from fastapi.responses import Response
+from sqlalchemy.orm import Session, joinedload
 
 from app.core.config import get_settings
 from app.core.database import get_db
@@ -32,6 +33,7 @@ from app.schemas.avaliacao_fisica import AvaliacaoFisicaCriar, AvaliacaoFisicaOu
 from app.schemas.exercicio import ExercicioAtualizar, ExercicioCriar, ExercicioOut
 from app.schemas.serie import SerieAtualizar, SerieCriar, SerieOut
 from app.schemas.treino import MontarTreinoIn, TreinoAtualizar, TreinoCriar, TreinoOut
+from app.services.aluno_export import build_aluno_xlsx
 from app.services.progresso import calcular_aderencia
 
 router = APIRouter(prefix="/api/personal", tags=["Personal"])
@@ -135,6 +137,34 @@ def analytics_aluno(
 ) -> AderenciaOut:
     aluno = obter_aluno_do_personal(aluno_id, personal, db)
     return calcular_aderencia(db, aluno, periodo_dias=periodo_dias)
+
+
+@router.get("/alunos/{aluno_id}/exportar-excel")
+def exportar_aluno_excel(
+    aluno_id: int,
+    personal: Personal = Depends(get_current_personal),
+    db: Session = Depends(get_db),
+) -> Response:
+    """Baixa a ficha completa do aluno (treinos + peso/meta) num Excel profissional."""
+    aluno = (
+        db.query(Aluno)
+        .options(joinedload(Aluno.treinos).joinedload(Treino.exercicios).joinedload(Exercicio.series))
+        .filter(Aluno.id == aluno_id, Aluno.personal_id == personal.id)
+        .first()
+    )
+    if aluno is None:
+        aluno = obter_aluno_do_personal(aluno_id, personal, db)  # dispara o 404 padrão
+
+    avaliacoes = (
+        db.query(AvaliacaoFisica).filter(AvaliacaoFisica.aluno_id == aluno.id).order_by(AvaliacaoFisica.data).all()
+    )
+    payload = build_aluno_xlsx(aluno, avaliacoes)
+    nome_arquivo = f"seklyn-{aluno.nome.lower().replace(' ', '-')}.xlsx"
+    return Response(
+        content=payload,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{nome_arquivo}"'},
+    )
 
 
 # ---------- Treinos ----------
