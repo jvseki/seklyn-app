@@ -9,6 +9,19 @@
   z-index: 0;
 }
 
+/* Vídeo de fundo do hero da home — logo "S" flutuando com glow, renderizado
+   com Remotion (ver /remotion no repo). Troca de arquivo por media query
+   (mobile ganha uma versão bem mais leve) direto no <source> do HTML. */
+.hero-video-fundo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  z-index: 0;
+}
+
 .blob {
   position: absolute;
   border-radius: 50%;

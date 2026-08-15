@@ -34,11 +34,10 @@
 </head>
 <body>
   <div class="hero-fundo">
-    <div class="blobs-fundo">
-      <div class="blob" style="top:-160px;left:-120px;width:520px;height:520px;background:radial-gradient(circle, #8b5cf6 0%, transparent 70%);"></div>
-      <div class="blob" style="top:-100px;right:-160px;width:600px;height:600px;background:radial-gradient(circle, #4c1d95 0%, transparent 70%);animation-delay:-7s;"></div>
-      <div class="blob" style="bottom:-220px;left:25%;width:520px;height:520px;background:radial-gradient(circle, #a78bfa 0%, transparent 70%);animation-delay:-14s;"></div>
-    </div>
+    <video class="hero-video-fundo" autoplay muted loop playsinline preload="auto" poster="assets/img/logo-s.png" aria-hidden="true">
+      <source src="assets/video/logo-hero-mobile.mp4" media="(max-width: 767px)" type="video/mp4" />
+      <source src="assets/video/logo-hero-desktop.mp4" type="video/mp4" />
+    </video>
 
     <header class="landing-header">
     <nav class="landing-nav container">
