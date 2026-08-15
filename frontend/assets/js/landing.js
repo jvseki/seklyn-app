@@ -23,3 +23,25 @@ async function refletirLoginNaNav() {
 }
 
 refletirLoginNaNav();
+
+// --- Vídeo do hero: escolhe o arquivo certo (mobile/desktop × claro/escuro) ---
+function atualizarVideoHero() {
+  const video = $("#hero-video-fundo");
+  if (!video) return;
+
+  const mobile = window.matchMedia("(max-width: 767px)").matches;
+  const escuro = document.documentElement.dataset.theme === "escuro";
+  const sufixoTamanho = mobile ? "mobile" : "desktop";
+  const sufixoTema = escuro ? "" : "-claro";
+  const novaFonte = `assets/video/logo-hero-${sufixoTamanho}${sufixoTema}.mp4`;
+
+  if (video.dataset.fonteAtual === novaFonte) return; // evita recarregar à toa
+  video.dataset.fonteAtual = novaFonte;
+  video.src = novaFonte;
+  video.load();
+  video.play().catch(() => {}); // autoplay pode ser bloqueado antes de interação — sem problema
+}
+
+atualizarVideoHero();
+document.addEventListener("temaAlterado", atualizarVideoHero);
+window.addEventListener("resize", atualizarVideoHero);

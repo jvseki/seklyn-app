@@ -4,11 +4,16 @@
   position: sticky;
   top: 0;
   z-index: 30;
-  /* Sempre escuro/translúcido (não muda com o tema claro/escuro): o header
-     fica sobre o vídeo do hero, que agora é sempre escuro. */
-  background: rgba(2, 6, 23, 0.55);
+  /* Frosted claro por padrão (o vídeo do hero no tema claro também é
+     claro); no tema escuro vira frosted escuro logo abaixo. */
+  background: rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+:root[data-theme="escuro"] .landing-header {
+  background: rgba(2, 6, 23, 0.55);
   border-bottom: 1px solid rgba(148, 163, 184, 0.15);
 }
 
@@ -64,33 +69,37 @@
   overflow: hidden;
 }
 
-/* Véu escuro por cima do vídeo: sem isso o texto (preto no tema claro) some
-   em cima da logo/blobs do vídeo. Também garante contraste igual nos dois temas. */
+/* Véu por cima do vídeo, pra garantir contraste do texto — claro (sutil,
+   o vídeo já é claro nesse tema) por padrão, escuro no tema escuro. */
 .hero-fundo::after {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 0;
-  background: linear-gradient(180deg, rgba(2, 6, 23, 0.72) 0%, rgba(2, 6, 23, 0.82) 55%, rgba(2, 6, 23, 0.95) 100%);
+  background: linear-gradient(180deg, rgba(247, 245, 255, 0.35) 0%, rgba(247, 245, 255, 0.5) 55%, rgba(247, 245, 255, 0.75) 100%);
   pointer-events: none;
 }
 
-/* Como o fundo do hero agora é sempre escuro (vídeo + véu), o texto dele
-   é sempre claro — independente do tema claro/escuro do resto da página. */
-.hero-fundo .hero h1,
-.hero-fundo .landing-marca .marca-texto {
+:root[data-theme="escuro"] .hero-fundo::after {
+  background: linear-gradient(180deg, rgba(2, 6, 23, 0.72) 0%, rgba(2, 6, 23, 0.82) 55%, rgba(2, 6, 23, 0.95) 100%);
+}
+
+/* Texto do hero no tema escuro precisa virar claro (o padrão --cor-texto já
+   resolve certo pro tema claro, não precisa de override nenhum aqui). */
+:root[data-theme="escuro"] .hero-fundo .hero h1,
+:root[data-theme="escuro"] .hero-fundo .landing-marca .marca-texto {
   color: #f8fafc;
 }
 
-.hero-fundo .hero p {
+:root[data-theme="escuro"] .hero-fundo .hero p {
   color: #cbd5e1;
 }
 
-.hero-fundo .landing-nav .btn-ghost {
+:root[data-theme="escuro"] .hero-fundo .landing-nav .btn-ghost {
   color: #e2e8f0;
 }
 
-.hero-fundo .botao-tema {
+:root[data-theme="escuro"] .hero-fundo .botao-tema {
   color: #cbd5e1;
 }
 

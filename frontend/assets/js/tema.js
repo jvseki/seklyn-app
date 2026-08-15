@@ -28,6 +28,9 @@ export function aplicarTema(tema) {
   }
   localStorage.setItem(CHAVE_TEMA, tema);
   atualizarBotoes(tema);
+  // Outras páginas (ex: vídeo do hero da home) podem escutar isso pra se
+  // adaptar ao tema sem precisar importar/acoplar em tema.js diretamente.
+  document.dispatchEvent(new CustomEvent("temaAlterado", { detail: { tema } }));
 }
 
 function iniciar() {

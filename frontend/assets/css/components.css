@@ -97,6 +97,33 @@
   flex-shrink: 0;
 }
 
+/* Logo "S" com resposta 3D ao vivo (mouse/toque) — leve, sem vídeo,
+   funciona em qualquer lugar que a logo apareça (nav, sidebar). */
+.marca-logo img {
+  flex-shrink: 0;
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.35s ease;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.marca-logo:hover img {
+  transform: perspective(400px) rotateY(18deg) rotateX(-6deg) scale(1.12);
+  filter: drop-shadow(0 6px 14px rgba(124, 58, 237, 0.45));
+}
+
+.marca-logo:active img {
+  transform: perspective(400px) rotateY(6deg) rotateX(-2deg) scale(1.04);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marca-logo img {
+    transition: none;
+  }
+  .marca-logo:hover img {
+    transform: none;
+  }
+}
+
 /* Botões */
 .btn {
   position: relative;
