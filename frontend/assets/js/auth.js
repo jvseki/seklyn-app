@@ -2,10 +2,12 @@
 import { api, salvarToken, limparToken, estaAutenticado } from "./api.js";
 import { $, mensagemDeErro } from "./utils.js";
 import { aplicarTemaPersonalizado } from "./tema-personalizado.js";
+import { montarMenuConta } from "./conta-menu.js";
 
 /**
  * Usado no topo das páginas protegidas do Personal: redireciona pro login se
- * necessário e já aplica o tema visual exclusivo da conta (se houver).
+ * necessário, aplica o tema visual exclusivo da conta (se houver) e monta o
+ * menu de conta (nome + editar dados/senha/sair) na sidebar.
  */
 export function protegerPagina() {
   if (!estaAutenticado()) {
@@ -14,7 +16,10 @@ export function protegerPagina() {
   }
   api
     .me()
-    .then((personal) => aplicarTemaPersonalizado(personal.tema_personalizado))
+    .then((personal) => {
+      aplicarTemaPersonalizado(personal.tema_personalizado);
+      montarMenuConta(personal);
+    })
     .catch(() => {});
 }
 

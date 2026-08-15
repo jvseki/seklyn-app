@@ -10,7 +10,15 @@ from app.core.security import criar_token_acesso, gerar_token_verificacao, hash_
 from app.deps import get_current_personal
 from app.models.assinatura import Assinatura
 from app.models.personal import Personal
-from app.schemas.personal import ConfirmarEmailIn, PersonalCriar, PersonalLogin, PersonalOut, TokenOut
+from app.schemas.personal import (
+    ConfirmarEmailIn,
+    PersonalAtualizar,
+    PersonalCriar,
+    PersonalLogin,
+    PersonalOut,
+    TokenOut,
+    TrocarSenhaIn,
+)
 from app.services.email_service import enviar_email_confirmacao
 
 router = APIRouter(prefix="/api/auth/personal", tags=["Autenticação"])
@@ -101,3 +109,28 @@ def reenviar_confirmacao(
     if personal.email_verificado:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Seu e-mail já está confirmado.")
     _enviar_confirmacao(db, personal)
+
+
+@router.put("/me", response_model=PersonalOut)
+def atualizar_meus_dados(
+    dados: PersonalAtualizar,
+    personal: Personal = Depends(get_current_personal),
+    db: Session = Depends(get_db),
+) -> Personal:
+    for campo, valor in dados.model_dump(exclude_unset=True).items():
+        setattr(personal, campo, valor)
+    db.commit()
+    db.refresh(personal)
+    return personal
+
+
+@router.post("/trocar-senha", status_code=status.HTTP_204_NO_CONTENT)
+def trocar_senha(
+    dados: TrocarSenhaIn,
+    personal: Personal = Depends(get_current_personal),
+    db: Session = Depends(get_db),
+) -> None:
+    if not verificar_senha(dados.senha_atual, personal.senha_hash):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Senha atual incorreta.")
+    personal.senha_hash = hash_senha(dados.senha_nova)
+    db.commit()

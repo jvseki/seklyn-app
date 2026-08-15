@@ -17,6 +17,16 @@ class PersonalLogin(BaseModel):
     senha: str
 
 
+class PersonalAtualizar(BaseModel):
+    nome: str | None = Field(default=None, min_length=2, max_length=120)
+    telefone: str | None = Field(default=None, max_length=30)
+
+
+class TrocarSenhaIn(BaseModel):
+    senha_atual: str
+    senha_nova: str = Field(min_length=8, max_length=100)
+
+
 class PersonalOut(OrmModel):
     id: int
     nome: str

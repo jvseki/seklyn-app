@@ -62,8 +62,14 @@
       </div>
       <div class="landing-nav-acoes">
         <button class="botao-tema" type="button" data-acao="alternar-tema" aria-label="Alternar tema">🌙</button>
-        <a href="personal/login.html" class="btn btn-ghost btn-sm">Entrar</a>
-        <a href="personal/cadastro.html" class="btn btn-primary btn-sm">Criar conta grátis</a>
+        <div id="landing-nao-logado" style="display:flex;gap:var(--espaco-2);">
+          <a href="personal/login.html" class="btn btn-ghost btn-sm">Entrar</a>
+          <a href="personal/cadastro.html" class="btn btn-primary btn-sm">Criar conta grátis</a>
+        </div>
+        <div id="landing-logado" hidden style="display:flex;gap:var(--espaco-3);align-items:center;">
+          <span class="hint-text" id="landing-nome-personal"></span>
+          <a href="personal/dashboard.html" class="btn btn-primary btn-sm">Ir para o painel</a>
+        </div>
       </div>
     </nav>
     </header>
@@ -168,5 +174,6 @@
   </footer>
 
   <script type="module" src="assets/js/tema.js"></script>
+  <script type="module" src="assets/js/landing.js"></script>
 </body>
 </html>

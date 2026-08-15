@@ -66,6 +66,8 @@ export const api = {
   me: () => apiFetch("/auth/personal/me"),
   confirmarEmail: (token) => apiFetch("/auth/personal/confirmar-email", { method: "POST", body: JSON.stringify({ token }) }),
   reenviarConfirmacao: () => apiFetch("/auth/personal/reenviar-confirmacao", { method: "POST" }),
+  atualizarMeusDados: (dados) => apiFetch("/auth/personal/me", { method: "PUT", body: JSON.stringify(dados) }),
+  trocarSenha: (dados) => apiFetch("/auth/personal/trocar-senha", { method: "POST", body: JSON.stringify(dados) }),
 
   // --- Alunos ---
   listarAlunos: () => apiFetch("/personal/alunos"),

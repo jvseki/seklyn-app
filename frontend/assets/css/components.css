@@ -562,6 +562,93 @@
   flex-shrink: 0;
 }
 
+.avatar-pequeno {
+  width: 28px;
+  height: 28px;
+  font-size: 0.75rem;
+}
+
+/* Menu de conta (nome + editar dados/senha/sair), na sidebar de todas as
+   páginas internas do Personal — injetado via conta-menu.js. */
+.conta-menu {
+  position: relative;
+}
+
+.conta-menu-gatilho {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px 6px 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--raio-total);
+  cursor: pointer;
+  color: var(--cor-texto);
+  font-family: inherit;
+}
+
+.conta-menu-gatilho:hover {
+  background: var(--cor-superficie);
+  border-color: var(--cor-borda);
+}
+
+.conta-menu-nome {
+  font-weight: 600;
+  font-size: 0.88rem;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conta-menu-seta {
+  color: var(--cor-texto-muted);
+  font-size: 0.7rem;
+}
+
+.conta-menu-dropdown {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  min-width: 200px;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-md);
+  box-shadow: var(--sombra-md);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 40;
+}
+
+.conta-menu-dropdown button,
+.conta-menu-dropdown a {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 9px 10px;
+  border-radius: var(--raio-sm);
+  background: transparent;
+  border: none;
+  color: var(--cor-texto);
+  font-size: 0.88rem;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.conta-menu-dropdown button:hover,
+.conta-menu-dropdown a:hover {
+  background: var(--cor-primaria-suave);
+}
+
+.conta-menu-dropdown hr {
+  border: none;
+  border-top: 1px solid var(--cor-borda);
+  margin: 4px 0;
+}
+
 /* Ladrilho de estatística */
 .stat-tile {
   background: var(--cor-superficie);
