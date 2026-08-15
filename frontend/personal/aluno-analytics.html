@@ -9,7 +9,7 @@
   </script>
   <script src="../assets/js/config.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Assinatura — Seklyn</title>
+  <title>Desempenho do aluno — Seklyn</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='128' y2='128' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0' stop-color='%234c1d95'/%3E%3Cstop offset='1' stop-color='%232e1065'/%3E%3C/linearGradient%3E%3ClinearGradient id='a' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23c4b5fd'/%3E%3Cstop offset='1' stop-color='%238b5cf6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='128' height='128' rx='30' fill='url(%23g)'/%3E%3Ccircle cx='93' cy='35' r='7' fill='url(%23a)'/%3E%3Cpath d='M79 46c0-8-8-13-19-13-12 0-20 6-20 15 0 20 32 12 32 26 0 6-6 10-14 10-9 0-16-4-18-11' stroke='white' stroke-width='9' stroke-linecap='round' fill='none'/%3E%3C/svg%3E" />
   <link rel="stylesheet" href="../assets/css/variables.css" />
   <link rel="stylesheet" href="../assets/css/base.css" />
@@ -45,9 +45,9 @@
         <span class="marca-texto">Sek<span class="ponto">lyn</span></span>
       </a>
       <nav class="sidebar-nav">
-        <a href="dashboard.html" class="sidebar-link">👥 Alunos</a>
+        <a href="dashboard.html" class="sidebar-link ativo">👥 Alunos</a>
         <a href="recomendacoes.html" class="sidebar-link">🛍️ Recomendações</a>
-        <a href="assinatura.html" class="sidebar-link ativo">💳 Assinatura</a>
+        <a href="assinatura.html" class="sidebar-link">💳 Assinatura</a>
       </nav>
       <div class="sidebar-rodape">
         <button class="botao-tema" type="button" data-acao="alternar-tema" aria-label="Alternar tema">🌙</button>
@@ -57,32 +57,31 @@
     </aside>
 
     <main class="conteudo-personal">
-      <div class="alerta alerta-aviso" id="boas-vindas" hidden style="margin-bottom:var(--espaco-5);">
-        <span>👋</span>
-        <div>Conta criada! Assine para liberar o cadastro de alunos e treinos.</div>
-      </div>
+      <a href="#" id="link-voltar-aluno" class="hint-text" style="display:inline-block;margin-bottom:var(--espaco-4);">← Voltar para o aluno</a>
 
       <div class="cabecalho-pagina">
         <div>
-          <h1>Assinatura</h1>
-          <p>Gerencie sua assinatura do Seklyn.</p>
+          <h1 id="analytics-nome-aluno">Desempenho</h1>
+          <p>Evolução dia a dia e transparência de quando cada série foi marcada.</p>
         </div>
       </div>
 
-      <div class="card" style="max-width:480px;">
-        <h3 style="margin-bottom:var(--espaco-3);">Status atual</h3>
-        <div id="status-assinatura"><div class="spinner"></div></div>
+      <div class="card" style="margin-bottom:var(--espaco-6);">
+        <h3 style="margin-bottom:var(--espaco-2);">Desempenho nos últimos 30 dias</h3>
+        <p class="hint-text" style="margin-bottom:var(--espaco-4);">Cada barra é o % do treino daquele dia concluído. Barra com borda vermelha = dia com várias séries marcadas numa janela bem curta de tempo (vale olhar com atenção).</p>
+        <div class="grafico-desempenho" id="grafico-desempenho"></div>
+      </div>
 
-        <button id="botao-assinar" class="btn btn-primary btn-block" style="margin-top:var(--espaco-5);">
-          Assinar agora
-        </button>
-        <p class="hint-text" style="margin-top:var(--espaco-3);">Pagamento processado com segurança pelo Stripe.</p>
+      <div class="card">
+        <h3 style="margin-bottom:var(--espaco-2);">Marcações recentes</h3>
+        <p class="hint-text" style="margin-bottom:var(--espaco-4);">Data e hora reais de cada série marcada — pra você ver o padrão de verdade, não só o check verde.</p>
+        <div id="lista-execucoes-recentes"><p class="hint-text">Carregando…</p></div>
       </div>
     </main>
   </div>
 
   <script type="module" src="../assets/js/tema.js"></script>
   <script type="module" src="../assets/js/menu.js"></script>
-  <script type="module" src="../assets/js/assinatura.js"></script>
+  <script type="module" src="../assets/js/aluno-analytics.js"></script>
 </body>
 </html>

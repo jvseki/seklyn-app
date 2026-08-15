@@ -562,6 +562,81 @@
   flex-shrink: 0;
 }
 
+/* Gráfico de desempenho (barras) — painel "Ver mais" do aluno */
+.grafico-barras {
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+  height: 160px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.grafico-barra-coluna {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-width: 16px;
+  height: 100%;
+  flex-shrink: 0;
+}
+
+.grafico-barra {
+  width: 12px;
+  min-height: 3px;
+  background: var(--cor-primaria);
+  border-radius: 4px 4px 0 0;
+  transition: height 0.2s ease;
+}
+
+.grafico-barra.suspeito {
+  background: var(--cor-aviso);
+  outline: 2px solid var(--cor-perigo);
+  outline-offset: -2px;
+}
+
+.grafico-legenda {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--espaco-2);
+  font-size: 0.78rem;
+  color: var(--cor-texto-muted);
+}
+
+/* Lista de marcações recentes, agrupada por dia */
+.execucao-dia-bloco {
+  padding: var(--espaco-3);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-md);
+  margin-bottom: var(--espaco-2);
+}
+
+.execucao-dia-bloco.suspeito {
+  border-color: var(--cor-aviso);
+  background: var(--cor-aviso-clara);
+}
+
+.execucao-dia-titulo {
+  font-weight: 700;
+  margin-bottom: var(--espaco-2);
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-2);
+  flex-wrap: wrap;
+}
+
+.execucao-dia-itens {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.execucao-item {
+  font-size: 0.85rem;
+  color: var(--cor-texto);
+}
+
 .avatar-pequeno {
   width: 28px;
   height: 28px;

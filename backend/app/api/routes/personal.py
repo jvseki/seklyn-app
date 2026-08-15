@@ -30,13 +30,13 @@ from app.models.personal import Personal
 from app.models.serie import Serie
 from app.models.treino import Treino
 from app.schemas.aluno import AlunoAtualizar, AlunoCriar, AlunoOut
-from app.schemas.analytics import AderenciaOut
+from app.schemas.analytics import AderenciaOut, AnalyticsDetalhadoOut
 from app.schemas.avaliacao_fisica import AvaliacaoFisicaCriar, AvaliacaoFisicaOut
 from app.schemas.exercicio import ExercicioAtualizar, ExercicioCriar, ExercicioOut
 from app.schemas.serie import SerieAtualizar, SerieCriar, SerieOut
 from app.schemas.treino import MontarTreinoIn, TreinoAtualizar, TreinoCriar, TreinoOut
 from app.services.aluno_export import build_aluno_xlsx
-from app.services.progresso import calcular_aderencia
+from app.services.progresso import calcular_aderencia, calcular_analytics_detalhado
 
 router = APIRouter(prefix="/api/personal", tags=["Personal"])
 settings = get_settings()
@@ -148,6 +148,17 @@ def analytics_aluno(
 ) -> AderenciaOut:
     aluno = obter_aluno_do_personal(aluno_id, personal, db)
     return calcular_aderencia(db, aluno, periodo_dias=periodo_dias)
+
+
+@router.get("/alunos/{aluno_id}/analytics-detalhado", response_model=AnalyticsDetalhadoOut)
+def analytics_detalhado_aluno(
+    aluno_id: int,
+    periodo_dias: int = 30,
+    personal: Personal = Depends(get_current_personal),
+    db: Session = Depends(get_db),
+) -> AnalyticsDetalhadoOut:
+    aluno = obter_aluno_do_personal(aluno_id, personal, db)
+    return calcular_analytics_detalhado(db, aluno, periodo_dias=periodo_dias)
 
 
 @router.get("/alunos/{aluno_id}/exportar-excel")

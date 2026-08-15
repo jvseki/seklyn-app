@@ -12,12 +12,19 @@ from datetime import date, timedelta
 
 from sqlalchemy.orm import Session
 
+from app.core.tempo import FUSO_BRASIL
 from app.core.tempo import hoje as hoje_brasil
 from app.models.aluno import Aluno
 from app.models.execucao import Execucao
 from app.models.serie import Serie
 from app.models.treino import Treino
-from app.schemas.analytics import AderenciaOut, ExercicioPuladoOut
+from app.schemas.analytics import (
+    AderenciaOut,
+    AnalyticsDetalhadoOut,
+    ExecucaoDetalheOut,
+    ExercicioPuladoOut,
+    PontoDesempenhoOut,
+)
 from app.schemas.exercicio import ExercicioComProgressoOut
 from app.schemas.serie import SerieComExecucaoOut
 from app.schemas.treino import TreinoDetalheOut, TreinoResumoOut
@@ -218,4 +225,79 @@ def calcular_aderencia(db: Session, aluno: Aluno, periodo_dias: int = 30) -> Ade
         percentual_geral_aderencia=percentual_geral,
         dias_com_algum_treino=total_dias_ativos,
         exercicios_mais_pulados=exercicios_pulados[:10],
+    )
+
+
+def calcular_analytics_detalhado(db: Session, aluno: Aluno, periodo_dias: int = 30) -> AnalyticsDetalhadoOut:
+    """
+    Painel "Ver mais": um ponto por dia (% do treino daquele dia da semana
+    concluído naquela data) pra montar o gráfico, e a lista de marcações
+    recentes com hora real — pra dar transparência de verdade ao personal,
+    em vez de só confiar no check ficar verde.
+
+    "Suspeito" = 3+ séries marcadas numa janela de até 5 minutos no mesmo
+    dia — não prova nada sozinho, mas é um sinal pra olhar com atenção.
+    """
+    hoje = hoje_brasil()
+    inicio = hoje - timedelta(days=periodo_dias - 1)
+
+    # Quantas séries o treino de cada dia da semana tem, pra servir de "meta do dia".
+    total_series_por_dia_semana: dict[str, int] = {}
+    for treino in aluno.treinos:
+        if not treino.dia_semana:
+            continue
+        total_series_por_dia_semana[treino.dia_semana] = sum(len(ex.series) for ex in treino.exercicios)
+
+    execucoes = (
+        db.query(Execucao)
+        .join(Serie, Execucao.serie_id == Serie.id)
+        .filter(
+            Execucao.aluno_id == aluno.id,
+            Execucao.data_execucao >= inicio,
+            Execucao.concluida.is_(True),
+        )
+        .all()
+    )
+
+    concluidas_por_dia: dict[date, int] = defaultdict(int)
+    horarios_por_dia: dict[date, list] = defaultdict(list)
+    for e in execucoes:
+        concluidas_por_dia[e.data_execucao] += 1
+        horarios_por_dia[e.data_execucao].append(e.criado_em)
+
+    def dia_e_suspeito(horarios: list) -> bool:
+        if len(horarios) < 3:
+            return False
+        ordenados = sorted(horarios)
+        janela = ordenados[-1] - ordenados[0]
+        return len(horarios) >= 3 and janela.total_seconds() <= 5 * 60
+
+    desempenho: list[PontoDesempenhoOut] = []
+    d = inicio
+    while d <= hoje:
+        chave_dia = DIAS_SEMANA_CHAVES[d.weekday()]
+        total_esperado = total_series_por_dia_semana.get(chave_dia, 0)
+        concluidas = concluidas_por_dia.get(d, 0)
+        percentual = min(round((concluidas / total_esperado) * 100, 1), 100.0) if total_esperado else 0.0
+        desempenho.append(
+            PontoDesempenhoOut(data=d, percentual=percentual, suspeito=dia_e_suspeito(horarios_por_dia.get(d, [])))
+        )
+        d += timedelta(days=1)
+
+    execucoes_ordenadas = sorted(execucoes, key=lambda e: e.criado_em, reverse=True)[:150]
+    execucoes_recentes = [
+        ExecucaoDetalheOut(
+            data=e.data_execucao,
+            hora=e.criado_em.astimezone(FUSO_BRASIL).strftime("%H:%M"),
+            treino_nome=e.serie.exercicio.treino.nome,
+            exercicio_nome=e.serie.exercicio.nome,
+        )
+        for e in execucoes_ordenadas
+    ]
+
+    return AnalyticsDetalhadoOut(
+        aluno_id=aluno.id,
+        periodo_dias=periodo_dias,
+        desempenho=desempenho,
+        execucoes_recentes=execucoes_recentes,
     )

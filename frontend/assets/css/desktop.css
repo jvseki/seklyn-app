@@ -34,6 +34,7 @@
   font-weight: 800;
   font-size: 1.15rem;
   color: var(--cor-texto);
+  text-decoration: none;
 }
 
 .sidebar-marca .ponto {

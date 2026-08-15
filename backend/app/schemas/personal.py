@@ -20,6 +20,9 @@ class PersonalLogin(BaseModel):
 class PersonalAtualizar(BaseModel):
     nome: str | None = Field(default=None, min_length=2, max_length=120)
     telefone: str | None = Field(default=None, max_length=30)
+    cpf: str | None = Field(default=None, max_length=14)
+    endereco: str | None = Field(default=None, max_length=200)
+    numero: str | None = Field(default=None, max_length=20)
 
 
 class TrocarSenhaIn(BaseModel):
@@ -32,6 +35,9 @@ class PersonalOut(OrmModel):
     nome: str
     email: EmailStr
     telefone: str | None
+    cpf: str | None
+    endereco: str | None
+    numero: str | None
     email_verificado: bool
     tema_personalizado: str | None
     criado_em: datetime

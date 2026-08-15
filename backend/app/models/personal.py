@@ -16,6 +16,9 @@ class Personal(Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     senha_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     telefone: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    cpf: Mapped[str | None] = mapped_column(String(14), nullable=True)
+    endereco: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    numero: Mapped[str | None] = mapped_column(String(20), nullable=True)
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # Confirmação de e-mail (a conta funciona normalmente antes de confirmar,

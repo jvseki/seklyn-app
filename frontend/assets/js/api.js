@@ -78,6 +78,8 @@ export const api = {
   regenerarLinkAluno: (id) => apiFetch(`/personal/alunos/${id}/regenerar-link`, { method: "POST" }),
   analyticsAluno: (id, periodoDias = 30) =>
     apiFetch(`/personal/alunos/${id}/analytics?periodo_dias=${periodoDias}`),
+  analyticsDetalhadoAluno: (id, periodoDias = 30) =>
+    apiFetch(`/personal/alunos/${id}/analytics-detalhado?periodo_dias=${periodoDias}`),
 
   // --- Avaliações físicas (peso ao longo do tempo) ---
   listarAvaliacoes: (alunoId) => apiFetch(`/personal/alunos/${alunoId}/avaliacoes`),

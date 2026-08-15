@@ -21,6 +21,8 @@ class Aluno(Base):
     email: Mapped[str | None] = mapped_column(String(255), nullable=True)
     telefone: Mapped[str | None] = mapped_column(String(30), nullable=True)
     cpf: Mapped[str | None] = mapped_column(String(14), nullable=True)
+    endereco: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    numero: Mapped[str | None] = mapped_column(String(20), nullable=True)
     # Meta de peso em kg (ex: aluno tem 100kg, quer chegar a 90kg) — usada
     # pra calcular o progresso mostrado a partir do histórico de avaliações.
     peso_meta_kg: Mapped[float | None] = mapped_column(Float, nullable=True)

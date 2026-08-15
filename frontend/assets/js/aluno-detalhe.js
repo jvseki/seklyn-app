@@ -36,6 +36,9 @@ if (!alunoId) {
   window.location.href = "dashboard.html";
 }
 
+const linkVerMaisEl = $("#link-ver-mais-analytics");
+if (linkVerMaisEl) linkVerMaisEl.href = `aluno-analytics.html?id=${alunoId}`;
+
 const cabecalhoNomeEl = $("#aluno-nome");
 const cabecalhoLinkEl = $("#aluno-link");
 const whatsappEl = $("#aluno-whatsapp");
@@ -1033,8 +1036,23 @@ $("[data-acao='editar-aluno']")?.addEventListener("click", () => {
   formEditarAluno.nome.value = alunoAtual.nome;
   formEditarAluno.email.value = alunoAtual.email || "";
   formEditarAluno.telefone.value = alunoAtual.telefone || "";
-  formEditarAluno.cpf.value = alunoAtual.cpf || "";
+  formEditarAluno.endereco.value = alunoAtual.endereco || "";
+  formEditarAluno.numero.value = alunoAtual.numero || "";
   formEditarAluno.peso_meta_kg.value = alunoAtual.peso_meta_kg ?? "";
+
+  // CPF vem travado (texto fixo) depois de cadastrado — protege de trocar
+  // sem querer enquanto edita outra coisa. Dá pra destravar com confirmação.
+  const cpfInputEl = formEditarAluno.cpf;
+  const blocoFixoEl = $("#editar-aluno-cpf-bloco-fixo");
+  if (alunoAtual.cpf) {
+    cpfInputEl.hidden = true;
+    blocoFixoEl.hidden = false;
+    $("#editar-aluno-cpf-fixo").textContent = alunoAtual.cpf;
+  } else {
+    cpfInputEl.hidden = false;
+    cpfInputEl.value = "";
+    blocoFixoEl.hidden = true;
+  }
 
   // Só faz sentido definir uma meta depois de ter pelo menos um peso registrado
   // (é a partir dele que a barra de progresso calcula o ponto de partida).
@@ -1049,6 +1067,20 @@ document.querySelectorAll("[data-acao='fechar-modal-aluno']").forEach((el) =>
   el.addEventListener("click", () => fecharModal(modalEditarAluno))
 );
 
+$("[data-acao='desbloquear-cpf-aluno']")?.addEventListener("click", async () => {
+  const confirmou = await confirmarAcao("Tem certeza que quer corrigir o CPF? Só mude se foi cadastrado errado.", {
+    titulo: "Corrigir CPF",
+    textoConfirmar: "Sim, corrigir",
+    perigo: false,
+  });
+  if (!confirmou) return;
+  $("#editar-aluno-cpf-bloco-fixo").hidden = true;
+  const cpfInputEl = formEditarAluno.cpf;
+  cpfInputEl.hidden = false;
+  cpfInputEl.value = alunoAtual.cpf || "";
+  cpfInputEl.focus();
+});
+
 formEditarAluno?.addEventListener("submit", async (evento) => {
   evento.preventDefault();
   const botao = $("button[type='submit']", formEditarAluno);
@@ -1058,9 +1090,15 @@ formEditarAluno?.addEventListener("submit", async (evento) => {
       nome: formEditarAluno.nome.value.trim(),
       email: formEditarAluno.email.value.trim() || null,
       telefone: formEditarAluno.telefone.value.trim() || null,
-      cpf: formEditarAluno.cpf.value.trim() || null,
+      endereco: formEditarAluno.endereco.value.trim() || null,
+      numero: formEditarAluno.numero.value.trim() || null,
       peso_meta_kg: formEditarAluno.peso_meta_kg.value ? Number(formEditarAluno.peso_meta_kg.value) : null,
     };
+    // Só manda o CPF se o campo estava editável (ainda não tinha sido definido) —
+    // uma vez travado, não entra no payload, então o backend nem encosta nele.
+    if (!formEditarAluno.cpf.hidden) {
+      dados.cpf = formEditarAluno.cpf.value.trim() || null;
+    }
     alunoAtual = await api.atualizarAluno(alunoId, dados);
     cabecalhoNomeEl.textContent = alunoAtual.nome;
     atualizarBotoesWhatsapp();

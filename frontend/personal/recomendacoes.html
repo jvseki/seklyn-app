@@ -19,14 +19,14 @@
 <body>
   <div class="topbar-mobile">
     <button class="botao-hamburguer" type="button" data-acao="abrir-menu" aria-label="Abrir menu">☰</button>
-    <span class="marca-texto" style="font-weight:800;">Sek<span class="ponto">lyn</span></span>
-    <span style="width:40px;"></span>
+    <a href="dashboard.html" style="text-decoration:none;color:inherit;"><span class="marca-texto" style="font-weight:800;">Sek<span class="ponto">lyn</span></span></a>
+    <a href="dashboard.html" class="botao-hamburguer" title="Página inicial" aria-label="Página inicial">🏠</a>
   </div>
   <div class="sidebar-overlay"></div>
 
   <div class="app-personal">
     <aside class="sidebar">
-      <div class="sidebar-marca marca-logo">
+      <a href="dashboard.html" class="sidebar-marca marca-logo" title="Página inicial">
         <svg width="24" height="24" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <defs>
             <linearGradient id="logoGradient" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
@@ -43,7 +43,7 @@
           <path d="M79 46c0-8-8-13-19-13-12 0-20 6-20 15 0 20 32 12 32 26 0 6-6 10-14 10-9 0-16-4-18-11" stroke="white" stroke-width="9" stroke-linecap="round" fill="none" />
         </svg>
         <span class="marca-texto">Sek<span class="ponto">lyn</span></span>
-      </div>
+      </a>
       <nav class="sidebar-nav">
         <a href="dashboard.html" class="sidebar-link">👥 Alunos</a>
         <a href="recomendacoes.html" class="sidebar-link ativo">🛍️ Recomendações</a>
@@ -51,6 +51,7 @@
       </nav>
       <div class="sidebar-rodape">
         <button class="botao-tema" type="button" data-acao="alternar-tema" aria-label="Alternar tema">🌙</button>
+        <a href="dashboard.html" class="btn btn-ghost btn-icon" title="Página inicial" aria-label="Página inicial">🏠</a>
         <button class="btn btn-ghost btn-sm" data-acao="sair">Sair</button>
       </div>
     </aside>

@@ -19,14 +19,14 @@
 <body>
   <div class="topbar-mobile">
     <button class="botao-hamburguer" type="button" data-acao="abrir-menu" aria-label="Abrir menu">☰</button>
-    <span class="marca-texto" style="font-weight:800;">Sek<span class="ponto">lyn</span></span>
-    <span style="width:40px;"></span>
+    <a href="dashboard.html" style="text-decoration:none;color:inherit;"><span class="marca-texto" style="font-weight:800;">Sek<span class="ponto">lyn</span></span></a>
+    <a href="dashboard.html" class="botao-hamburguer" title="Página inicial" aria-label="Página inicial">🏠</a>
   </div>
   <div class="sidebar-overlay"></div>
 
   <div class="app-personal">
     <aside class="sidebar">
-      <div class="sidebar-marca marca-logo">
+      <a href="dashboard.html" class="sidebar-marca marca-logo" title="Página inicial">
         <svg width="24" height="24" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <defs>
             <linearGradient id="logoGradient" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
@@ -43,7 +43,7 @@
           <path d="M79 46c0-8-8-13-19-13-12 0-20 6-20 15 0 20 32 12 32 26 0 6-6 10-14 10-9 0-16-4-18-11" stroke="white" stroke-width="9" stroke-linecap="round" fill="none" />
         </svg>
         <span class="marca-texto">Sek<span class="ponto">lyn</span></span>
-      </div>
+      </a>
       <nav class="sidebar-nav">
         <a href="dashboard.html" class="sidebar-link ativo">👥 Alunos</a>
         <a href="recomendacoes.html" class="sidebar-link">🛍️ Recomendações</a>
@@ -51,6 +51,7 @@
       </nav>
       <div class="sidebar-rodape">
         <button class="botao-tema" type="button" data-acao="alternar-tema" aria-label="Alternar tema">🌙</button>
+        <a href="dashboard.html" class="btn btn-ghost btn-icon" title="Página inicial" aria-label="Página inicial">🏠</a>
         <button class="btn btn-ghost btn-sm" data-acao="sair">Sair</button>
       </div>
     </aside>
@@ -86,7 +87,10 @@
       </div>
 
       <div class="card" style="margin-bottom:var(--espaco-6);">
-        <h3 style="margin-bottom:var(--espaco-3);">📊 Aderência (últimos 30 dias)</h3>
+        <div class="cabecalho-pagina" style="margin-bottom:var(--espaco-3);">
+          <h3 style="margin:0;">📊 Aderência (últimos 30 dias)</h3>
+          <a href="aluno-analytics.html" id="link-ver-mais-analytics" class="btn btn-ghost btn-sm">Ver mais →</a>
+        </div>
         <div id="analytics-resumo"><p class="hint-text">Carregando…</p></div>
       </div>
 
@@ -131,6 +135,20 @@
         <div class="form-group">
           <label class="label" for="editar-aluno-cpf">CPF (opcional)</label>
           <input class="input" id="editar-aluno-cpf" name="cpf" placeholder="000.000.000-00" />
+          <div id="editar-aluno-cpf-bloco-fixo" hidden style="display:flex;gap:var(--espaco-2);align-items:center;">
+            <p class="input" id="editar-aluno-cpf-fixo" style="flex:1;background:var(--cor-superficie);color:var(--cor-texto-muted);margin:0;"></p>
+            <button type="button" class="btn btn-ghost btn-sm" data-acao="desbloquear-cpf-aluno">✏️ Corrigir</button>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group" style="flex:2;">
+            <label class="label" for="editar-aluno-endereco">Endereço (opcional)</label>
+            <input class="input" id="editar-aluno-endereco" name="endereco" placeholder="Rua, bairro..." />
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label class="label" for="editar-aluno-numero">Número</label>
+            <input class="input" id="editar-aluno-numero" name="numero" placeholder="Ex: 123" />
+          </div>
         </div>
         <div class="form-group">
           <label class="label" for="editar-aluno-peso-meta">Meta de peso em kg (opcional)</label>

@@ -18,6 +18,8 @@ class AlunoAtualizar(BaseModel):
     email: EmailStr | None = None
     telefone: str | None = Field(default=None, max_length=30)
     cpf: str | None = Field(default=None, max_length=14)
+    endereco: str | None = Field(default=None, max_length=200)
+    numero: str | None = Field(default=None, max_length=20)
     peso_meta_kg: float | None = None
     ativo: bool | None = None
 
@@ -28,6 +30,8 @@ class AlunoOut(OrmModel):
     email: EmailStr | None
     telefone: str | None
     cpf: str | None
+    endereco: str | None
+    numero: str | None
     peso_meta_kg: float | None
     hash_token: str
     ativo: bool
