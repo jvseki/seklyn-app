@@ -3,10 +3,12 @@ Ponto de entrada da API do Seklyn.
 Rodar em desenvolvimento: uvicorn app.main:app --reload
 """
 from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import admin, aluno, auth, personal, recomendacoes, stripe_webhook
 from app.core.config import get_settings
+from app.core.erros import tratar_erro_validacao
 
 settings = get_settings()
 
@@ -15,6 +17,10 @@ app = FastAPI(
     description="API do Seklyn — acompanhamento de treinos para Personal Trainers e seus alunos.",
     version="0.1.0",
 )
+
+# Erros de validação (campo muito longo, obrigatório faltando, etc.) vêm em
+# inglês por padrão do Pydantic — traduzido pra PT-BR antes de chegar no site.
+app.add_exception_handler(RequestValidationError, tratar_erro_validacao)
 
 app.add_middleware(
     CORSMiddleware,
