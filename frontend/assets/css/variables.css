@@ -204,6 +204,36 @@
   --sombra-botao-hover: 0 4px 8px rgba(192, 38, 211, 0.4), 0 14px 28px rgba(112, 26, 117, 0.35);
 }
 
+/* Tema personalizado "amarelo" — mesmo esquema, exclusivo de outra conta.
+   Contraste em marrom bem escuro (não branco): texto branco em cima de
+   amarelo tem contraste ruim. */
+:root[data-tema-personalizado="amarelo"] {
+  --cor-primaria: #f59e0b; /* amber-500 */
+  --cor-primaria-hover: #d97706; /* amber-600 */
+  --cor-primaria-ativa: #92400e; /* amber-800 */
+  --cor-primaria-forte: #78350f; /* amber-900 */
+  --cor-primaria-clara: #fef3c7; /* amber-100 */
+  --cor-primaria-suave: #fffbeb; /* amber-50 */
+  --cor-primaria-contraste: #451a03;
+
+  --cor-blob-1: #fcd34d; /* amber-300 */
+  --cor-blob-2: #f59e0b; /* amber-500 */
+  --cor-blob-3: #fbbf24; /* amber-400 */
+
+  --sombra-botao: 0 2px 4px rgba(245, 158, 11, 0.35), 0 10px 20px rgba(120, 53, 15, 0.25);
+  --sombra-botao-hover: 0 4px 8px rgba(245, 158, 11, 0.4), 0 14px 28px rgba(120, 53, 15, 0.3);
+}
+
+:root[data-tema-personalizado="amarelo"][data-theme="escuro"] {
+  --cor-primaria: #fcd34d; /* amber-300 */
+  --cor-primaria-hover: #fde68a; /* amber-200 */
+  --cor-primaria-ativa: #fef3c7; /* amber-100 */
+  --cor-primaria-forte: #fef3c7;
+  --cor-primaria-clara: #4a3208;
+  --cor-primaria-suave: #332305;
+  --cor-primaria-contraste: #241a04;
+}
+
 :root[data-tema-personalizado="choque"][data-theme="escuro"] {
   --cor-primaria: #f0abfc; /* fuchsia-300 */
   --cor-primaria-hover: #f5d0fe; /* fuchsia-200 */
