@@ -111,6 +111,11 @@
   gap: var(--espaco-2);
   margin-bottom: var(--espaco-3);
   font-size: 1rem;
+  color: var(--cor-texto-muted);
+}
+
+.bloco-exercicio-titulo .icone-concluido {
+  color: var(--cor-sucesso);
 }
 
 .bloco-exercicio-obs {

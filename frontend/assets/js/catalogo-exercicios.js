@@ -7,7 +7,7 @@ export const CATEGORIAS_TREINO = [
   {
     chave: "peito",
     rotulo: "Peito",
-    emoji: "🏋️",
+    icone: "halteres",
     padrao: { repeticoes_alvo: "10-12", carga_alvo: "", intervalo_descanso: "60s" },
     exercicios: [
       { nome: "Supino reto", recomendado: true },
@@ -24,7 +24,7 @@ export const CATEGORIAS_TREINO = [
   {
     chave: "costas",
     rotulo: "Costas",
-    emoji: "🔙",
+    icone: "costas",
     padrao: { repeticoes_alvo: "10-12", carga_alvo: "", intervalo_descanso: "60s" },
     exercicios: [
       { nome: "Puxada frente (pulley)", recomendado: true },
@@ -41,7 +41,7 @@ export const CATEGORIAS_TREINO = [
   {
     chave: "pernas",
     rotulo: "Pernas",
-    emoji: "🦵",
+    icone: "pernas",
     padrao: { repeticoes_alvo: "10-12", carga_alvo: "", intervalo_descanso: "90s" },
     exercicios: [
       { nome: "Agachamento livre", recomendado: true },
@@ -62,7 +62,7 @@ export const CATEGORIAS_TREINO = [
   {
     chave: "ombro",
     rotulo: "Ombro",
-    emoji: "🙆",
+    icone: "ombro",
     padrao: { repeticoes_alvo: "12-15", carga_alvo: "", intervalo_descanso: "60s" },
     exercicios: [
       { nome: "Desenvolvimento militar", recomendado: true },
@@ -77,7 +77,7 @@ export const CATEGORIAS_TREINO = [
   {
     chave: "biceps",
     rotulo: "Bíceps",
-    emoji: "💪",
+    icone: "halteres",
     padrao: { repeticoes_alvo: "12-15", carga_alvo: "", intervalo_descanso: "45s" },
     exercicios: [
       { nome: "Rosca direta", recomendado: true },
@@ -91,7 +91,7 @@ export const CATEGORIAS_TREINO = [
   {
     chave: "triceps",
     rotulo: "Tríceps",
-    emoji: "💪",
+    icone: "halteres",
     padrao: { repeticoes_alvo: "12-15", carga_alvo: "", intervalo_descanso: "45s" },
     exercicios: [
       { nome: "Tríceps pulley (corda)", recomendado: true },
@@ -105,7 +105,7 @@ export const CATEGORIAS_TREINO = [
   {
     chave: "abdomen",
     rotulo: "Abdômen",
-    emoji: "🔥",
+    icone: "chama",
     padrao: { repeticoes_alvo: "15-20", carga_alvo: "", intervalo_descanso: "30s" },
     exercicios: [
       { nome: "Abdominal supra", recomendado: true },
@@ -119,7 +119,7 @@ export const CATEGORIAS_TREINO = [
   {
     chave: "cardio",
     rotulo: "Cardio",
-    emoji: "🏃",
+    icone: "corrida",
     // Cardio não tem "séries/repetições" — só tempo. O montador detecta isso pela chave.
     tipoConfig: "tempo",
     padrao: { repeticoes_alvo: "20 min", carga_alvo: "", intervalo_descanso: "" },

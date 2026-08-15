@@ -110,6 +110,14 @@
   text-align: center;
 }
 
+.hero-selo-ponto {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--cor-primaria);
+  flex-shrink: 0;
+}
+
 .hero-selo {
   display: inline-flex;
   align-items: center;
@@ -196,6 +204,7 @@
   height: 48px;
   border-radius: var(--raio-md);
   background: var(--cor-primaria-suave);
+  color: var(--cor-primaria-ativa);
   display: flex;
   align-items: center;
   justify-content: center;

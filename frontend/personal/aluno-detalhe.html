@@ -51,11 +51,11 @@
           <p>Monte e acompanhe os treinos deste aluno.</p>
         </div>
         <div style="display:flex;gap:var(--espaco-2);flex-wrap:wrap;">
-          <button class="btn btn-ghost" type="button" data-acao="editar-aluno">✏️ Editar aluno</button>
-          <button class="btn btn-ghost" type="button" data-acao="imprimir-ficha">🖨️ Imprimir ficha</button>
-          <button class="btn btn-ghost" type="button" data-acao="baixar-excel">📊 Baixar Excel</button>
-          <a id="aluno-ficha-whatsapp" class="btn btn-ghost" href="#" target="_blank" rel="noopener noreferrer" hidden>📤 Mandar no WhatsApp</a>
-          <a id="aluno-whatsapp" class="btn btn-secondary" href="#" target="_blank" rel="noopener noreferrer" hidden>💬 Chamar no WhatsApp</a>
+          <button class="btn btn-ghost" type="button" data-acao="editar-aluno"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-3px;flex-shrink:0;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg> Editar aluno</button>
+          <button class="btn btn-ghost" type="button" data-acao="imprimir-ficha"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-3px;flex-shrink:0;"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Imprimir ficha</button>
+          <button class="btn btn-ghost" type="button" data-acao="baixar-excel"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-3px;flex-shrink:0;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Baixar Excel</button>
+          <a id="aluno-ficha-whatsapp" class="btn btn-ghost" href="#" target="_blank" rel="noopener noreferrer" hidden><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-3px;flex-shrink:0;"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Mandar no WhatsApp</a>
+          <a id="aluno-whatsapp" class="btn btn-secondary" href="#" target="_blank" rel="noopener noreferrer" hidden><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-3px;flex-shrink:0;"><path d="M21 11.5a8.5 8.5 0 0 1-12.36 7.57L3 20l1.06-5.44A8.5 8.5 0 1 1 21 11.5Z"/><path d="M8.5 10.5c.3 2 2 3.7 4 4"/></svg> Chamar no WhatsApp</a>
         </div>
       </div>
 
@@ -66,7 +66,7 @@
             <p class="hint-text" id="aluno-link" style="cursor:pointer;">…</p>
           </div>
           <div style="display:flex;gap:var(--espaco-2);align-items:center;">
-            <a id="aluno-link-whatsapp" class="btn btn-secondary btn-sm" href="#" target="_blank" rel="noopener noreferrer" hidden>💬 Enviar por WhatsApp</a>
+            <a id="aluno-link-whatsapp" class="btn btn-secondary btn-sm" href="#" target="_blank" rel="noopener noreferrer" hidden><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-3px;flex-shrink:0;"><path d="M21 11.5a8.5 8.5 0 0 1-12.36 7.57L3 20l1.06-5.44A8.5 8.5 0 1 1 21 11.5Z"/><path d="M8.5 10.5c.3 2 2 3.7 4 4"/></svg> Enviar por WhatsApp</a>
             <span class="badge badge-neutro">Clique no link para copiar</span>
           </div>
         </div>
@@ -74,7 +74,7 @@
 
       <div class="card" style="margin-bottom:var(--espaco-6);">
         <div class="cabecalho-pagina" style="margin-bottom:var(--espaco-3);">
-          <h3 style="margin:0;">📊 Aderência (últimos 30 dias)</h3>
+          <h3 style="margin:0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-3px;flex-shrink:0;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Aderência (últimos 30 dias)</h3>
           <a href="aluno-analytics.html" id="link-ver-mais-analytics" class="btn btn-ghost btn-sm">Ver mais →</a>
         </div>
         <div id="analytics-resumo"><p class="hint-text">Carregando…</p></div>
@@ -82,7 +82,7 @@
 
       <div class="card" style="margin-bottom:var(--espaco-6);">
         <div class="cabecalho-pagina" style="margin-bottom:var(--espaco-3);">
-          <h3 style="margin:0;">⚖️ Peso e meta</h3>
+          <h3 style="margin:0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-3px;flex-shrink:0;"><path d="M12 3v18"/><path d="M6 8h12"/><path d="M3 8l3-4 3 4-3 5-3-5Z"/><path d="M15 8l3-4 3 4-3 5-3-5Z"/></svg> Peso e meta</h3>
           <button class="btn btn-ghost btn-sm" type="button" data-acao="abrir-nova-avaliacao">+ Registrar peso</button>
         </div>
         <div id="avaliacao-progresso"></div>
@@ -103,7 +103,7 @@
     <div class="modal">
       <div class="modal-cabecalho">
         <h3>Editar aluno</h3>
-        <button class="btn btn-ghost btn-icon" data-acao="fechar-modal-aluno">✕</button>
+        <button class="btn btn-ghost btn-icon" data-acao="fechar-modal-aluno"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-3px;flex-shrink:0;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
       <form id="form-editar-aluno">
         <div class="form-group">
@@ -123,7 +123,7 @@
           <input class="input" id="editar-aluno-cpf" name="cpf" placeholder="000.000.000-00" />
           <div id="editar-aluno-cpf-bloco-fixo" hidden style="display:flex;gap:var(--espaco-2);align-items:center;">
             <p class="input" id="editar-aluno-cpf-fixo" style="flex:1;background:var(--cor-superficie);color:var(--cor-texto-muted);margin:0;"></p>
-            <button type="button" class="btn btn-ghost btn-sm" data-acao="desbloquear-cpf-aluno">✏️ Corrigir</button>
+            <button type="button" class="btn btn-ghost btn-sm" data-acao="desbloquear-cpf-aluno"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-3px;flex-shrink:0;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg> Corrigir</button>
           </div>
         </div>
         <div class="form-row">
@@ -153,7 +153,7 @@
     <div class="modal" style="max-width:400px;">
       <div class="modal-cabecalho">
         <h3>Registrar peso</h3>
-        <button class="btn btn-ghost btn-icon" data-acao="fechar-modal-avaliacao">✕</button>
+        <button class="btn btn-ghost btn-icon" data-acao="fechar-modal-avaliacao"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-3px;flex-shrink:0;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
       <form id="form-nova-avaliacao">
         <div class="form-group">
@@ -180,7 +180,7 @@
     <div class="modal">
       <div class="modal-cabecalho">
         <h3 id="editar-item-titulo">Editar</h3>
-        <button class="btn btn-ghost btn-icon" data-acao="fechar-modal-item">✕</button>
+        <button class="btn btn-ghost btn-icon" data-acao="fechar-modal-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-3px;flex-shrink:0;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
       <form id="form-editar-item">
         <div id="editar-item-campos"></div>
@@ -196,7 +196,7 @@
     <div class="modal" style="max-width:560px;">
       <div class="modal-cabecalho">
         <h3 id="montar-treino-titulo">Montar treino</h3>
-        <button class="btn btn-ghost btn-icon" data-acao="fechar-modal-montar">✕</button>
+        <button class="btn btn-ghost btn-icon" data-acao="fechar-modal-montar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-3px;flex-shrink:0;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
 
       <div class="passos-indicador" id="passos-indicador">

@@ -5,6 +5,7 @@
 import { api, limparToken } from "./api.js";
 import { $, escaparHtml, mensagemDeErro, mostrarToast, abrirModal, fecharModal } from "./utils.js";
 import { confirmarAcao } from "./confirmar.js";
+import { icone } from "./icones.js";
 
 let personalAtual = null;
 
@@ -33,7 +34,7 @@ function garantirModais() {
     <div class="modal">
       <div class="modal-cabecalho">
         <h3>Editar meus dados</h3>
-        <button class="btn btn-ghost btn-icon" data-acao="fechar-editar-conta">✕</button>
+        <button class="btn btn-ghost btn-icon" data-acao="fechar-editar-conta">${icone("fechar", 16)}</button>
       </div>
       <form id="form-editar-conta">
         <div class="form-group">
@@ -49,7 +50,7 @@ function garantirModais() {
           <input class="input" id="editar-conta-cpf" name="cpf" placeholder="000.000.000-00" />
           <div id="editar-conta-cpf-bloco-fixo" hidden style="display:flex;gap:var(--espaco-2);align-items:center;">
             <p class="input" id="editar-conta-cpf-fixo" style="flex:1;background:var(--cor-superficie);color:var(--cor-texto-muted);margin:0;"></p>
-            <button type="button" class="btn btn-ghost btn-sm" data-acao="desbloquear-cpf-conta">✏️ Corrigir</button>
+            <button type="button" class="btn btn-ghost btn-sm" data-acao="desbloquear-cpf-conta">${icone("editar", 14)} Corrigir</button>
           </div>
         </div>
         <div class="form-row">
@@ -79,7 +80,7 @@ function garantirModais() {
     <div class="modal">
       <div class="modal-cabecalho">
         <h3>Alterar senha</h3>
-        <button class="btn btn-ghost btn-icon" data-acao="fechar-trocar-senha">✕</button>
+        <button class="btn btn-ghost btn-icon" data-acao="fechar-trocar-senha">${icone("fechar", 16)}</button>
       </div>
       <form id="form-trocar-senha">
         <div class="form-group">
@@ -198,11 +199,11 @@ export function montarMenuConta(personal) {
       <span class="conta-menu-seta">▾</span>
     </button>
     <div class="conta-menu-dropdown" id="conta-menu-dropdown" hidden>
-      <button type="button" data-acao="abrir-editar-conta">✏️ Editar meus dados</button>
-      <button type="button" data-acao="abrir-trocar-senha">🔒 Alterar senha</button>
-      <a href="assinatura.html">💳 Assinatura</a>
+      <button type="button" data-acao="abrir-editar-conta">${icone("editar", 16)} Editar meus dados</button>
+      <button type="button" data-acao="abrir-trocar-senha">${icone("cadeado", 16)} Alterar senha</button>
+      <a href="assinatura.html">${icone("cartao", 16)} Assinatura</a>
       <hr />
-      <button type="button" data-acao="sair-menu-conta">🚪 Sair</button>
+      <button type="button" data-acao="sair-menu-conta">${icone("sair", 16)} Sair</button>
     </div>
   `;
   rodape.insertBefore(contaMenu, rodape.firstChild);

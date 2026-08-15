@@ -14,6 +14,7 @@ import {
 } from "./utils.js";
 import { listaCompletaExercicios, CATEGORIAS_TREINO, obterCategoria } from "./catalogo-exercicios.js";
 import { confirmarAcao } from "./confirmar.js";
+import { icone } from "./icones.js";
 
 protegerPagina();
 
@@ -95,6 +96,8 @@ const DIAS_SEMANA = [
 ];
 
 const ROTULO_DIA = Object.fromEntries(DIAS_SEMANA.map((d) => [d.chave, d.rotulo]));
+const ICONE_HALTERES = icone("halteres", 16);
+const ICONE_LIXEIRA = icone("lixeira", 16);
 
 function linhaSerie(serie) {
   return `
@@ -160,9 +163,9 @@ function linhaDiaSemana(dia, treinoDoDia) {
       <div class="dia-acoes">
         ${
           temTreino
-            ? `<button class="btn btn-ghost btn-sm" data-acao="montar-treino" data-dia="${dia.chave}" type="button" title="Refazer este dia com o montador">🏋️ Refazer</button>
-               <button class="btn btn-ghost btn-sm" data-acao="excluir-dia" data-dia="${dia.chave}" data-id="${treinoDoDia.id}" type="button" title="Remover treino deste dia">🗑️</button>`
-            : `<button class="btn btn-primary btn-sm" data-acao="montar-treino" data-dia="${dia.chave}" type="button">🏋️ Montar treino</button>`
+            ? `<button class="btn btn-ghost btn-sm" data-acao="montar-treino" data-dia="${dia.chave}" type="button" title="Refazer este dia com o montador">${ICONE_HALTERES} Refazer</button>
+               <button class="btn btn-ghost btn-sm" data-acao="excluir-dia" data-dia="${dia.chave}" data-id="${treinoDoDia.id}" type="button" title="Remover treino deste dia">${ICONE_LIXEIRA}</button>`
+            : `<button class="btn btn-primary btn-sm" data-acao="montar-treino" data-dia="${dia.chave}" type="button">${ICONE_HALTERES} Montar treino</button>`
         }
       </div>
     </div>
@@ -359,7 +362,7 @@ function renderizarAvaliacaoProgresso() {
   }
 
   const diferenca = Math.round(Math.abs(progresso.atual - progresso.meta) * 10) / 10;
-  const faltaTexto = diferenca === 0 ? "Meta alcançada! 🎉" : `Faltam ${diferenca}kg para a meta de ${progresso.meta}kg.`;
+  const faltaTexto = diferenca === 0 ? "Meta alcançada!" : `Faltam ${diferenca}kg para a meta de ${progresso.meta}kg.`;
 
   avaliacaoProgressoEl.innerHTML = `
     <p><strong>${progresso.atual}kg</strong> atualmente <span class="hint-text">(começou com ${progresso.inicial}kg)</span></p>
@@ -382,7 +385,7 @@ function renderizarAvaliacaoHistorico() {
             (a) => `
               <div class="series-linha" data-avaliacao-id="${a.id}">
                 <span>${formatarData(a.data)} — <strong>${a.peso_kg}kg</strong>${a.observacoes ? " · " + escaparHtml(a.observacoes) : ""}</span>
-                <button class="btn btn-ghost btn-sm" data-acao="excluir-avaliacao" data-id="${a.id}" type="button">🗑️</button>
+                <button class="btn btn-ghost btn-sm" data-acao="excluir-avaliacao" data-id="${a.id}" type="button">${ICONE_LIXEIRA}</button>
               </div>
             `
           )
@@ -592,7 +595,7 @@ function renderizarGradeCategorias() {
   gradeCategoriasEl.innerHTML = CATEGORIAS_TREINO.map(
     (cat) => `
       <button class="categoria-chip ${categoriasSelecionadas.includes(cat.chave) ? "selecionada" : ""}" type="button" data-categoria="${cat.chave}">
-        <span class="emoji">${cat.emoji}</span>
+        <span class="emoji">${icone(cat.icone, 22)}</span>
         <span>${cat.rotulo}</span>
       </button>
     `

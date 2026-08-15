@@ -6,6 +6,7 @@ import { $, $all, escaparHtml, mensagemDeErro, mostrarToast } from "./utils.js";
 import "./tema.js"; // liga o botão de alternar tema (data-acao="alternar-tema") desta página
 import { aplicarTemaPersonalizado } from "./tema-personalizado.js";
 import { observarRevelacoes } from "./revelar-ao-rolar.js";
+import { icone } from "./icones.js";
 
 const ROTULO_DIA = {
   segunda: "Segunda",
@@ -153,7 +154,7 @@ function blocoExercicio(exercicio) {
   return `
     <div class="bloco-exercicio" data-exercicio-id="${exercicio.id}">
       <div class="bloco-exercicio-titulo">
-        <span>${exercicio.concluido_hoje ? "✅" : "🏋️"}</span>
+        <span class="${exercicio.concluido_hoje ? "icone-concluido" : ""}">${exercicio.concluido_hoje ? icone("check", 18) : icone("halteres", 18)}</span>
         <strong>${escaparHtml(exercicio.nome)}</strong>
       </div>
       ${exercicio.observacoes ? `<p class="bloco-exercicio-obs">${escaparHtml(exercicio.observacoes)}</p>` : ""}
@@ -212,15 +213,15 @@ els.execucaoExercicios?.addEventListener("click", async (evento) => {
     const jaMostrandoFaixa = !els.execucaoFaixaConcluido.hidden;
     els.execucaoFaixaConcluido.hidden = !resultado.treino_concluido_hoje;
     if (resultado.treino_concluido_hoje && !jaMostrandoFaixa) {
-      mostrarToast("Treino concluído! Parabéns 🎉", "sucesso");
+      mostrarToast("Treino concluído! Parabéns.", "sucesso");
     }
 
-    // Recalcula se o exercício desta série ficou 100% concluído (para o ícone ✅).
+    // Recalcula se o exercício desta série ficou 100% concluído (para o ícone de check).
     const detalheAtualizado = await api.detalheTreinoAluno(token, treinoId, data);
     const exercicioAtual = detalheAtualizado.exercicios.find((ex) => ex.series.some((s) => s.id === serieId));
     if (exercicioAtual) {
       const blocoEl = els.execucaoExercicios.querySelector(`[data-exercicio-id="${exercicioAtual.id}"] .bloco-exercicio-titulo span`);
-      if (blocoEl) blocoEl.textContent = exercicioAtual.concluido_hoje ? "✅" : "🏋️";
+      if (blocoEl) blocoEl.innerHTML = exercicioAtual.concluido_hoje ? icone("check", 18) : icone("halteres", 18);
     }
   } catch (erro) {
     mostrarToast(mensagemDeErro(erro), "erro");

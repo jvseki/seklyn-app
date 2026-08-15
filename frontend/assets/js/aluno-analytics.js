@@ -4,6 +4,7 @@
 import { api } from "./api.js";
 import { protegerPagina } from "./auth.js";
 import { $, escaparHtml, mensagemDeErro, mostrarToast } from "./utils.js";
+import { icone } from "./icones.js";
 
 protegerPagina();
 
@@ -33,7 +34,7 @@ function renderizarGrafico(pontos) {
       ${pontos
         .map(
           (p) => `
-            <div class="grafico-barra-coluna" title="${formatarDataCompleta(p.data)} — ${p.percentual}%${p.suspeito ? " ⚠️ marcações muito próximas" : ""}">
+            <div class="grafico-barra-coluna" title="${formatarDataCompleta(p.data)}, ${p.percentual}%${p.suspeito ? " - marcações muito próximas" : ""}">
               <div class="grafico-barra ${p.suspeito ? "suspeito" : ""}" style="height:${Math.max(p.percentual, 2)}%;"></div>
             </div>
           `
@@ -84,13 +85,13 @@ function renderizarExecucoes(execucoes) {
         <div class="execucao-dia-bloco ${suspeito ? "suspeito" : ""}">
           <p class="execucao-dia-titulo">
             ${formatarDataCompleta(data)}
-            ${suspeito ? '<span class="badge badge-aviso">⚠️ marcações muito próximas</span>' : ""}
+            ${suspeito ? `<span class="badge badge-aviso">${icone("aviso", 14)} marcações muito próximas</span>` : ""}
           </p>
           <div class="execucao-dia-itens">
             ${grupos
               .map(
                 (g) =>
-                  `<span class="execucao-item">${escaparHtml(g.hora)} — ${g.quantidade > 1 ? `${g.quantidade}x ` : ""}${escaparHtml(g.exercicio_nome)} <span class="hint-text">(${escaparHtml(g.treino_nome)})</span></span>`
+                  `<span class="execucao-item">${escaparHtml(g.hora)} · ${g.quantidade > 1 ? `${g.quantidade}x ` : ""}${escaparHtml(g.exercicio_nome)} <span class="hint-text">(${escaparHtml(g.treino_nome)})</span></span>`
               )
               .join("")}
           </div>

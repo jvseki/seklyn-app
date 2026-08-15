@@ -75,7 +75,7 @@ export async function copiarParaAreaDeTransferencia(texto, botaoOrigem = null) {
     mostrarToast("Link copiado!", "sucesso");
     if (botaoOrigem) {
       const conteudoOriginal = botaoOrigem.textContent;
-      botaoOrigem.textContent = "✅ Copiado!";
+      botaoOrigem.textContent = "Copiado!";
       setTimeout(() => {
         botaoOrigem.textContent = conteudoOriginal;
       }, 1600);

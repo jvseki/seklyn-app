@@ -14,6 +14,7 @@ import {
 } from "./utils.js";
 import { confirmarAcao } from "./confirmar.js";
 import { observarRevelacoes } from "./revelar-ao-rolar.js";
+import { icone } from "./icones.js";
 
 protegerPagina();
 
@@ -51,7 +52,7 @@ function cardAluno(aluno) {
       </div>
       <div class="aluno-card-acoes">
         <button class="btn btn-secondary btn-sm" data-acao="copiar" data-link="${escaparHtml(aluno.link_acesso)}">Copiar link</button>
-        ${whatsapp ? `<a class="btn btn-secondary btn-sm" href="${whatsapp}" target="_blank" rel="noopener noreferrer">💬 WhatsApp</a>` : ""}
+        ${whatsapp ? `<a class="btn btn-secondary btn-sm" href="${whatsapp}" target="_blank" rel="noopener noreferrer">${icone("whatsapp", 15)} WhatsApp</a>` : ""}
         <button class="btn btn-ghost btn-sm" data-acao="regenerar" data-id="${aluno.id}">Novo link</button>
         <button class="btn btn-danger btn-sm" data-acao="excluir" data-id="${aluno.id}">Excluir</button>
       </div>
