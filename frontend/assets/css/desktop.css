@@ -58,6 +58,10 @@
   font-size: 0.92rem;
 }
 
+.sidebar-link-icone {
+  flex-shrink: 0;
+}
+
 .sidebar-link:hover {
   background: var(--cor-fundo-alt);
   color: var(--cor-texto);

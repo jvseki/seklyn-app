@@ -5,6 +5,7 @@ import { api } from "./api.js";
 import { $, $all, escaparHtml, mensagemDeErro, mostrarToast } from "./utils.js";
 import "./tema.js"; // liga o botão de alternar tema (data-acao="alternar-tema") desta página
 import { aplicarTemaPersonalizado } from "./tema-personalizado.js";
+import { observarRevelacoes } from "./revelar-ao-rolar.js";
 
 const ROTULO_DIA = {
   segunda: "Segunda",
@@ -88,12 +89,12 @@ function cardDia(dia) {
 
   if (!dia.treino_id) {
     return `
-      <div class="treino-resumo-card treino-resumo-card-descanso" style="border:1.5px solid var(--cor-borda);">
+      <div class="treino-resumo-card treino-resumo-card-descanso reveal" style="border:1.5px solid var(--cor-borda);">
         <div class="treino-resumo-topo">
           <h3>${rotulo} <span class="hint-text" style="font-weight:400;">· ${dataCurta}</span></h3>
           ${badgeHoje}
         </div>
-        <p class="hint-text">Dia de descanso 😌</p>
+        <p class="hint-text">Dia de descanso</p>
       </div>
     `;
   }
@@ -105,7 +106,7 @@ function cardDia(dia) {
       : "";
 
   return `
-    <button class="treino-resumo-card" data-treino-id="${dia.treino_id}" data-data="${dia.data}" style="text-align:left;width:100%;border:1.5px solid var(--cor-borda);cursor:pointer;">
+    <button class="treino-resumo-card reveal" data-treino-id="${dia.treino_id}" data-data="${dia.data}" style="text-align:left;width:100%;border:1.5px solid var(--cor-borda);cursor:pointer;">
       <div class="treino-resumo-topo">
         <h3>${escaparHtml(dia.treino_nome)}</h3>
         ${badgeHoje}${rotuloBadge}
@@ -124,6 +125,7 @@ function cardDia(dia) {
 
 function renderizarSemana(semana) {
   els.listaTreinos.innerHTML = semana.map(cardDia).join("");
+  observarRevelacoes(els.listaTreinos);
 }
 
 els.listaTreinos?.addEventListener("click", (evento) => {

@@ -13,6 +13,7 @@ import {
   linkWhatsApp,
 } from "./utils.js";
 import { confirmarAcao } from "./confirmar.js";
+import { observarRevelacoes } from "./revelar-ao-rolar.js";
 
 protegerPagina();
 
@@ -37,7 +38,7 @@ function iniciais(nome) {
 function cardAluno(aluno) {
   const whatsapp = linkWhatsApp(aluno.telefone);
   return `
-    <div class="card card-hover aluno-card" data-id="${aluno.id}">
+    <div class="card card-hover aluno-card reveal" data-id="${aluno.id}">
       <a href="aluno-detalhe.html?id=${aluno.id}" class="aluno-card-topo" style="text-decoration:none;color:inherit;">
         <div class="avatar">${escaparHtml(iniciais(aluno.nome))}</div>
         <div>
@@ -75,6 +76,7 @@ function renderizarAlunos(alunos) {
   }
   estadoVazioEl.hidden = true;
   listaEl.innerHTML = alunos.map(cardAluno).join("");
+  observarRevelacoes(listaEl);
 }
 
 async function carregarAlunos() {

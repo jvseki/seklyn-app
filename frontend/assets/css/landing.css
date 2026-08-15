@@ -91,10 +91,6 @@
   color: #f8fafc;
 }
 
-:root[data-theme="escuro"] .hero-fundo .hero p {
-  color: #cbd5e1;
-}
-
 :root[data-theme="escuro"] .hero-fundo .landing-nav .btn-ghost {
   color: #e2e8f0;
 }
@@ -140,10 +136,21 @@
 
 .hero p {
   font-size: 1.1rem;
+  font-weight: 500;
   color: var(--cor-texto-muted);
   max-width: 620px;
   margin-inline: auto;
   margin-bottom: var(--espaco-6);
+}
+
+/* Por cima do vídeo o cinza padrão "some" — mais escuro/pesado no tema
+   claro, mais claro no tema escuro (ambos já com peso 500 acima). */
+.hero-fundo .hero p {
+  color: #3f3358;
+}
+
+:root[data-theme="escuro"] .hero-fundo .hero p {
+  color: #cbd5e1;
 }
 
 .hero-acoes {
