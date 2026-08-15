@@ -12,6 +12,7 @@ from datetime import date, timedelta
 
 from sqlalchemy.orm import Session
 
+from app.core.tempo import hoje as hoje_brasil
 from app.models.aluno import Aluno
 from app.models.execucao import Execucao
 from app.models.serie import Serie
@@ -20,6 +21,20 @@ from app.schemas.analytics import AderenciaOut, ExercicioPuladoOut
 from app.schemas.exercicio import ExercicioComProgressoOut
 from app.schemas.serie import SerieComExecucaoOut
 from app.schemas.treino import TreinoDetalheOut, TreinoResumoOut
+
+
+DIAS_SEMANA_CHAVES = ["segunda", "terca", "quarta", "quinta", "sexta", "sabado", "domingo"]
+
+
+def datas_semana_atual(hoje: date | None = None) -> list[date]:
+    """
+    As 7 datas (segunda a domingo) da semana que contém `hoje`. É essa janela
+    que o aluno vê e pode marcar — dá pra adiantar ou repor um dia esquecido,
+    mas só dentro da semana atual; na semana seguinte a janela já é outra.
+    """
+    hoje = hoje or hoje_brasil()
+    segunda = hoje - timedelta(days=hoje.weekday())  # weekday(): segunda=0 ... domingo=6
+    return [segunda + timedelta(days=i) for i in range(7)]
 
 
 def _series_concluidas_ids(db: Session, serie_ids: list[int], dia: date) -> set[int]:
@@ -39,7 +54,7 @@ def _series_concluidas_ids(db: Session, serie_ids: list[int], dia: date) -> set[
 
 def montar_treino_resumo(db: Session, treino: Treino, dia: date | None = None) -> TreinoResumoOut:
     """Card resumido (para a lista de treinos do aluno)."""
-    dia = dia or date.today()
+    dia = dia or hoje_brasil()
     serie_ids = [s.id for ex in treino.exercicios for s in ex.series]
     concluidas_ids = _series_concluidas_ids(db, serie_ids, dia)
     total = len(serie_ids)
@@ -60,7 +75,7 @@ def montar_treino_resumo(db: Session, treino: Treino, dia: date | None = None) -
 
 def montar_treino_detalhe(db: Session, treino: Treino, dia: date | None = None) -> TreinoDetalheOut:
     """Detalhe completo do treino, com cada exercício/série marcados com o status do dia."""
-    dia = dia or date.today()
+    dia = dia or hoje_brasil()
     serie_ids = [s.id for ex in treino.exercicios for s in ex.series]
     concluidas_ids = _series_concluidas_ids(db, serie_ids, dia)
 
@@ -109,7 +124,7 @@ def alternar_execucao_serie(db: Session, serie: Serie, aluno_id: int, dia: date 
     se ainda não existir, remove se já existir. Retorna o novo estado
     (True = passou a estar concluída).
     """
-    dia = dia or date.today()
+    dia = dia or hoje_brasil()
     execucao = (
         db.query(Execucao)
         .filter(Execucao.serie_id == serie.id, Execucao.data_execucao == dia)
@@ -132,7 +147,7 @@ def calcular_aderencia(db: Session, aluno: Aluno, periodo_dias: int = 30) -> Ade
     uma série, identifica quais exercícios costumam ficar incompletos
     ("pulados").
     """
-    hoje = date.today()
+    hoje = hoje_brasil()
     inicio = hoje - timedelta(days=periodo_dias - 1)
 
     execucoes = (

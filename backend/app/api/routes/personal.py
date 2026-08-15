@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.security import gerar_hash_token
+from app.core.tempo import hoje as hoje_brasil
 from app.deps import (
     exigir_assinatura_ativa,
     get_current_personal,
@@ -418,7 +419,7 @@ def criar_avaliacao(
     aluno = obter_aluno_do_personal(aluno_id, personal, db)
     avaliacao = AvaliacaoFisica(
         aluno_id=aluno.id,
-        data=dados.data or date.today(),
+        data=dados.data or hoje_brasil(),
         peso_kg=dados.peso_kg,
         observacoes=dados.observacoes,
     )

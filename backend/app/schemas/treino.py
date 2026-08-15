@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -81,3 +81,17 @@ class TreinoDetalheOut(BaseModel):
     exercicios: list[ExercicioComProgressoOut] = []
     progresso_percentual: float
     concluido_hoje: bool
+
+
+class DiaSemanaAlunoOut(BaseModel):
+    """Um dos 7 dias da semana atual do aluno, com data real e status daquele dia."""
+
+    data: date
+    dia_semana: str
+    hoje: bool
+    treino_id: int | None = None
+    treino_nome: str | None = None
+    total_series: int = 0
+    series_concluidas: int = 0
+    progresso_percentual: float = 0.0
+    concluido: bool = False

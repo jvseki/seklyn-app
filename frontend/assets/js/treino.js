@@ -16,6 +16,12 @@ const ROTULO_DIA = {
   domingo: "Domingo",
 };
 
+/** "2026-08-11" → "11/08" */
+function formatarDataCurta(isoData) {
+  const [, mes, dia] = isoData.split("-");
+  return `${dia}/${mes}`;
+}
+
 const parametros = new URLSearchParams(window.location.search);
 const token = parametros.get("t");
 
@@ -34,6 +40,7 @@ const els = {
   tabDicas: $("#tab-dicas"),
   botaoVoltar: $("#botao-voltar-execucao"),
   execucaoTitulo: $("#execucao-titulo"),
+  execucaoSubtitulo: $("#execucao-subtitulo"),
   execucaoProgressoBarra: $("#execucao-progresso-barra"),
   execucaoProgressoTexto: $("#execucao-progresso-texto"),
   execucaoFaixaConcluido: $("#execucao-faixa-concluido"),
@@ -62,50 +69,67 @@ function mostrarSecao(nome) {
 
 els.tabTreinos?.addEventListener("click", () => mostrarSecao("lista"));
 els.tabDicas?.addEventListener("click", () => mostrarSecao("dicas"));
-els.botaoVoltar?.addEventListener("click", () => mostrarSecao("lista"));
+els.botaoVoltar?.addEventListener("click", async () => {
+  mostrarSecao("lista");
+  // Reflete na semana o que foi marcado/desmarcado na execução.
+  try {
+    painelCache = await api.painelAluno(token);
+    renderizarSemana(painelCache.semana);
+  } catch {
+    // silencioso — a lista antiga continua visível
+  }
+});
 
-// --- Tela: lista de treinos ---
-function cardTreino(treino) {
-  const rotuloBadge = treino.concluido_hoje
-    ? `<span class="badge badge-sucesso">Concluído hoje</span>`
-    : treino.series_concluidas_hoje > 0
+// --- Tela: semana atual (7 dias com data real, dia por dia) ---
+function cardDia(dia) {
+  const rotulo = ROTULO_DIA[dia.dia_semana] || dia.dia_semana;
+  const dataCurta = formatarDataCurta(dia.data);
+  const badgeHoje = dia.hoje ? `<span class="badge badge-primaria">Hoje</span>` : "";
+
+  if (!dia.treino_id) {
+    return `
+      <div class="treino-resumo-card treino-resumo-card-descanso" style="border:1.5px solid var(--cor-borda);">
+        <div class="treino-resumo-topo">
+          <h3>${rotulo} <span class="hint-text" style="font-weight:400;">· ${dataCurta}</span></h3>
+          ${badgeHoje}
+        </div>
+        <p class="hint-text">Dia de descanso 😌</p>
+      </div>
+    `;
+  }
+
+  const rotuloBadge = dia.concluido
+    ? `<span class="badge badge-sucesso">Concluído</span>`
+    : dia.series_concluidas > 0
       ? `<span class="badge badge-neutro">Em andamento</span>`
       : "";
-  const rotuloDia = treino.dia_semana ? `<p class="hint-text" style="margin-top:-8px;margin-bottom:8px;">${ROTULO_DIA[treino.dia_semana] || treino.dia_semana}</p>` : "";
+
   return `
-    <button class="treino-resumo-card" data-treino-id="${treino.id}" style="text-align:left;width:100%;border:1.5px solid var(--cor-borda);cursor:pointer;">
+    <button class="treino-resumo-card" data-treino-id="${dia.treino_id}" data-data="${dia.data}" style="text-align:left;width:100%;border:1.5px solid var(--cor-borda);cursor:pointer;">
       <div class="treino-resumo-topo">
-        <h3>${escaparHtml(treino.nome)}</h3>
-        ${rotuloBadge}
+        <h3>${escaparHtml(dia.treino_nome)}</h3>
+        ${badgeHoje}${rotuloBadge}
       </div>
-      ${rotuloDia}
+      <p class="hint-text" style="margin-top:-8px;margin-bottom:8px;">${rotulo} · ${dataCurta}</p>
       <div class="progresso">
-        <div class="progresso-preenchimento ${treino.concluido_hoje ? "completo" : ""}" style="width:${treino.progresso_percentual}%;"></div>
+        <div class="progresso-preenchimento ${dia.concluido ? "completo" : ""}" style="width:${dia.progresso_percentual}%;"></div>
       </div>
       <div class="treino-resumo-rodape">
-        <span>${treino.series_concluidas_hoje} de ${treino.total_series} séries hoje</span>
-        <span>${treino.progresso_percentual}%</span>
+        <span>${dia.series_concluidas} de ${dia.total_series} séries</span>
+        <span>${dia.progresso_percentual}%</span>
       </div>
     </button>
   `;
 }
 
-function renderizarListaTreinos(treinos) {
-  if (treinos.length === 0) {
-    els.listaTreinos.innerHTML = `
-      <div class="estado-vazio">
-        <div class="icone">🗓️</div>
-        <p>Seu Personal ainda não cadastrou nenhum treino para você.</p>
-      </div>`;
-    return;
-  }
-  els.listaTreinos.innerHTML = treinos.map(cardTreino).join("");
+function renderizarSemana(semana) {
+  els.listaTreinos.innerHTML = semana.map(cardDia).join("");
 }
 
 els.listaTreinos?.addEventListener("click", (evento) => {
   const botao = evento.target.closest("[data-treino-id]");
   if (!botao) return;
-  abrirExecucaoTreino(Number(botao.dataset.treinoId));
+  abrirExecucaoTreino(Number(botao.dataset.treinoId), botao.dataset.data);
 });
 
 // --- Tela: execução do treino (checklist) ---
@@ -139,20 +163,26 @@ function blocoExercicio(exercicio) {
 function atualizarCabecalhoProgresso(detalhe) {
   els.execucaoProgressoBarra.style.width = `${detalhe.progresso_percentual}%`;
   els.execucaoProgressoBarra.classList.toggle("completo", detalhe.concluido_hoje);
-  els.execucaoProgressoTexto.textContent = `${detalhe.progresso_percentual}% concluído hoje`;
+  els.execucaoProgressoTexto.textContent = `${detalhe.progresso_percentual}% concluído`;
   els.execucaoFaixaConcluido.hidden = !detalhe.concluido_hoje;
 }
 
-async function abrirExecucaoTreino(treinoId) {
+async function abrirExecucaoTreino(treinoId, data) {
   mostrarSecao("execucao");
   els.execucaoTitulo.textContent = "Carregando...";
+  if (els.execucaoSubtitulo) els.execucaoSubtitulo.textContent = "";
   els.execucaoExercicios.innerHTML = "";
   try {
-    const detalhe = await api.detalheTreinoAluno(token, treinoId);
+    const detalhe = await api.detalheTreinoAluno(token, treinoId, data);
     els.execucaoTitulo.textContent = detalhe.nome;
+    if (els.execucaoSubtitulo) {
+      const rotulo = ROTULO_DIA[detalhe.dia_semana] || detalhe.dia_semana || "";
+      els.execucaoSubtitulo.textContent = data ? `${rotulo} · ${formatarDataCurta(data)}` : rotulo;
+    }
     els.execucaoExercicios.innerHTML = detalhe.exercicios.map(blocoExercicio).join("");
     atualizarCabecalhoProgresso(detalhe);
     els.execucaoExercicios.dataset.treinoId = treinoId;
+    els.execucaoExercicios.dataset.data = data || "";
   } catch (erro) {
     mostrarToast(mensagemDeErro(erro), "erro");
     mostrarSecao("lista");
@@ -166,13 +196,16 @@ els.execucaoExercicios?.addEventListener("click", async (evento) => {
   const item = botao.closest(".checklist-item");
   botao.disabled = true;
 
+  const treinoId = Number(els.execucaoExercicios.dataset.treinoId);
+  const data = els.execucaoExercicios.dataset.data || undefined;
+
   try {
-    const resultado = await api.executarSerie(token, serieId);
+    const resultado = await api.executarSerie(token, serieId, data);
     item.classList.toggle("concluida", resultado.concluida_hoje);
 
     els.execucaoProgressoBarra.style.width = `${resultado.treino_progresso_percentual}%`;
     els.execucaoProgressoBarra.classList.toggle("completo", resultado.treino_concluido_hoje);
-    els.execucaoProgressoTexto.textContent = `${resultado.treino_progresso_percentual}% concluído hoje`;
+    els.execucaoProgressoTexto.textContent = `${resultado.treino_progresso_percentual}% concluído`;
 
     const jaMostrandoFaixa = !els.execucaoFaixaConcluido.hidden;
     els.execucaoFaixaConcluido.hidden = !resultado.treino_concluido_hoje;
@@ -181,8 +214,7 @@ els.execucaoExercicios?.addEventListener("click", async (evento) => {
     }
 
     // Recalcula se o exercício desta série ficou 100% concluído (para o ícone ✅).
-    const treinoId = Number(els.execucaoExercicios.dataset.treinoId);
-    const detalheAtualizado = await api.detalheTreinoAluno(token, treinoId);
+    const detalheAtualizado = await api.detalheTreinoAluno(token, treinoId, data);
     const exercicioAtual = detalheAtualizado.exercicios.find((ex) => ex.series.some((s) => s.id === serieId));
     if (exercicioAtual) {
       const blocoEl = els.execucaoExercicios.querySelector(`[data-exercicio-id="${exercicioAtual.id}"] .bloco-exercicio-titulo span`);
@@ -237,7 +269,7 @@ async function iniciar() {
     els.saudacaoNome.textContent = `Olá, ${painelCache.aluno.nome.split(" ")[0]}!`;
     els.saudacaoPersonal.textContent = `Treinos por ${painelCache.aluno.personal_nome}`;
     aplicarTemaPersonalizado(painelCache.aluno.personal_tema);
-    renderizarListaTreinos(painelCache.treinos);
+    renderizarSemana(painelCache.semana);
 
     els.carregando.hidden = true;
     els.app.hidden = false;

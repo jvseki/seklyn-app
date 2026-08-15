@@ -118,7 +118,12 @@ export const api = {
 
   // --- Área pública do Aluno (via hash_token, sem login) ---
   painelAluno: (token) => apiFetch(`/aluno/${token}`),
-  detalheTreinoAluno: (token, treinoId) => apiFetch(`/aluno/${token}/treinos/${treinoId}`),
-  executarSerie: (token, serieId) => apiFetch(`/aluno/${token}/series/${serieId}/executar`, { method: "POST" }),
+  detalheTreinoAluno: (token, treinoId, data) =>
+    apiFetch(`/aluno/${token}/treinos/${treinoId}${data ? `?data=${data}` : ""}`),
+  executarSerie: (token, serieId, data) =>
+    apiFetch(`/aluno/${token}/series/${serieId}/executar`, {
+      method: "POST",
+      body: JSON.stringify({ data: data || null }),
+    }),
   recomendacoesAluno: (token) => apiFetch(`/aluno/${token}/recomendacoes`),
 };

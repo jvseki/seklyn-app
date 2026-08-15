@@ -3,7 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel, EmailStr, Field
 
 from app.schemas.common import OrmModel
-from app.schemas.treino import TreinoResumoOut
+from app.schemas.treino import DiaSemanaAlunoOut
 
 
 class AlunoCriar(BaseModel):
@@ -45,7 +45,7 @@ class AlunoPublicoOut(BaseModel):
 
 
 class AlunoPainelOut(BaseModel):
-    """Painel inicial do aluno: dados básicos + lista de treinos com progresso do dia."""
+    """Painel inicial do aluno: dados básicos + os 7 dias da semana atual, com data real."""
 
     aluno: AlunoPublicoOut
-    treinos: list[TreinoResumoOut] = []
+    semana: list[DiaSemanaAlunoOut] = []

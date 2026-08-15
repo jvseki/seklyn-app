@@ -327,6 +327,11 @@
   color: var(--cor-aviso);
 }
 
+.badge-primaria {
+  background: var(--cor-primaria);
+  color: var(--cor-primaria-contraste);
+}
+
 /* Barra de progresso */
 .progresso {
   width: 100%;

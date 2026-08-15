@@ -12,6 +12,12 @@ class ExecucaoCriar(BaseModel):
     carga_realizada: str | None = None
 
 
+class ExecutarSerieIn(BaseModel):
+    """Corpo opcional do toggle de execução: em qual dia da semana atual marcar."""
+
+    data: date | None = None  # se omitido, usa hoje
+
+
 class ExecucaoOut(OrmModel):
     id: int
     serie_id: int
