@@ -89,6 +89,13 @@
   --cor-texto-muted: #94a3b8; /* slate-400 */
   --cor-texto-contraste: #0f172a;
 
+  /* As "claras" (fundo pastel dos badges/alertas de sucesso/aviso/perigo) ficavam
+     claras mesmo no escuro — texto claro em cima de fundo pastel = ilegível.
+     Aqui viram tons escuros da mesma cor, do jeito que --cor-primaria-clara já faz. */
+  --cor-sucesso-clara: #14291c;
+  --cor-perigo-clara: #3a1414;
+  --cor-aviso-clara: #3a2a0a;
+
   --sombra-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --sombra-md: 0 4px 16px rgba(0, 0, 0, 0.35);
   --sombra-lg: 0 12px 32px rgba(0, 0, 0, 0.45);
