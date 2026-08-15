@@ -1,12 +1,14 @@
 // Seklyn — sistema genérico de "revelar ao rolar": qualquer elemento com a
-// classe .reveal ganha um fade+slide suave assim que entra na tela. Usa
+// classe .reveal ganha um fade+slide suave assim que entra na tela — e volta
+// a esconder se sair de novo (rolando pra cima), pra sempre ter aquele efeito
+// de "aparecendo" tanto descendo quanto subindo a página. Usa
 // IntersectionObserver (nativo, leve, sem libs) — funciona igual em
 // desktop/mobile e em qualquer página que importar este módulo.
 //
 // Cartões dentro do mesmo container ganham atraso escalonado automático
 // (efeito cascata), calculado pela ordem em que aparecem no DOM.
 
-const SELETOR = ".reveal:not(.revelado)";
+const SELETOR = ".reveal";
 const ATRASO_ENTRE_ITENS_MS = 70;
 const ATRASO_MAXIMO_MS = 420;
 
@@ -21,9 +23,7 @@ function garantirObservador() {
   observador = new IntersectionObserver(
     (entradas) => {
       entradas.forEach((entrada) => {
-        if (!entrada.isIntersecting) return;
-        entrada.target.classList.add("revelado");
-        observador.unobserve(entrada.target);
+        entrada.target.classList.toggle("revelado", entrada.isIntersecting);
       });
     },
     { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
