@@ -47,6 +47,20 @@ function renderizarGrafico(pontos) {
   `;
 }
 
+/** Junta em uma linha só as séries seguidas do mesmo exercício/horário (ex: 3 séries de Prancha às 22:49 viram "3x Prancha"). */
+function agruparExecucoesRepetidas(itens) {
+  const grupos = [];
+  for (const item of itens) {
+    const ultimo = grupos[grupos.length - 1];
+    if (ultimo && ultimo.hora === item.hora && ultimo.exercicio_nome === item.exercicio_nome && ultimo.treino_nome === item.treino_nome) {
+      ultimo.quantidade += 1;
+    } else {
+      grupos.push({ ...item, quantidade: 1 });
+    }
+  }
+  return grupos;
+}
+
 function renderizarExecucoes(execucoes) {
   const container = $("#lista-execucoes-recentes");
   if (execucoes.length === 0) {
@@ -65,6 +79,7 @@ function renderizarExecucoes(execucoes) {
     .map(([data, itens]) => {
       const horarios = itens.map((i) => i.hora).sort();
       const suspeito = itens.length >= 3 && horariosMuitoProximos(horarios);
+      const grupos = agruparExecucoesRepetidas(itens);
       return `
         <div class="execucao-dia-bloco ${suspeito ? "suspeito" : ""}">
           <p class="execucao-dia-titulo">
@@ -72,9 +87,10 @@ function renderizarExecucoes(execucoes) {
             ${suspeito ? '<span class="badge badge-aviso">⚠️ marcações muito próximas</span>' : ""}
           </p>
           <div class="execucao-dia-itens">
-            ${itens
+            ${grupos
               .map(
-                (i) => `<span class="execucao-item">${escaparHtml(i.hora)} — ${escaparHtml(i.exercicio_nome)} <span class="hint-text">(${escaparHtml(i.treino_nome)})</span></span>`
+                (g) =>
+                  `<span class="execucao-item">${escaparHtml(g.hora)} — ${g.quantidade > 1 ? `${g.quantidade}x ` : ""}${escaparHtml(g.exercicio_nome)} <span class="hint-text">(${escaparHtml(g.treino_nome)})</span></span>`
               )
               .join("")}
           </div>
