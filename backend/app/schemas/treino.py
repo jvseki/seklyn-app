@@ -23,8 +23,10 @@ class TreinoAtualizar(BaseModel):
 
 
 class SerieRapidaIn(BaseModel):
-    repeticoes_alvo: str = Field(min_length=1, max_length=30)
-    carga_alvo: str | None = Field(default=None, max_length=30)
+    # Mesmo limite de SerieCriar — dá espaço pra notas de técnica avançada
+    # tipo "Cluster set 4x 2+2+2+2+2" (30 chars estourava fácil).
+    repeticoes_alvo: str = Field(min_length=1, max_length=60)
+    carga_alvo: str | None = Field(default=None, max_length=60)
     intervalo_descanso: str | None = Field(default=None, max_length=20)
 
 

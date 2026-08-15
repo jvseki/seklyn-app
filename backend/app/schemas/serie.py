@@ -5,15 +5,17 @@ from app.schemas.common import OrmModel
 
 class SerieCriar(BaseModel):
     ordem: int = 0
-    repeticoes_alvo: str = Field(min_length=1, max_length=30)
-    carga_alvo: str | None = Field(default=None, max_length=30)
+    # 60 chars dá espaço pra notas de técnica avançada tipo "Cluster set 4x
+    # 2+2+2+2+2" ou "Drop-set: 12 + falha + 8 + falha" (30 era curto demais).
+    repeticoes_alvo: str = Field(min_length=1, max_length=60)
+    carga_alvo: str | None = Field(default=None, max_length=60)
     intervalo_descanso: str | None = Field(default=None, max_length=20)
 
 
 class SerieAtualizar(BaseModel):
     ordem: int | None = None
-    repeticoes_alvo: str | None = Field(default=None, min_length=1, max_length=30)
-    carga_alvo: str | None = Field(default=None, max_length=30)
+    repeticoes_alvo: str | None = Field(default=None, min_length=1, max_length=60)
+    carga_alvo: str | None = Field(default=None, max_length=60)
     intervalo_descanso: str | None = Field(default=None, max_length=20)
 
 

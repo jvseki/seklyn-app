@@ -48,7 +48,7 @@ async function apiFetch(caminho, opcoes = {}) {
     if (resposta.status === 401) limparToken();
     const detalhe = corpo?.detail;
     const mensagem = Array.isArray(detalhe)
-      ? detalhe.map((d) => d.msg).join(", ")
+      ? [...new Set(detalhe.map((d) => d.msg))].join(", ") // dedupe: mesmo erro em várias séries não vira parede de texto repetida
       : detalhe || "Ocorreu um erro. Tente novamente.";
     const erro = new Error(mensagem);
     erro.status = resposta.status;

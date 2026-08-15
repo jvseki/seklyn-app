@@ -114,9 +114,9 @@ function blocoExercicio(exercicio) {
       </div>
       ${series}
       <form class="form-row" data-acao="form-nova-serie" data-exercicio-id="${exercicio.id}" style="padding-left:var(--espaco-6);margin-top:var(--espaco-2);">
-        <div class="form-group" style="flex:1;"><input class="input" name="repeticoes_alvo" placeholder="Repetições (ex: 10-12)" required /></div>
-        <div class="form-group" style="flex:1;"><input class="input" name="carga_alvo" placeholder="Carga (opcional)" /></div>
-        <div class="form-group" style="flex:1;"><input class="input" name="intervalo_descanso" placeholder="Descanso (ex: 60s)" /></div>
+        <div class="form-group" style="flex:1;"><input class="input" name="repeticoes_alvo" placeholder="Repetições (ex: 10-12)" maxlength="60" required /></div>
+        <div class="form-group" style="flex:1;"><input class="input" name="carga_alvo" placeholder="Carga (opcional)" maxlength="60" /></div>
+        <div class="form-group" style="flex:1;"><input class="input" name="intervalo_descanso" placeholder="Descanso (ex: 60s)" maxlength="20" /></div>
         <div class="form-group" style="flex:0;"><button class="btn btn-secondary btn-sm" type="submit">+ Série</button></div>
       </form>
     </div>
@@ -232,16 +232,16 @@ const CAMPOS_POR_TIPO = {
       <div class="form-row">
         <div class="form-group">
           <label class="label" for="editar-item-repeticoes">Repetições</label>
-          <input class="input" id="editar-item-repeticoes" name="repeticoes_alvo" value="${escaparHtml(item.repeticoes_alvo)}" required />
+          <input class="input" id="editar-item-repeticoes" name="repeticoes_alvo" maxlength="60" value="${escaparHtml(item.repeticoes_alvo)}" required />
         </div>
         <div class="form-group">
           <label class="label" for="editar-item-carga">Carga (opcional)</label>
-          <input class="input" id="editar-item-carga" name="carga_alvo" value="${escaparHtml(item.carga_alvo || "")}" />
+          <input class="input" id="editar-item-carga" name="carga_alvo" maxlength="60" value="${escaparHtml(item.carga_alvo || "")}" />
         </div>
       </div>
       <div class="form-group">
         <label class="label" for="editar-item-intervalo">Descanso (opcional)</label>
-        <input class="input" id="editar-item-intervalo" name="intervalo_descanso" placeholder="ex: 60s" value="${escaparHtml(item.intervalo_descanso || "")}" />
+        <input class="input" id="editar-item-intervalo" name="intervalo_descanso" maxlength="20" placeholder="ex: 60s" value="${escaparHtml(item.intervalo_descanso || "")}" />
       </div>
     `,
     montarPayload: (form) => ({
@@ -688,7 +688,7 @@ function renderizarPassoConfig() {
             <div class="form-group">
               <span class="label">Tempo</span>
               <div class="grade-chips" data-chips="tempo" data-grupo-config="${chave}"></div>
-              <input class="input" data-campo="tempo-personalizado" data-grupo-config="${chave}" placeholder="Ex: 25 min" hidden style="margin-top:var(--espaco-2);" />
+              <input class="input" data-campo="tempo-personalizado" data-grupo-config="${chave}" placeholder="Ex: 25 min" maxlength="60" hidden style="margin-top:var(--espaco-2);" />
             </div>
           </div>
         `;
@@ -704,16 +704,16 @@ function renderizarPassoConfig() {
           <div class="form-group">
             <span class="label">Repetições por série</span>
             <div class="grade-chips" data-chips="repeticoes" data-grupo-config="${chave}"></div>
-            <input class="input" data-campo="repeticoes-personalizado" data-grupo-config="${chave}" placeholder="Ex: 10-12" hidden style="margin-top:var(--espaco-2);" />
+            <input class="input" data-campo="repeticoes-personalizado" data-grupo-config="${chave}" placeholder="Ex: 10-12" maxlength="60" hidden style="margin-top:var(--espaco-2);" />
           </div>
           <div class="form-group">
             <span class="label">Descanso entre séries</span>
             <div class="grade-chips" data-chips="descanso" data-grupo-config="${chave}"></div>
-            <input class="input" data-campo="descanso-personalizado" data-grupo-config="${chave}" placeholder="Ex: 60s" hidden style="margin-top:var(--espaco-2);" />
+            <input class="input" data-campo="descanso-personalizado" data-grupo-config="${chave}" placeholder="Ex: 60s" maxlength="20" hidden style="margin-top:var(--espaco-2);" />
           </div>
           <div class="form-group">
             <label class="label">Carga (opcional)</label>
-            <input class="input" data-campo="carga" data-grupo-config="${chave}" placeholder="Deixe em branco se variar por aluno" />
+            <input class="input" data-campo="carga" data-grupo-config="${chave}" placeholder="Deixe em branco se variar por aluno" maxlength="60" />
           </div>
         </div>
       `;
