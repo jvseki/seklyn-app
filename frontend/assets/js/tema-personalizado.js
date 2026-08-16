@@ -2,17 +2,22 @@
 // tanto no painel dele quanto na área dos alunos (via personal_tema vindo
 // da API), mantendo a identidade visual consistente ponta a ponta.
 export function aplicarTemaPersonalizado(temaPersonalizado) {
-  if (!temaPersonalizado) {
+  if (temaPersonalizado) {
+    document.documentElement.dataset.temaPersonalizado = temaPersonalizado;
+  } else {
     delete document.documentElement.dataset.temaPersonalizado;
-    return;
   }
-
-  document.documentElement.dataset.temaPersonalizado = temaPersonalizado;
-  adicionarBlobsDecorativos();
+  // Roda sempre, tenha tema customizado ou não — sem conta customizada usa
+  // o roxo padrão da marca (já definido em :root), então a sidebar nunca
+  // fica sem esse toque de vida.
+  adicionarBlobsEm(".sidebar, .app-aluno");
 }
 
-function adicionarBlobsDecorativos() {
-  const alvo = document.querySelector(".sidebar") || document.querySelector(".app-aluno");
+/** Adiciona os blobs decorativos animados dentro de um elemento (precisa
+ * ter position:relative e algo de altura). Reaproveitável em qualquer
+ * container — ex: o banner do topo do dashboard. */
+export function adicionarBlobsEm(seletor) {
+  const alvo = document.querySelector(seletor);
   if (!alvo || alvo.querySelector(".blobs-fundo")) return;
 
   const container = document.createElement("div");

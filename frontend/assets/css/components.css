@@ -156,21 +156,32 @@
   padding: 12px 20px;
   font-weight: 600;
   font-size: 0.95rem;
-  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.2s ease;
   white-space: nowrap;
   overflow: hidden;
+  /* Toda inclinação/elevação/aperto do botão passa por essas 4 variáveis,
+     combinadas numa transform só — evita hover/active/JS brigando entre
+     si pra decidir quem "ganha" o transform (só um valor pode vencer). */
+  --tilt-x: 0deg;
+  --tilt-y: 0deg;
+  --btn-y: 0px;
+  --btn-escala: 1;
+  transform: perspective(400px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y)) translateY(var(--btn-y)) scale(var(--btn-escala));
+  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.2s ease;
 }
 
 /* Toque físico de verdade — "afunda" no clique/toque, "mola" de volta ao
    soltar. Funciona igual em mouse e touch (:active dispara nos dois). */
 .btn:active:not(:disabled) {
-  transform: scale(0.96);
+  --btn-escala: 0.96;
 }
 
 .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-  transform: none;
+  --tilt-x: 0deg;
+  --tilt-y: 0deg;
+  --btn-y: 0px;
+  --btn-escala: 1;
   box-shadow: none;
 }
 
@@ -210,11 +221,12 @@
 
 .btn-primary:hover:not(:disabled) {
   box-shadow: var(--sombra-botao-hover);
-  transform: translateY(-2px);
+  --btn-y: -2px;
 }
 
 .btn-primary:active:not(:disabled) {
-  transform: scale(0.96) translateY(1px);
+  --btn-escala: 0.96;
+  --btn-y: 1px;
   box-shadow: var(--sombra-sm);
 }
 
@@ -226,7 +238,7 @@
 
 .btn-secondary:hover:not(:disabled) {
   background: var(--cor-primaria-clara);
-  transform: translateY(-1px);
+  --btn-y: -1px;
   box-shadow: var(--sombra-sm);
 }
 
@@ -248,7 +260,7 @@
 .btn-danger:hover:not(:disabled) {
   background: var(--cor-perigo);
   color: #fff;
-  transform: translateY(-1px);
+  --btn-y: -1px;
   box-shadow: var(--sombra-sm);
 }
 
@@ -919,6 +931,23 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Banner de boas-vindas no topo do painel (dashboard) — mesma linguagem
+   visual do fundo com blobs das telas de auth, só que mais contido. */
+.painel-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--raio-lg);
+  padding: var(--espaco-6) var(--espaco-5);
+  margin-bottom: var(--espaco-5);
+  background: linear-gradient(135deg, var(--cor-primaria-suave), var(--cor-fundo-alt));
+  border: 1px solid var(--cor-borda);
+}
+
+.painel-hero > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* Spotlight — brilho que segue o cursor/toque + leve elevação de

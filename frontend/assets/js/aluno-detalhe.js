@@ -363,12 +363,15 @@ function renderizarAvaliacaoProgresso() {
   }
 
   const diferenca = Math.round(Math.abs(progresso.atual - progresso.meta) * 10) / 10;
-  const faltaTexto = diferenca === 0 ? "Meta alcançada!" : `Faltam ${diferenca}kg para a meta de ${progresso.meta}kg.`;
+  const metaAlcancada = diferenca === 0;
+  const faltaTexto = metaAlcancada
+    ? `${icone("troféu", 15)} Meta alcançada!`
+    : `Faltam ${diferenca}kg para a meta de ${progresso.meta}kg.`;
 
   avaliacaoProgressoEl.innerHTML = `
     <p><strong>${progresso.atual}kg</strong> atualmente <span class="hint-text">(começou com ${progresso.inicial}kg)</span></p>
-    <div class="barra-progresso"><div class="barra-progresso-preenchida" style="width:${progresso.percentual}%;"></div></div>
-    <p class="hint-text" style="margin-top:var(--espaco-2);">${faltaTexto}</p>
+    <div class="barra-progresso"><div class="barra-progresso-preenchida${metaAlcancada ? " meta-alcancada" : ""}" style="width:${progresso.percentual}%;"></div></div>
+    <p class="${metaAlcancada ? "" : "hint-text"}" style="margin-top:var(--espaco-2);${metaAlcancada ? "color:var(--cor-sucesso);font-weight:700;" : ""}">${faltaTexto}</p>
   `;
 }
 

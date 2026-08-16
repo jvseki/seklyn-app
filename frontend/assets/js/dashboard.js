@@ -15,8 +15,10 @@ import {
 import { confirmarAcao } from "./confirmar.js";
 import { observarRevelacoes } from "./revelar-ao-rolar.js";
 import { icone } from "./icones.js";
+import { adicionarBlobsEm } from "./tema-personalizado.js";
 
 protegerPagina();
+adicionarBlobsEm("#painel-hero-dashboard");
 
 const listaEl = $("#lista-alunos");
 const estadoVazioEl = $("#estado-vazio-alunos");

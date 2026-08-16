@@ -40,4 +40,31 @@ export function ativarSpotlight(seletor = ".spotlight-card", raiz = document) {
   });
 }
 
+/** Inclinação 3D real (perspective + rotateX/rotateY) que segue o mouse —
+ * só no mouse mesmo, o toque já tem o "afundar" físico do :active
+ * (inclinar junto com o dedo em cima do botão ficaria estranho). */
+export function ativarTiltBotoes(seletor = ".btn-primary", raiz = document) {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  raiz.querySelectorAll(seletor).forEach((el) => {
+    if (el.dataset.tiltLigado) return;
+    el.dataset.tiltLigado = "1";
+
+    el.addEventListener("pointermove", (evento) => {
+      if (evento.pointerType !== "mouse") return;
+      const rect = el.getBoundingClientRect();
+      const px = (evento.clientX - rect.left) / rect.width - 0.5;
+      const py = (evento.clientY - rect.top) / rect.height - 0.5;
+      el.style.setProperty("--tilt-x", `${(-py * 10).toFixed(2)}deg`);
+      el.style.setProperty("--tilt-y", `${(px * 10).toFixed(2)}deg`);
+    });
+    el.addEventListener("pointerleave", (evento) => {
+      if (evento.pointerType !== "mouse") return;
+      el.style.setProperty("--tilt-x", "0deg");
+      el.style.setProperty("--tilt-y", "0deg");
+    });
+  });
+}
+
 ativarSpotlight();
+ativarTiltBotoes();

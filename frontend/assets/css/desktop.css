@@ -348,18 +348,31 @@
 /* Barra de progresso do peso até a meta cadastrada do aluno */
 .barra-progresso {
   width: 100%;
-  height: 10px;
+  height: 12px;
   border-radius: var(--raio-total);
   background: var(--cor-borda);
   overflow: hidden;
   margin-top: var(--espaco-2);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .barra-progresso-preenchida {
   height: 100%;
-  background: var(--cor-primaria);
+  background: linear-gradient(90deg, var(--cor-primaria-forte) 0%, var(--cor-primaria) 100%);
   border-radius: var(--raio-total);
-  transition: width 0.3s ease;
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Meta batida — a barra vira verde e brilha em vez de só parar de preencher */
+.barra-progresso-preenchida.meta-alcancada {
+  background: linear-gradient(90deg, var(--cor-sucesso), #22c55e);
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.55);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .barra-progresso-preenchida {
+    transition: none;
+  }
 }
 
 .exercicio-sugerido {
