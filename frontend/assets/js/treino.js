@@ -7,6 +7,7 @@ import "./tema.js"; // liga o botão de alternar tema (data-acao="alternar-tema"
 import { aplicarTemaPersonalizado } from "./tema-personalizado.js";
 import { observarRevelacoes } from "./revelar-ao-rolar.js";
 import { icone } from "./icones.js";
+import { iconeHalter } from "./icones-treino.js";
 
 const ROTULO_DIA = {
   segunda: "Segunda",
@@ -154,7 +155,7 @@ function blocoExercicio(exercicio) {
   return `
     <div class="bloco-exercicio" data-exercicio-id="${exercicio.id}">
       <div class="bloco-exercicio-titulo">
-        <span class="${exercicio.concluido_hoje ? "icone-concluido" : ""}">${exercicio.concluido_hoje ? icone("check", 18) : icone("halteres", 18)}</span>
+        <span class="${exercicio.concluido_hoje ? "icone-concluido" : ""}">${exercicio.concluido_hoje ? icone("check", 18) : iconeHalter(18)}</span>
         <strong>${escaparHtml(exercicio.nome)}</strong>
       </div>
       ${exercicio.observacoes ? `<p class="bloco-exercicio-obs">${escaparHtml(exercicio.observacoes)}</p>` : ""}
@@ -221,7 +222,7 @@ els.execucaoExercicios?.addEventListener("click", async (evento) => {
     const exercicioAtual = detalheAtualizado.exercicios.find((ex) => ex.series.some((s) => s.id === serieId));
     if (exercicioAtual) {
       const blocoEl = els.execucaoExercicios.querySelector(`[data-exercicio-id="${exercicioAtual.id}"] .bloco-exercicio-titulo span`);
-      if (blocoEl) blocoEl.innerHTML = exercicioAtual.concluido_hoje ? icone("check", 18) : icone("halteres", 18);
+      if (blocoEl) blocoEl.innerHTML = exercicioAtual.concluido_hoje ? icone("check", 18) : iconeHalter(18);
     }
   } catch (erro) {
     mostrarToast(mensagemDeErro(erro), "erro");

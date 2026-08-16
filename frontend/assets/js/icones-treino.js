@@ -15,3 +15,10 @@ export function iconeCategoriaTreino(chave) {
   if (!CATEGORIAS_VALIDAS.includes(chave)) return "";
   return `<img src="../assets/img/treino/${chave}.png" alt="" style="height:60px;width:60px;object-fit:contain;display:block;margin:0 auto;" />`;
 }
+
+/** Devolve a <img> do halter (frontend/assets/img/halter.png, fundo
+ * transparente), inline com texto — usado nos botões "Montar treino" /
+ * "Refazer" e no toggle de série pendente. `altura` em px (padrão 18). */
+export function iconeHalter(altura = 18) {
+  return `<img src="../assets/img/halter.png" alt="" style="height:${altura}px;width:auto;object-fit:contain;vertical-align:-4px;" />`;
+}

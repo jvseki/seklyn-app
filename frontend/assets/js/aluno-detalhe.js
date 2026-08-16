@@ -15,7 +15,7 @@ import {
 import { listaCompletaExercicios, CATEGORIAS_TREINO, obterCategoria } from "./catalogo-exercicios.js";
 import { confirmarAcao } from "./confirmar.js";
 import { icone } from "./icones.js";
-import { iconeCategoriaTreino } from "./icones-treino.js";
+import { iconeCategoriaTreino, iconeHalter } from "./icones-treino.js";
 
 protegerPagina();
 
@@ -97,7 +97,7 @@ const DIAS_SEMANA = [
 ];
 
 const ROTULO_DIA = Object.fromEntries(DIAS_SEMANA.map((d) => [d.chave, d.rotulo]));
-const ICONE_HALTERES = icone("halteres", 16);
+const ICONE_HALTERES = iconeHalter(16);
 const ICONE_LIXEIRA = icone("lixeira", 16);
 
 function linhaSerie(serie) {
