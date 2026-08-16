@@ -156,13 +156,15 @@
   padding: 12px 20px;
   font-weight: 600;
   font-size: 0.95rem;
-  transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.2s ease;
+  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.2s ease;
   white-space: nowrap;
   overflow: hidden;
 }
 
-.btn:active {
-  transform: translateY(0);
+/* Toque físico de verdade — "afunda" no clique/toque, "mola" de volta ao
+   soltar. Funciona igual em mouse e touch (:active dispara nos dois). */
+.btn:active:not(:disabled) {
+  transform: scale(0.96);
 }
 
 .btn:disabled {
@@ -187,13 +189,32 @@
   pointer-events: none;
 }
 
+/* Brilho que "varre" o botão no hover — só dispara com mouse (:hover não
+   existe em touch), o toque já ganha o feedback físico do :active. */
+.btn-primary::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transform: skewX(-20deg);
+  pointer-events: none;
+  transition: left 0.6s ease;
+}
+
+.btn-primary:hover:not(:disabled)::after {
+  left: 120%;
+}
+
 .btn-primary:hover:not(:disabled) {
   box-shadow: var(--sombra-botao-hover);
   transform: translateY(-2px);
 }
 
 .btn-primary:active:not(:disabled) {
-  transform: translateY(0);
+  transform: scale(0.96) translateY(1px);
   box-shadow: var(--sombra-sm);
 }
 
@@ -205,6 +226,8 @@
 
 .btn-secondary:hover:not(:disabled) {
   background: var(--cor-primaria-clara);
+  transform: translateY(-1px);
+  box-shadow: var(--sombra-sm);
 }
 
 .btn-ghost {
@@ -225,6 +248,8 @@
 .btn-danger:hover:not(:disabled) {
   background: var(--cor-perigo);
   color: #fff;
+  transform: translateY(-1px);
+  box-shadow: var(--sombra-sm);
 }
 
 .btn-block {
@@ -239,6 +264,22 @@
 .btn-icon {
   padding: 10px;
   border-radius: var(--raio-total);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn {
+    transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.2s ease;
+  }
+  .btn:active:not(:disabled),
+  .btn-primary:hover:not(:disabled),
+  .btn-primary:active:not(:disabled),
+  .btn-secondary:hover:not(:disabled),
+  .btn-danger:hover:not(:disabled) {
+    transform: none;
+  }
+  .btn-primary::after {
+    display: none;
+  }
 }
 
 /* Cartões */
