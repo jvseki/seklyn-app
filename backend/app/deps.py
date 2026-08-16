@@ -43,6 +43,13 @@ def get_current_personal(
     return personal
 
 
+def exigir_admin(personal: Personal = Depends(get_current_personal)) -> Personal:
+    """Bloqueia as rotas do painel de administração pra quem não é super admin."""
+    if not personal.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso restrito ao administrador.")
+    return personal
+
+
 def exigir_assinatura_ativa(
     personal: Personal = Depends(get_current_personal),
     db: Session = Depends(get_db),

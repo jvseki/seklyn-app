@@ -19,6 +19,9 @@ export function protegerPagina() {
     .then((personal) => {
       aplicarTemaPersonalizado(personal.tema_personalizado);
       montarMenuConta(personal);
+      if (personal.is_admin) {
+        document.querySelectorAll("[data-admin-only]").forEach((el) => (el.hidden = false));
+      }
     })
     .catch(() => {});
 }

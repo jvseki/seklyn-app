@@ -9,7 +9,7 @@
   </script>
   <script src="../assets/js/config.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Recomendações — Seklyn</title>
+  <title>Administração — Seklyn</title>
   <link rel="icon" type="image/png" href="../assets/img/logo-s.png" />
   <link rel="stylesheet" href="../assets/css/variables.css" />
   <link rel="stylesheet" href="../assets/css/base.css" />
@@ -32,9 +32,9 @@
       </a>
       <nav class="sidebar-nav">
         <a href="dashboard.html" class="sidebar-link"><svg class="sidebar-link-icone" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Alunos</span></a>
-        <a href="recomendacoes.html" class="sidebar-link ativo"><svg class="sidebar-link-icone" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg><span>Recomendações</span></a>
+        <a href="recomendacoes.html" class="sidebar-link"><svg class="sidebar-link-icone" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg><span>Recomendações</span></a>
         <a href="assinatura.html" class="sidebar-link"><svg class="sidebar-link-icone" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg><span>Assinatura</span></a>
-        <a href="admin.html" class="sidebar-link" data-admin-only hidden><svg class="sidebar-link-icone" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg><span>Admin</span></a>
+        <a href="admin.html" class="sidebar-link ativo" data-admin-only hidden><svg class="sidebar-link-icone" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg><span>Admin</span></a>
       </nav>
       <div class="sidebar-rodape">
         <button class="botao-tema" type="button" data-acao="alternar-tema" aria-label="Alternar tema">🌙</button>
@@ -46,48 +46,52 @@
     <main class="conteudo-personal">
       <div class="cabecalho-pagina">
         <div>
-          <h1>Recomendações</h1>
-          <p>Cadastre qualquer link útil pro aluno: produto, cupom, ou um vídeo seu do YouTube explicando um exercício. Aparece pra ele como "Dicas do seu Personal", sem interromper o treino.</p>
+          <h1>Administração</h1>
+          <p>Todas as contas de Personal cadastradas no Seklyn — ative, desative e ajuste o limite de alunos.</p>
         </div>
       </div>
 
-      <div class="card" style="margin-bottom:var(--espaco-6);max-width:640px;">
-        <h3 style="margin-bottom:var(--espaco-4);">Nova recomendação</h3>
-        <form id="form-recomendacao">
-          <div class="form-group">
-            <label class="label" for="rec-titulo">Título</label>
-            <input class="input" id="rec-titulo" name="titulo" placeholder="Ex: Whey Protein Growth, ou Vídeo - Como agachar certo" required />
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="label" for="rec-url">Link</label>
-              <input class="input" id="rec-url" name="url_afiliado" type="url" placeholder="Link de afiliado, cupom ou vídeo do YouTube" required />
-            </div>
-            <div class="form-group">
-              <label class="label" for="rec-categoria">Categoria (opcional)</label>
-              <input class="input" id="rec-categoria" name="categoria" placeholder="Suplemento, equipamento, vídeo..." />
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="label" for="rec-descricao">Descrição curta (opcional)</label>
-            <input class="input" id="rec-descricao" name="descricao" placeholder="Por que você recomenda" />
-          </div>
-          <button type="submit" class="btn btn-primary">Cadastrar recomendação</button>
-        </form>
+      <div class="grid-stats">
+        <div class="stat-tile">
+          <div class="valor" id="stat-total">–</div>
+          <div class="rotulo">Contas cadastradas</div>
+        </div>
+        <div class="stat-tile">
+          <div class="valor" id="stat-ativas">–</div>
+          <div class="rotulo">Assinaturas ativas</div>
+        </div>
+        <div class="stat-tile">
+          <div class="valor" id="stat-inativas">–</div>
+          <div class="rotulo">Assinaturas inativas</div>
+        </div>
       </div>
 
-      <h3 style="margin-bottom:var(--espaco-4);">Suas recomendações</h3>
-      <div style="display:flex;flex-direction:column;gap:var(--espaco-3);max-width:720px;" id="lista-recomendacoes"></div>
+      <div class="tabela-scroll" style="margin-top:var(--espaco-5);">
+        <table class="tabela-admin">
+          <thead>
+            <tr>
+              <th>Personal</th>
+              <th>E-mail</th>
+              <th>Tema</th>
+              <th>Alunos</th>
+              <th>Assinatura</th>
+              <th>Limite</th>
+              <th>Criado em</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tabela-corpo"></tbody>
+        </table>
+      </div>
 
-      <div class="estado-vazio" id="estado-vazio-recomendacoes" hidden>
-        <div class="icone"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></div>
-        <p>Nenhuma recomendação cadastrada ainda.</p>
+      <div class="estado-vazio" id="estado-vazio-admin" hidden>
+        <p>Nenhum Personal cadastrado ainda.</p>
       </div>
     </main>
   </div>
 
   <script type="module" src="../assets/js/tema.js"></script>
   <script type="module" src="../assets/js/menu.js"></script>
-  <script type="module" src="../assets/js/recomendacoes.js"></script>
+  <script type="module" src="../assets/js/admin.js"></script>
 </body>
 </html>

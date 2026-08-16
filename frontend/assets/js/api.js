@@ -120,6 +120,13 @@ export const api = {
   statusAssinatura: () => apiFetch("/personal/assinatura"),
   criarCheckoutSession: () => apiFetch("/stripe/criar-checkout-session", { method: "POST" }),
 
+  // --- Painel de administração (só pra conta super admin) ---
+  listarPersonaisAdmin: () => apiFetch("/admin/personais"),
+  ativarPersonalAdmin: (id) => apiFetch(`/admin/personais/${id}/ativar`, { method: "POST" }),
+  desativarPersonalAdmin: (id) => apiFetch(`/admin/personais/${id}/desativar`, { method: "POST" }),
+  definirLimitePersonalAdmin: (id, limite_alunos) =>
+    apiFetch(`/admin/personais/${id}/limite`, { method: "PUT", body: JSON.stringify({ limite_alunos }) }),
+
   // --- Área pública do Aluno (via hash_token, sem login) ---
   painelAluno: (token) => apiFetch(`/aluno/${token}`),
   detalheTreinoAluno: (token, treinoId, data) =>

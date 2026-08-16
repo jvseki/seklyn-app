@@ -31,6 +31,11 @@ class Personal(Base):
     # Também é refletido na área do aluno, pra manter a identidade visual consistente.
     tema_personalizado: Mapped[str | None] = mapped_column(String(30), nullable=True)
 
+    # Super admin do painel: enxerga e ativa/desativa a assinatura de qualquer
+    # Personal cadastrado (tela /personal/admin.html). Definido manualmente no
+    # banco, não tem cadastro por fora — é só pra dona conta do produto.
+    is_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
     alunos: Mapped[list["Aluno"]] = relationship(back_populates="personal", cascade="all, delete-orphan")
     assinatura: Mapped["Assinatura | None"] = relationship(
         back_populates="personal", uselist=False, cascade="all, delete-orphan"
