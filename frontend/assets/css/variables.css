@@ -192,6 +192,35 @@
   --cor-primaria-contraste: #0c1a2e;
 }
 
+/* Tema personalizado "celeste" — azul claro, mais leve que o "azul"
+   (blue-600) de outra conta, pra ficar visualmente distinto dele. */
+:root[data-tema-personalizado="celeste"] {
+  --cor-primaria: #0ea5e9; /* sky-500 */
+  --cor-primaria-hover: #0284c7; /* sky-600 */
+  --cor-primaria-ativa: #0369a1; /* sky-700 */
+  --cor-primaria-forte: #075985; /* sky-800 */
+  --cor-primaria-clara: #e0f2fe; /* sky-100 */
+  --cor-primaria-suave: #f0f9ff; /* sky-50 */
+  --cor-primaria-contraste: #ffffff;
+
+  --cor-blob-1: #7dd3fc; /* sky-300 */
+  --cor-blob-2: #0ea5e9; /* sky-500 */
+  --cor-blob-3: #38bdf8; /* sky-400 */
+
+  --sombra-botao: 0 2px 4px rgba(14, 165, 233, 0.3), 0 10px 20px rgba(7, 89, 133, 0.25);
+  --sombra-botao-hover: 0 4px 8px rgba(14, 165, 233, 0.35), 0 14px 28px rgba(7, 89, 133, 0.3);
+}
+
+:root[data-tema-personalizado="celeste"][data-theme="escuro"] {
+  --cor-primaria: #7dd3fc; /* sky-300 */
+  --cor-primaria-hover: #bae6fd; /* sky-200 */
+  --cor-primaria-ativa: #e0f2fe; /* sky-100 */
+  --cor-primaria-forte: #e0f2fe;
+  --cor-primaria-clara: #123549;
+  --cor-primaria-suave: #0d2736;
+  --cor-primaria-contraste: #081a25;
+}
+
 /* Tema personalizado "choque" — roxo vibrante/magenta, propositalmente
    diferente do roxo padrão do site (violet-600) pra ficar bem distinto. */
 :root[data-tema-personalizado="choque"] {
