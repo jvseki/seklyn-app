@@ -16,8 +16,10 @@ import { listaCompletaExercicios, CATEGORIAS_TREINO, obterCategoria } from "./ca
 import { confirmarAcao } from "./confirmar.js";
 import { icone } from "./icones.js";
 import { iconeCategoriaTreino, iconeHalter } from "./icones-treino.js";
+import { adicionarBlobsEm } from "./tema-personalizado.js";
 
 protegerPagina();
+adicionarBlobsEm("#painel-hero-aluno");
 
 // <datalist> com sugestões de exercícios comuns de academia — o Personal
 // continua podendo digitar qualquer nome que não esteja na lista.

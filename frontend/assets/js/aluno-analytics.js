@@ -33,9 +33,9 @@ function renderizarGrafico(pontos) {
     <div class="grafico-barras">
       ${pontos
         .map(
-          (p) => `
+          (p, indice) => `
             <div class="grafico-barra-coluna" title="${formatarDataCompleta(p.data)}, ${p.percentual}%${p.suspeito ? " - marcações muito próximas" : ""}">
-              <div class="grafico-barra ${p.suspeito ? "suspeito" : ""}" style="height:${Math.max(p.percentual, 2)}%;"></div>
+              <div class="grafico-barra ${p.suspeito ? "suspeito" : ""}" style="height:${Math.max(p.percentual, 2)}%;animation-delay:${indice * 15}ms;"></div>
             </div>
           `
         )

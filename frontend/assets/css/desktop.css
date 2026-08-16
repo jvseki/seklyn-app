@@ -415,6 +415,17 @@
   gap: var(--espaco-4);
 }
 
+.exercicio-bloco {
+  border-radius: var(--raio-sm);
+  padding: 0 var(--espaco-3);
+  margin: 0 calc(var(--espaco-3) * -1);
+  transition: background-color 0.15s ease;
+}
+
+.exercicio-bloco:hover {
+  background: var(--cor-fundo-alt);
+}
+
 .treino-editor-card .exercicio-linha {
   display: flex;
   align-items: center;
@@ -425,6 +436,12 @@
 
 .treino-editor-card .exercicio-linha:first-of-type {
   border-top: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .exercicio-bloco {
+    transition: none;
+  }
 }
 
 .exercicio-linha .exercicio-nome {

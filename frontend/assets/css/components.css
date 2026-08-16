@@ -479,8 +479,19 @@
   border-bottom: none;
 }
 
+.tabela-admin tbody tr {
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
 .tabela-admin tbody tr:hover {
   background: var(--cor-fundo-alt);
+  box-shadow: inset 3px 0 0 var(--cor-primaria);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tabela-admin tbody tr {
+    transition: none;
+  }
 }
 
 .tabela-admin .tema-ponto {
@@ -761,13 +772,34 @@
   min-height: 3px;
   background: var(--cor-primaria);
   border-radius: 4px 4px 0 0;
-  transition: height 0.2s ease;
+  transition: height 0.2s ease, filter 0.15s ease;
+  transform-origin: bottom;
+  animation: crescer-barra 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+.grafico-barra:hover {
+  filter: brightness(1.2);
 }
 
 .grafico-barra.suspeito {
   background: var(--cor-aviso);
   outline: 2px solid var(--cor-perigo);
   outline-offset: -2px;
+}
+
+@keyframes crescer-barra {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grafico-barra {
+    animation: none;
+  }
 }
 
 .grafico-legenda {

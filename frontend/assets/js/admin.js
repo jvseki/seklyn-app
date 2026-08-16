@@ -6,8 +6,10 @@ import { api } from "./api.js";
 import { protegerPagina } from "./auth.js";
 import { $, escaparHtml, mensagemDeErro, mostrarToast, formatarDataHora } from "./utils.js";
 import { confirmarAcao } from "./confirmar.js";
+import { adicionarBlobsEm } from "./tema-personalizado.js";
 
 protegerPagina();
+adicionarBlobsEm("#painel-hero-admin");
 
 const corpoTabelaEl = $("#tabela-corpo");
 const estadoVazioEl = $("#estado-vazio-admin");

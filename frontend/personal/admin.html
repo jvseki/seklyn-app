@@ -44,29 +44,31 @@
     </aside>
 
     <main class="conteudo-personal">
-      <div class="cabecalho-pagina">
-        <div>
-          <h1>Administração</h1>
-          <p>Todas as contas de Personal cadastradas no Seklyn — ative, desative e ajuste o limite de alunos.</p>
+      <div class="painel-hero" id="painel-hero-admin">
+        <div class="cabecalho-pagina">
+          <div>
+            <h1>Administração</h1>
+            <p>Todas as contas de Personal cadastradas no Seklyn — ative, desative e ajuste o limite de alunos.</p>
+          </div>
+        </div>
+
+        <div class="grid-stats" style="margin-bottom:0;">
+          <div class="stat-tile spotlight-card">
+            <div class="valor" id="stat-total">–</div>
+            <div class="rotulo">Contas cadastradas</div>
+          </div>
+          <div class="stat-tile spotlight-card">
+            <div class="valor" id="stat-ativas">–</div>
+            <div class="rotulo">Assinaturas ativas</div>
+          </div>
+          <div class="stat-tile spotlight-card">
+            <div class="valor" id="stat-inativas">–</div>
+            <div class="rotulo">Assinaturas inativas</div>
+          </div>
         </div>
       </div>
 
-      <div class="grid-stats">
-        <div class="stat-tile spotlight-card">
-          <div class="valor" id="stat-total">–</div>
-          <div class="rotulo">Contas cadastradas</div>
-        </div>
-        <div class="stat-tile spotlight-card">
-          <div class="valor" id="stat-ativas">–</div>
-          <div class="rotulo">Assinaturas ativas</div>
-        </div>
-        <div class="stat-tile spotlight-card">
-          <div class="valor" id="stat-inativas">–</div>
-          <div class="rotulo">Assinaturas inativas</div>
-        </div>
-      </div>
-
-      <div class="tabela-scroll" style="margin-top:var(--espaco-5);">
+      <div class="tabela-scroll">
         <table class="tabela-admin">
           <thead>
             <tr>
