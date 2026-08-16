@@ -879,3 +879,51 @@
     transform: rotate(360deg);
   }
 }
+
+/* Spotlight — brilho que segue o cursor/toque + leve elevação de
+   profundidade. Ver assets/js/spotlight.js. Funciona igual em mouse e
+   touch (Pointer Events cobre os dois sem código separado). Fica no fim
+   do arquivo de propósito: precisa vir depois de .card/.card-hover/
+   .card-vidro/.stat-tile pra "transition" e "box-shadow" não serem
+   sobrescritos por eles (mesma especificidade, quem vem depois ganha). */
+.spotlight-card {
+  position: relative;
+  overflow: hidden;
+  --spot-x: 50%;
+  --spot-y: 50%;
+  --spot-opacidade: 0;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.spotlight-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(280px circle at var(--spot-x) var(--spot-y), color-mix(in srgb, var(--cor-primaria) 25%, transparent), transparent 70%);
+  opacity: var(--spot-opacidade);
+  transition: opacity 0.3s ease;
+}
+
+.spotlight-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.spotlight-card.spot-ativo {
+  transform: translateY(-4px);
+  box-shadow: var(--sombra-lg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spotlight-card {
+    transition: none;
+  }
+  .spotlight-card.spot-ativo {
+    transform: none;
+  }
+  .spotlight-card::after {
+    transition: none;
+  }
+}
