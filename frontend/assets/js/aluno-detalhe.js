@@ -15,7 +15,7 @@ import {
 import { listaCompletaExercicios, CATEGORIAS_TREINO, obterCategoria } from "./catalogo-exercicios.js";
 import { confirmarAcao } from "./confirmar.js";
 import { icone } from "./icones.js";
-import { iconeTreino } from "./icones-treino.js";
+import { iconeCategoriaTreino } from "./icones-treino.js";
 
 protegerPagina();
 
@@ -596,7 +596,7 @@ function renderizarGradeCategorias() {
   gradeCategoriasEl.innerHTML = CATEGORIAS_TREINO.map(
     (cat) => `
       <button class="categoria-chip ${categoriasSelecionadas.includes(cat.chave) ? "selecionada" : ""}" type="button" data-categoria="${cat.chave}">
-        <span class="emoji">${iconeTreino(cat.chave, 30)}</span>
+        <span class="emoji">${iconeCategoriaTreino(cat.chave)}</span>
         <span>${cat.rotulo}</span>
       </button>
     `
