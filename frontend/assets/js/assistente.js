@@ -15,17 +15,17 @@ function montarWidget() {
   const container = document.createElement("div");
   container.id = "assistente-widget";
   container.innerHTML = `
-    <button class="assistente-botao" type="button" aria-label="Abrir assistente virtual">
+    <button class="assistente-botao" type="button" aria-label="Abrir o Kyn, assistente virtual do Seklyn">
       <img src="${MASCOTE_SRC}" alt="" class="assistente-mascote" />
     </button>
     <div class="assistente-painel" hidden>
       <div class="assistente-cabecalho">
         <img src="${MASCOTE_SRC}" alt="" class="assistente-mascote assistente-mascote-cabecalho" />
-        <strong>Mentor Seklyn</strong>
+        <strong>Kyn — mentor Seklyn</strong>
         <button class="btn btn-ghost btn-icon" type="button" data-acao="fechar-assistente" aria-label="Fechar" style="margin-left:auto;">${icone("fechar", 16)}</button>
       </div>
       <div class="assistente-mensagens" id="assistente-mensagens">
-        <div class="assistente-msg assistente-msg-bot">Oi! Sou o mentor do Seklyn. Posso te ajudar a entender como usar o site — cadastrar aluno, montar treino, ver aderência, assinatura, etc. O que você quer saber?</div>
+        <div class="assistente-msg assistente-msg-bot">Oi! Sou o Kyn, o mentor do Seklyn. Posso te ajudar a entender como usar o site — cadastrar aluno, montar treino, ver aderência, assinatura, etc. O que você quer saber?</div>
       </div>
       <form class="assistente-form" id="assistente-form">
         <input class="input" type="text" placeholder="Digite sua dúvida..." maxlength="500" required />
