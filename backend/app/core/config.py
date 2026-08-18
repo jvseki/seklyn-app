@@ -36,6 +36,11 @@ class Settings(BaseSettings):
     # pagamento é combinado fora do site, sem checkout automático ainda).
     admin_secret_key: str = ""
 
+    # Assistente virtual (mentor de uso do site) via Gemini API. Sem chave
+    # configurada, o assistente fica indisponível (não quebra o resto do site).
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-3.6-flash"
+
 
 @lru_cache
 def get_settings() -> Settings:

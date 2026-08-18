@@ -1029,3 +1029,132 @@
     transition: none;
   }
 }
+
+/* Assistente virtual (mentor de uso) — widget flutuante, só no painel do
+   Personal. Ver assets/js/assistente.js. */
+#assistente-widget {
+  position: fixed;
+  right: var(--espaco-5);
+  bottom: var(--espaco-5);
+  z-index: 50;
+}
+
+.assistente-botao {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(to bottom right, var(--cor-primaria), var(--cor-primaria-forte));
+  color: var(--cor-primaria-contraste);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: var(--sombra-botao);
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+}
+
+.assistente-mascote {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: bottom;
+  padding-top: 6px;
+  pointer-events: none;
+}
+
+.assistente-mascote-cabecalho {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.assistente-botao:hover {
+  transform: scale(1.08);
+  box-shadow: var(--sombra-botao-hover);
+}
+
+.assistente-botao:active {
+  transform: scale(0.94);
+}
+
+.assistente-painel {
+  position: absolute;
+  right: 0;
+  bottom: 64px;
+  width: min(340px, calc(100vw - 40px));
+  height: min(460px, calc(100vh - 140px));
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-lg);
+  box-shadow: var(--sombra-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.assistente-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--espaco-3) var(--espaco-4);
+  border-bottom: 1px solid var(--cor-borda);
+  background: var(--cor-primaria-suave);
+  color: var(--cor-primaria-ativa);
+}
+
+.assistente-mensagens {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--espaco-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+}
+
+.assistente-msg {
+  max-width: 85%;
+  padding: 10px 14px;
+  border-radius: var(--raio-md);
+  font-size: 0.88rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+.assistente-msg-bot {
+  align-self: flex-start;
+  background: var(--cor-fundo-alt);
+  color: var(--cor-texto);
+  border-bottom-left-radius: 4px;
+}
+
+.assistente-msg-user {
+  align-self: flex-end;
+  background: var(--cor-primaria);
+  color: var(--cor-primaria-contraste);
+  border-bottom-right-radius: 4px;
+}
+
+.assistente-form {
+  display: flex;
+  gap: var(--espaco-2);
+  padding: var(--espaco-3);
+  border-top: 1px solid var(--cor-borda);
+}
+
+.assistente-form .input {
+  flex: 1;
+}
+
+@media (max-width: 480px) {
+  #assistente-widget {
+    right: var(--espaco-3);
+    bottom: var(--espaco-3);
+  }
+
+  .assistente-painel {
+    width: calc(100vw - 24px);
+  }
+}
