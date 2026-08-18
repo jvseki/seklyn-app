@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import admin, aluno, assistente, auth, personal, recomendacoes, stripe_webhook
+from app.api.routes import admin, aluno, auth, personal, recomendacoes, stripe_webhook
 from app.core.config import get_settings
 from app.core.erros import tratar_erro_validacao
 
@@ -36,7 +36,6 @@ app.include_router(aluno.router)
 app.include_router(recomendacoes.router)
 app.include_router(stripe_webhook.router)
 app.include_router(admin.router)
-app.include_router(assistente.router)
 
 
 @app.get("/api/saude", tags=["Saúde"])

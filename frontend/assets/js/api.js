@@ -120,10 +120,6 @@ export const api = {
   statusAssinatura: () => apiFetch("/personal/assinatura"),
   criarCheckoutSession: () => apiFetch("/stripe/criar-checkout-session", { method: "POST" }),
 
-  // --- Assistente virtual (mentor de uso do site) ---
-  perguntarAssistente: (mensagem, historico) =>
-    apiFetch("/personal/assistente", { method: "POST", body: JSON.stringify({ mensagem, historico }) }),
-
   // --- Painel de administração (só pra conta super admin) ---
   listarPersonaisAdmin: () => apiFetch("/admin/personais"),
   ativarPersonalAdmin: (id) => apiFetch(`/admin/personais/${id}/ativar`, { method: "POST" }),
