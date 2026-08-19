@@ -45,7 +45,10 @@ def painel_aluno(
 ) -> AlunoPainelOut:
     treinos = (
         db.query(Treino)
-        .options(joinedload(Treino.exercicios).joinedload(Exercicio.series))
+        .options(
+            joinedload(Treino.exercicios).joinedload(Exercicio.series),
+            joinedload(Treino.exercicios).joinedload(Exercicio.video),
+        )
         .filter(Treino.aluno_id == aluno.id, Treino.ativo.is_(True))
         .all()
     )
@@ -95,7 +98,10 @@ def detalhe_treino_aluno(
 ) -> TreinoDetalheOut:
     treino = (
         db.query(Treino)
-        .options(joinedload(Treino.exercicios).joinedload(Exercicio.series))
+        .options(
+            joinedload(Treino.exercicios).joinedload(Exercicio.series),
+            joinedload(Treino.exercicios).joinedload(Exercicio.video),
+        )
         .filter(Treino.id == treino_id, Treino.aluno_id == aluno.id)
         .first()
     )

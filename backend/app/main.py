@@ -2,11 +2,14 @@
 Ponto de entrada da API do Seklyn.
 Rodar em desenvolvimento: uvicorn app.main:app --reload
 """
+import os
+
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
-from app.api.routes import admin, aluno, auth, personal, recomendacoes, stripe_webhook
+from app.api.routes import admin, aluno, auth, personal, recomendacoes, stripe_webhook, videos
 from app.core.config import get_settings
 from app.core.erros import tratar_erro_validacao
 
@@ -36,6 +39,12 @@ app.include_router(aluno.router)
 app.include_router(recomendacoes.router)
 app.include_router(stripe_webhook.router)
 app.include_router(admin.router)
+app.include_router(videos.router)
+
+# Vídeos enviados (upload direto) — fica em uploads/, montado no volume
+# persistente do Docker pra sobreviver a rebuild/restart do container.
+os.makedirs("uploads/videos", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 
 @app.get("/api/saude", tags=["Saúde"])

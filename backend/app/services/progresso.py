@@ -108,6 +108,7 @@ def montar_treino_detalhe(db: Session, treino: Treino, dia: date | None = None) 
                 observacoes=ex.observacoes,
                 series=series_out,
                 concluido_hoje=concluido_ex,
+                video=ex.video,
             )
         )
 

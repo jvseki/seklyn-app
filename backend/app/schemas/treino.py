@@ -33,6 +33,7 @@ class SerieRapidaIn(BaseModel):
 class ExercicioRapidoIn(BaseModel):
     nome: str = Field(min_length=1, max_length=120)
     series: list[SerieRapidaIn] = Field(min_length=1)
+    video_exercicio_id: int | None = None
 
 
 class MontarTreinoIn(BaseModel):

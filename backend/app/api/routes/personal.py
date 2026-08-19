@@ -29,6 +29,7 @@ from app.models.exercicio import Exercicio
 from app.models.personal import Personal
 from app.models.serie import Serie
 from app.models.treino import Treino
+from app.models.video_exercicio import VideoExercicio
 from app.schemas.aluno import AlunoAtualizar, AlunoCriar, AlunoOut
 from app.schemas.analytics import AderenciaOut, AnalyticsDetalhadoOut
 from app.schemas.avaliacao_fisica import AvaliacaoFisicaCriar, AvaliacaoFisicaOut
@@ -170,7 +171,10 @@ def exportar_aluno_excel(
     """Baixa a ficha completa do aluno (treinos + peso/meta) num Excel profissional."""
     aluno = (
         db.query(Aluno)
-        .options(joinedload(Aluno.treinos).joinedload(Treino.exercicios).joinedload(Exercicio.series))
+        .options(
+            joinedload(Aluno.treinos).joinedload(Treino.exercicios).joinedload(Exercicio.series),
+            joinedload(Aluno.treinos).joinedload(Treino.exercicios).joinedload(Exercicio.video),
+        )
         .filter(Aluno.id == aluno_id, Aluno.personal_id == personal.id)
         .first()
     )
@@ -201,7 +205,10 @@ def listar_treinos(
     aluno = obter_aluno_do_personal(aluno_id, personal, db)
     return (
         db.query(Treino)
-        .options(joinedload(Treino.exercicios).joinedload(Exercicio.series))
+        .options(
+            joinedload(Treino.exercicios).joinedload(Exercicio.series),
+            joinedload(Treino.exercicios).joinedload(Exercicio.video),
+        )
         .filter(Treino.aluno_id == aluno.id)
         .order_by(Treino.ordem)
         .all()
@@ -260,8 +267,21 @@ def montar_treino(
         db.add(treino)
         db.flush()
 
+    # IDs de vídeo pedidos que realmente pertencem a esse Personal — evita
+    # um Personal referenciar vídeo de outra conta só adivinhando o id.
+    ids_video_pedidos = {e.video_exercicio_id for e in dados.exercicios if e.video_exercicio_id}
+    ids_video_validos = set()
+    if ids_video_pedidos:
+        ids_video_validos = {
+            v.id
+            for v in db.query(VideoExercicio.id)
+            .filter(VideoExercicio.id.in_(ids_video_pedidos), VideoExercicio.personal_id == personal.id)
+            .all()
+        }
+
     for ordem_exercicio, exercicio_in in enumerate(dados.exercicios):
-        exercicio = Exercicio(treino_id=treino.id, nome=exercicio_in.nome, ordem=ordem_exercicio)
+        video_id = exercicio_in.video_exercicio_id if exercicio_in.video_exercicio_id in ids_video_validos else None
+        exercicio = Exercicio(treino_id=treino.id, nome=exercicio_in.nome, ordem=ordem_exercicio, video_exercicio_id=video_id)
         db.add(exercicio)
         db.flush()
         for ordem_serie, serie_in in enumerate(exercicio_in.series):
@@ -309,6 +329,19 @@ def excluir_treino(
 # ---------- Exercícios ----------
 
 
+def _validar_video_do_personal(video_exercicio_id: int | None, personal: Personal, db: Session) -> int | None:
+    """Só aceita o vídeo se ele pertencer mesmo a esse Personal — evita
+    referenciar (ou adivinhar) o id de vídeo de outra conta."""
+    if video_exercicio_id is None:
+        return None
+    existe = (
+        db.query(VideoExercicio.id)
+        .filter(VideoExercicio.id == video_exercicio_id, VideoExercicio.personal_id == personal.id)
+        .first()
+    )
+    return video_exercicio_id if existe else None
+
+
 @router.post("/treinos/{treino_id}/exercicios", response_model=ExercicioOut, status_code=status.HTTP_201_CREATED)
 def criar_exercicio(
     treino_id: int,
@@ -317,7 +350,10 @@ def criar_exercicio(
     db: Session = Depends(get_db),
 ) -> Exercicio:
     treino = obter_treino_do_personal(treino_id, personal, db)
-    exercicio = Exercicio(treino_id=treino.id, nome=dados.nome, ordem=dados.ordem, observacoes=dados.observacoes)
+    video_id = _validar_video_do_personal(dados.video_exercicio_id, personal, db)
+    exercicio = Exercicio(
+        treino_id=treino.id, nome=dados.nome, ordem=dados.ordem, observacoes=dados.observacoes, video_exercicio_id=video_id
+    )
     db.add(exercicio)
     db.commit()
     db.refresh(exercicio)
@@ -332,7 +368,10 @@ def atualizar_exercicio(
     db: Session = Depends(get_db),
 ) -> Exercicio:
     exercicio = obter_exercicio_do_personal(exercicio_id, personal, db)
-    for campo, valor in dados.model_dump(exclude_unset=True).items():
+    atualizacoes = dados.model_dump(exclude_unset=True)
+    if "video_exercicio_id" in atualizacoes:
+        atualizacoes["video_exercicio_id"] = _validar_video_do_personal(atualizacoes["video_exercicio_id"], personal, db)
+    for campo, valor in atualizacoes.items():
         setattr(exercicio, campo, valor)
     db.commit()
     db.refresh(exercicio)
