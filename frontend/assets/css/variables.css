@@ -270,6 +270,35 @@
   --cor-primaria-contraste: #241a04;
 }
 
+/* Tema personalizado "laranja" — vibrante/chamativo de propósito, distinto
+   de todos os outros (rosa, verde, azul, celeste, choque, amarelo). */
+:root[data-tema-personalizado="laranja"] {
+  --cor-primaria: #ea580c; /* orange-600 */
+  --cor-primaria-hover: #c2410c; /* orange-700 */
+  --cor-primaria-ativa: #9a3412; /* orange-800 */
+  --cor-primaria-forte: #7c2d12; /* orange-900 */
+  --cor-primaria-clara: #ffedd5; /* orange-100 */
+  --cor-primaria-suave: #fff7ed; /* orange-50 */
+  --cor-primaria-contraste: #ffffff;
+
+  --cor-blob-1: #fdba74; /* orange-300 */
+  --cor-blob-2: #ea580c; /* orange-600 */
+  --cor-blob-3: #fb923c; /* orange-400 */
+
+  --sombra-botao: 0 2px 4px rgba(234, 88, 12, 0.35), 0 10px 20px rgba(124, 45, 18, 0.3);
+  --sombra-botao-hover: 0 4px 8px rgba(234, 88, 12, 0.4), 0 14px 28px rgba(124, 45, 18, 0.35);
+}
+
+:root[data-tema-personalizado="laranja"][data-theme="escuro"] {
+  --cor-primaria: #fb923c; /* orange-400 */
+  --cor-primaria-hover: #fdba74; /* orange-300 */
+  --cor-primaria-ativa: #ffedd5; /* orange-100 */
+  --cor-primaria-forte: #ffedd5;
+  --cor-primaria-clara: #4a260d;
+  --cor-primaria-suave: #331a09;
+  --cor-primaria-contraste: #1f1005;
+}
+
 :root[data-tema-personalizado="choque"][data-theme="escuro"] {
   --cor-primaria: #f0abfc; /* fuchsia-300 */
   --cor-primaria-hover: #f5d0fe; /* fuchsia-200 */
