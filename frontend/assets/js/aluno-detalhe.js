@@ -17,6 +17,7 @@ import { confirmarAcao } from "./confirmar.js";
 import { icone } from "./icones.js";
 import { iconeCategoriaTreino, iconeHalter } from "./icones-treino.js";
 import { adicionarBlobsEm } from "./tema-personalizado.js";
+import { renderizarPlayerVideo } from "./video-exercicio.js";
 
 protegerPagina();
 adicionarBlobsEm("#painel-hero-aluno");
@@ -74,6 +75,10 @@ const montarTreinoNomeInput = $("#montar-treino-nome");
 const listaExerciciosSugeridosEl = $("#lista-exercicios-sugeridos");
 const outroExercicioInput = $("#montar-treino-outro-exercicio");
 const configGruposEl = $("#config-grupos");
+const configIndividualEl = $("#config-individual");
+const configModoExplicacaoEl = $("#config-modo-explicacao");
+const configModoToggleEl = $("#montar-treino-config-individual");
+const listaVideosEl = $("#lista-videos-exercicios");
 
 let alunoAtual = null;
 let treinosCache = []; // guarda os dados carregados pra preencher os modais de edição sem outra chamada à API
@@ -82,6 +87,9 @@ let montarTreinoDia = null; // dia da semana sendo montado no modal assistido
 let categoriasSelecionadas = []; // chaves das categorias escolhidas no passo 1 (pode ser mais de uma)
 let itensSelecionados = []; // [{ nome, incluido, categoria, categoriaChave }] — exercícios sugeridos das categorias escolhidas
 let configPorGrupo = {}; // chave da categoria (ou "manual") → { series, repeticoes, descanso }
+let configPorExercicio = {}; // índice de itensSelecionados → { series, repeticoes, descanso, cargaModo, carga, cargasPorSerie }
+let videosPorItem = {}; // índice de itensSelecionados → { video_exercicio_id, video } | undefined (sem vídeo)
+let modoConfigIndividual = false; // false = config por grupo/categoria (padrão), true = por exercício
 
 const OPCOES_SERIES = [2, 3, 4, 5, 6];
 const OPCOES_REPETICOES = ["6-8", "8-10", "10-12", "12-15", "15-20"];
@@ -114,6 +122,7 @@ function linhaSerie(serie) {
 
 function blocoExercicio(exercicio) {
   const series = exercicio.series.map(linhaSerie).join("") || `<p class="hint-text" style="padding-left:var(--espaco-6);">Nenhuma série cadastrada ainda.</p>`;
+  const video = exercicio.video ? renderizarPlayerVideo(exercicio.video, { altura: 200 }) : "";
   return `
     <div class="exercicio-bloco" data-exercicio-id="${exercicio.id}">
       <div class="exercicio-linha">
@@ -121,6 +130,7 @@ function blocoExercicio(exercicio) {
         <button class="btn btn-ghost btn-sm" data-acao="editar-exercicio" data-id="${exercicio.id}" type="button">Editar</button>
         <button class="btn btn-ghost btn-sm" data-acao="excluir-exercicio" data-id="${exercicio.id}" type="button">Remover exercício</button>
       </div>
+      ${video}
       ${series}
       <form class="form-row" data-acao="form-nova-serie" data-exercicio-id="${exercicio.id}" style="padding-left:var(--espaco-6);margin-top:var(--espaco-2);">
         <div class="form-group" style="flex:1;"><input class="input" name="repeticoes_alvo" placeholder="Repetições (ex: 10-12)" maxlength="60" required /></div>
@@ -802,6 +812,395 @@ function resolverConfigGrupo(chave) {
   return { repeticoes, descanso, numeroSeries, carga };
 }
 
+// --- Vídeo demonstrativo por exercício (upload ou link do YouTube, reusado por nome) ---
+
+function renderizarListaVideos() {
+  const selecionados = itensSelecionados.map((item, indice) => ({ ...item, indice })).filter((item) => item.incluido);
+  listaVideosEl.innerHTML = selecionados
+    .map(({ nome, indice }) => {
+      const anexado = videosPorItem[indice]?.video_exercicio_id;
+      return `
+        <div>
+          <div class="video-exercicio-anexo" data-video-item="${indice}">
+            <span style="flex:1;font-size:0.88rem;">${escaparHtml(nome)}</span>
+            ${
+              anexado
+                ? `<span class="video-exercicio-badge">${icone("check", 14)} Vídeo anexado</span>
+                   <button class="btn btn-ghost btn-sm" type="button" data-acao="remover-video" data-indice="${indice}">Remover</button>`
+                : `<button class="btn btn-ghost btn-sm" type="button" data-acao="abrir-video" data-indice="${indice}">+ Vídeo</button>`
+            }
+          </div>
+          <div class="video-exercicio-painel" data-painel-video="${indice}" hidden></div>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+async function abrirPainelVideo(indice) {
+  const painel = listaVideosEl.querySelector(`[data-painel-video="${indice}"]`);
+  if (!painel) return;
+  const item = itensSelecionados[indice];
+  painel.hidden = false;
+  painel.innerHTML = `<p class="hint-text" style="margin:0;">Procurando vídeo salvo pra "${escaparHtml(item.nome)}"...</p>`;
+
+  let salvo = null;
+  try {
+    salvo = await api.buscarVideoExercicio(item.nome);
+  } catch {
+    salvo = null;
+  }
+
+  painel.innerHTML = `
+    ${
+      salvo
+        ? `<div>
+            <p class="hint-text" style="margin:0 0 var(--espaco-2);">Já existe um vídeo salvo pra "${escaparHtml(item.nome)}" (de outro treino). Quer reusar em vez de subir de novo?</p>
+            <button class="btn btn-secondary btn-sm" type="button" data-acao="reusar-video" data-indice="${indice}" data-video-id="${salvo.id}">Usar esse vídeo</button>
+          </div>`
+        : ""
+    }
+    <div class="video-exercicio-abas">
+      <button class="video-exercicio-aba ativa" type="button" data-aba="youtube" data-indice="${indice}">Link do YouTube</button>
+      <button class="video-exercicio-aba" type="button" data-aba="upload" data-indice="${indice}">Enviar arquivo MP4</button>
+    </div>
+    <div data-conteudo-aba="youtube" data-indice="${indice}">
+      <div class="form-row">
+        <div class="form-group" style="flex:1;margin-bottom:0;">
+          <input class="input" type="url" placeholder="https://youtube.com/watch?v=... (pode ser não listado)" data-campo-youtube="${indice}" />
+        </div>
+        <div class="form-group" style="flex:0;margin-bottom:0;">
+          <button class="btn btn-primary btn-sm" type="button" data-acao="salvar-video-youtube" data-indice="${indice}">Salvar</button>
+        </div>
+      </div>
+    </div>
+    <div data-conteudo-aba="upload" data-indice="${indice}" hidden>
+      <div class="form-group">
+        <input class="input" type="file" accept="video/mp4,video/quicktime,video/webm" data-campo-upload="${indice}" />
+        <span class="hint-text">Até 30MB.</span>
+      </div>
+      <div class="form-group">
+        <label class="label" style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-weight:400;">
+          <input type="checkbox" data-campo-direitos-video="${indice}" style="margin-top:3px;" />
+          <span class="hint-text">Confirmo que tenho os direitos de uso desse vídeo (gravei eu mesmo ou tenho autorização) — a responsabilidade pelo conteúdo enviado é minha.</span>
+        </label>
+      </div>
+      <button class="btn btn-primary btn-sm" type="button" data-acao="salvar-video-upload" data-indice="${indice}">Enviar e salvar</button>
+    </div>
+    <button class="btn btn-ghost btn-sm" type="button" data-acao="fechar-video" data-indice="${indice}">Cancelar</button>
+  `;
+}
+
+listaVideosEl?.addEventListener("click", async (evento) => {
+  const abrir = evento.target.closest("[data-acao='abrir-video']");
+  if (abrir) return abrirPainelVideo(Number(abrir.dataset.indice));
+
+  const fechar = evento.target.closest("[data-acao='fechar-video']");
+  if (fechar) {
+    listaVideosEl.querySelector(`[data-painel-video="${fechar.dataset.indice}"]`).hidden = true;
+    return;
+  }
+
+  const remover = evento.target.closest("[data-acao='remover-video']");
+  if (remover) {
+    delete videosPorItem[Number(remover.dataset.indice)];
+    renderizarListaVideos();
+    return;
+  }
+
+  const aba = evento.target.closest("[data-aba]");
+  if (aba) {
+    const painel = aba.closest(".video-exercicio-painel");
+    $all("[data-aba]", painel).forEach((b) => b.classList.toggle("ativa", b === aba));
+    $all("[data-conteudo-aba]", painel).forEach((c) => (c.hidden = c.dataset.conteudoAba !== aba.dataset.aba));
+    return;
+  }
+
+  const reusar = evento.target.closest("[data-acao='reusar-video']");
+  if (reusar) {
+    const indice = Number(reusar.dataset.indice);
+    videosPorItem[indice] = { video_exercicio_id: Number(reusar.dataset.videoId) };
+    renderizarListaVideos();
+    mostrarToast("Vídeo reusado.", "sucesso");
+    return;
+  }
+
+  const salvarYoutube = evento.target.closest("[data-acao='salvar-video-youtube']");
+  if (salvarYoutube) {
+    const indice = Number(salvarYoutube.dataset.indice);
+    const input = listaVideosEl.querySelector(`[data-campo-youtube="${indice}"]`);
+    const url = input.value.trim();
+    if (!url) {
+      mostrarToast("Cole o link do vídeo.", "erro");
+      return;
+    }
+    salvarYoutube.disabled = true;
+    try {
+      const video = await api.salvarVideoExercicioYoutube(itensSelecionados[indice].nome, url);
+      videosPorItem[indice] = { video_exercicio_id: video.id };
+      renderizarListaVideos();
+      mostrarToast("Vídeo salvo!", "sucesso");
+    } catch (erro) {
+      mostrarToast(mensagemDeErro(erro), "erro");
+    } finally {
+      salvarYoutube.disabled = false;
+    }
+    return;
+  }
+
+  const salvarUpload = evento.target.closest("[data-acao='salvar-video-upload']");
+  if (salvarUpload) {
+    const indice = Number(salvarUpload.dataset.indice);
+    const input = listaVideosEl.querySelector(`[data-campo-upload="${indice}"]`);
+    const arquivo = input.files[0];
+    if (!arquivo) {
+      mostrarToast("Escolha um arquivo de vídeo.", "erro");
+      return;
+    }
+    if (arquivo.size > 30 * 1024 * 1024) {
+      mostrarToast("Vídeo muito grande — o limite é 30MB.", "erro");
+      return;
+    }
+    const confirmaDireitos = listaVideosEl.querySelector(`[data-campo-direitos-video="${indice}"]`);
+    if (!confirmaDireitos?.checked) {
+      mostrarToast("Confirme que você tem os direitos de uso desse vídeo antes de enviar.", "erro");
+      return;
+    }
+    salvarUpload.disabled = true;
+    const textoOriginal = salvarUpload.textContent;
+    salvarUpload.textContent = "Enviando...";
+    try {
+      const video = await api.salvarVideoExercicioUpload(itensSelecionados[indice].nome, arquivo);
+      videosPorItem[indice] = { video_exercicio_id: video.id };
+      renderizarListaVideos();
+      mostrarToast("Vídeo salvo!", "sucesso");
+    } catch (erro) {
+      mostrarToast(mensagemDeErro(erro), "erro");
+    } finally {
+      salvarUpload.disabled = false;
+      salvarUpload.textContent = textoOriginal;
+    }
+  }
+});
+
+// --- Configuração individual por exercício (em vez de por grupo/categoria) ---
+
+function renderizarPassoConfigIndividual() {
+  const selecionados = itensSelecionados.map((item, indice) => ({ ...item, indice })).filter((item) => item.incluido);
+  configPorExercicio = {};
+
+  configIndividualEl.innerHTML = selecionados
+    .map(({ nome, categoriaChave, indice }) => {
+      const categoria = categoriaChave ? obterCategoria(categoriaChave) : null;
+      const tipoConfig = categoria?.tipoConfig || "series";
+
+      if (tipoConfig === "tempo") {
+        return `
+          <div class="config-grupo">
+            <p class="config-grupo-titulo">${escaparHtml(nome)}</p>
+            <div class="form-group">
+              <span class="label">Tempo</span>
+              <div class="grade-chips" data-chips="tempo" data-exercicio-config="${indice}"></div>
+              <input class="input" data-campo="tempo-personalizado" data-exercicio-config="${indice}" placeholder="Ex: 25 min" maxlength="60" hidden style="margin-top:var(--espaco-2);" />
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="config-grupo">
+          <p class="config-grupo-titulo">${escaparHtml(nome)}</p>
+          <div class="form-group">
+            <span class="label">Quantas séries</span>
+            <div class="grade-chips" data-chips="series" data-exercicio-config="${indice}"></div>
+          </div>
+          <div class="form-group">
+            <span class="label">Repetições por série</span>
+            <div class="grade-chips" data-chips="repeticoes" data-exercicio-config="${indice}"></div>
+            <input class="input" data-campo="repeticoes-personalizado" data-exercicio-config="${indice}" placeholder="Ex: 10-12" maxlength="60" hidden style="margin-top:var(--espaco-2);" />
+          </div>
+          <div class="form-group">
+            <span class="label">Descanso entre séries</span>
+            <div class="grade-chips" data-chips="descanso" data-exercicio-config="${indice}"></div>
+            <input class="input" data-campo="descanso-personalizado" data-exercicio-config="${indice}" placeholder="Ex: 60s" maxlength="20" hidden style="margin-top:var(--espaco-2);" />
+          </div>
+          <div class="form-group">
+            <label class="label" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+              <input type="checkbox" data-campo="carga-progressiva" data-exercicio-config="${indice}" />
+              Carga progressiva (uma carga diferente por série)
+            </label>
+          </div>
+          <div class="form-group" data-carga-unica="${indice}">
+            <label class="label">Carga (opcional)</label>
+            <input class="input" data-campo="carga" data-exercicio-config="${indice}" placeholder="Deixe em branco se variar por aluno" maxlength="60" />
+          </div>
+          <div data-carga-progressiva="${indice}" hidden></div>
+        </div>
+      `;
+    })
+    .join("");
+
+  selecionados.forEach(({ categoriaChave, indice }) => {
+    const categoria = categoriaChave ? obterCategoria(categoriaChave) : null;
+    const tipoConfig = categoria?.tipoConfig || "series";
+    const padrao = categoria?.padrao || { repeticoes_alvo: "10-12", intervalo_descanso: "60s" };
+
+    if (tipoConfig === "tempo") {
+      configPorExercicio[indice] = { tipo: "tempo", tempo: padrao.repeticoes_alvo };
+      renderizarChipsConfig(
+        configIndividualEl.querySelector(`[data-chips="tempo"][data-exercicio-config="${indice}"]`),
+        OPCOES_TEMPO,
+        configPorExercicio[indice].tempo,
+        `ex${indice}__tempo`
+      );
+      return;
+    }
+
+    configPorExercicio[indice] = {
+      tipo: "series",
+      series: 3,
+      repeticoes: padrao.repeticoes_alvo,
+      descanso: padrao.intervalo_descanso || "60s",
+      cargaModo: "unica",
+      cargasPorSerie: [],
+    };
+
+    renderizarChipsConfig(
+      configIndividualEl.querySelector(`[data-chips="series"][data-exercicio-config="${indice}"]`),
+      OPCOES_SERIES,
+      configPorExercicio[indice].series,
+      `ex${indice}__series`,
+      false
+    );
+    renderizarChipsConfig(
+      configIndividualEl.querySelector(`[data-chips="repeticoes"][data-exercicio-config="${indice}"]`),
+      OPCOES_REPETICOES,
+      configPorExercicio[indice].repeticoes,
+      `ex${indice}__repeticoes`
+    );
+    renderizarChipsConfig(
+      configIndividualEl.querySelector(`[data-chips="descanso"][data-exercicio-config="${indice}"]`),
+      OPCOES_DESCANSO,
+      configPorExercicio[indice].descanso,
+      `ex${indice}__descanso`
+    );
+  });
+}
+
+function regenerarCargasProgressivas(indice) {
+  const numeroSeries = Number(configPorExercicio[indice].series) || 3;
+  const bloco = configIndividualEl.querySelector(`[data-carga-progressiva="${indice}"]`);
+  if (!bloco) return;
+  bloco.innerHTML = Array.from(
+    { length: numeroSeries },
+    (_, i) => `
+      <div class="form-group" style="margin-bottom:var(--espaco-2);">
+        <label class="label">Carga na série ${i + 1}</label>
+        <input class="input" data-campo="carga-serie" data-exercicio-config="${indice}" data-serie-numero="${i}" placeholder="Ex: 10kg" maxlength="60" value="${escaparHtml(configPorExercicio[indice].cargasPorSerie[i] || "")}" />
+      </div>
+    `
+  ).join("");
+  configPorExercicio[indice].cargasPorSerie = Array.from(
+    { length: numeroSeries },
+    (_, i) => configPorExercicio[indice].cargasPorSerie[i] || ""
+  );
+}
+
+configIndividualEl?.addEventListener("click", (evento) => {
+  const chip = evento.target.closest(".chip-opcao");
+  if (!chip) return;
+  const [chaveExercicio, campo] = chip.dataset.grupo.split("__");
+  const indice = Number(chaveExercicio.replace("ex", ""));
+  const valor = chip.dataset.valor;
+  const bruto = valor === "outro" ? "outro" : isNaN(Number(valor)) ? valor : Number(valor);
+  configPorExercicio[indice][campo] = bruto;
+
+  $all(`.chip-opcao[data-grupo="${chip.dataset.grupo}"]`, configIndividualEl).forEach((c) => c.classList.toggle("selecionado", c === chip));
+
+  if (campo === "repeticoes" || campo === "descanso" || campo === "tempo") {
+    const personalizadoEl = configIndividualEl.querySelector(`[data-campo="${campo}-personalizado"][data-exercicio-config="${indice}"]`);
+    if (personalizadoEl) {
+      personalizadoEl.hidden = valor !== "outro";
+      if (valor === "outro") personalizadoEl.focus();
+    }
+  }
+
+  if (campo === "series" && configPorExercicio[indice].cargaModo === "progressiva") {
+    regenerarCargasProgressivas(indice);
+  }
+});
+
+configIndividualEl?.addEventListener("change", (evento) => {
+  const toggleProgressiva = evento.target.closest("[data-campo='carga-progressiva']");
+  if (toggleProgressiva) {
+    const indice = Number(toggleProgressiva.dataset.exercicioConfig);
+    const ligado = toggleProgressiva.checked;
+    configPorExercicio[indice].cargaModo = ligado ? "progressiva" : "unica";
+    configIndividualEl.querySelector(`[data-carga-unica="${indice}"]`).hidden = ligado;
+    configIndividualEl.querySelector(`[data-carga-progressiva="${indice}"]`).hidden = !ligado;
+    if (ligado) regenerarCargasProgressivas(indice);
+    return;
+  }
+
+  const cargaSerieInput = evento.target.closest("[data-campo='carga-serie']");
+  if (cargaSerieInput) {
+    const indice = Number(cargaSerieInput.dataset.exercicioConfig);
+    const numeroSerie = Number(cargaSerieInput.dataset.serieNumero);
+    configPorExercicio[indice].cargasPorSerie[numeroSerie] = cargaSerieInput.value.trim();
+  }
+});
+
+/** Lê a config de um exercício (modo individual) no momento de salvar. */
+function resolverConfigExercicio(indice) {
+  const cfg = configPorExercicio[indice];
+
+  if (cfg.tipo === "tempo") {
+    const tempo =
+      cfg.tempo === "outro"
+        ? (configIndividualEl.querySelector(`[data-campo="tempo-personalizado"][data-exercicio-config="${indice}"]`)?.value.trim() || "")
+        : String(cfg.tempo);
+    return { repeticoes: tempo, descanso: null, cargas: [null] };
+  }
+
+  const repeticoes =
+    cfg.repeticoes === "outro"
+      ? (configIndividualEl.querySelector(`[data-campo="repeticoes-personalizado"][data-exercicio-config="${indice}"]`)?.value.trim() || "")
+      : String(cfg.repeticoes);
+  const descanso =
+    cfg.descanso === "outro"
+      ? (configIndividualEl.querySelector(`[data-campo="descanso-personalizado"][data-exercicio-config="${indice}"]`)?.value.trim() || "")
+      : String(cfg.descanso);
+  const numeroSeries = Number(cfg.series) || 3;
+
+  let cargas;
+  if (cfg.cargaModo === "progressiva") {
+    cargas = Array.from({ length: numeroSeries }, (_, i) => cfg.cargasPorSerie[i] || null);
+  } else {
+    const cargaUnica = configIndividualEl.querySelector(`[data-campo="carga"][data-exercicio-config="${indice}"]`)?.value.trim() || null;
+    cargas = Array.from({ length: numeroSeries }, () => cargaUnica);
+  }
+
+  return { repeticoes, descanso, cargas };
+}
+
+function aplicarModoConfig() {
+  configGruposEl.hidden = modoConfigIndividual;
+  configIndividualEl.hidden = !modoConfigIndividual;
+  configModoExplicacaoEl.textContent = modoConfigIndividual
+    ? "Cada exercício tem sua própria configuração — dá pra fazer 3 séries num e 4 no outro, por exemplo."
+    : "Cada categoria tem sua própria configuração — dá pra deixar peito diferente de perna, por exemplo.";
+  if (modoConfigIndividual) {
+    renderizarPassoConfigIndividual();
+  } else {
+    renderizarPassoConfig();
+  }
+}
+
+configModoToggleEl?.addEventListener("change", () => {
+  modoConfigIndividual = configModoToggleEl.checked;
+  aplicarModoConfig();
+});
+
 function abrirMontarTreino(dia) {
   montarTreinoDia = dia;
   const jaTemTreino = treinosCache.some((t) => t.dia_semana === dia);
@@ -810,9 +1209,62 @@ function abrirMontarTreino(dia) {
     : `Montar treino de ${ROTULO_DIA[dia]}`;
   categoriasSelecionadas = [];
   itensSelecionados = [];
+  videosPorItem = {};
+  configPorExercicio = {};
+  modoConfigIndividual = false;
+  if (configModoToggleEl) configModoToggleEl.checked = false;
   renderizarGradeCategorias();
   mostrarPassoMontagem(1);
   abrirModal(modalMontarTreino);
+}
+
+function montarPayloadExerciciosPorGrupo(selecionados) {
+  const grupos = gruposAtivos();
+  const configResolvida = new Map();
+  for (const { chave, rotulo } of grupos) {
+    const resolvido = resolverConfigGrupo(chave);
+    if (!resolvido.repeticoes) {
+      const campo = configPorGrupo[chave]?.tipo === "tempo" ? "o tempo" : "as repetições";
+      mostrarToast(`Informe ${campo} de "${rotulo}".`, "erro");
+      return null;
+    }
+    configResolvida.set(chave, resolvido);
+  }
+
+  return selecionados.map((item) => {
+    const indiceOriginal = itensSelecionados.indexOf(item);
+    const { repeticoes, descanso, numeroSeries, carga } = configResolvida.get(item.categoriaChave || "manual");
+    // Uma linha de série por série de verdade (ex: "4 séries" = 4 linhas o aluno marca uma a uma).
+    const serieRepetida = { repeticoes_alvo: repeticoes, carga_alvo: carga, intervalo_descanso: descanso || null };
+    return {
+      nome: item.nome,
+      video_exercicio_id: videosPorItem[indiceOriginal]?.video_exercicio_id || null,
+      series: Array.from({ length: numeroSeries }, () => serieRepetida),
+    };
+  });
+}
+
+function montarPayloadExerciciosIndividual() {
+  const comIndice = itensSelecionados.map((item, indice) => ({ ...item, indice })).filter((item) => item.incluido);
+  const payload = [];
+  for (const { nome, indice } of comIndice) {
+    const resolvido = resolverConfigExercicio(indice);
+    if (!resolvido.repeticoes) {
+      const campo = configPorExercicio[indice]?.tipo === "tempo" ? "o tempo" : "as repetições";
+      mostrarToast(`Informe ${campo} de "${nome}".`, "erro");
+      return null;
+    }
+    payload.push({
+      nome,
+      video_exercicio_id: videosPorItem[indice]?.video_exercicio_id || null,
+      series: resolvido.cargas.map((carga) => ({
+        repeticoes_alvo: resolvido.repeticoes,
+        carga_alvo: carga,
+        intervalo_descanso: resolvido.descanso || null,
+      })),
+    });
+  }
+  return payload;
 }
 
 async function confirmarMontagemTreino() {
@@ -823,17 +1275,10 @@ async function confirmarMontagemTreino() {
     return;
   }
 
-  const grupos = gruposAtivos();
-  const configResolvida = new Map();
-  for (const { chave, rotulo } of grupos) {
-    const resolvido = resolverConfigGrupo(chave);
-    if (!resolvido.repeticoes) {
-      const campo = configPorGrupo[chave]?.tipo === "tempo" ? "o tempo" : "as repetições";
-      mostrarToast(`Informe ${campo} de "${rotulo}".`, "erro");
-      return;
-    }
-    configResolvida.set(chave, resolvido);
-  }
+  const exercicios = modoConfigIndividual
+    ? montarPayloadExerciciosIndividual()
+    : montarPayloadExerciciosPorGrupo(selecionados);
+  if (!exercicios) return; // mensagem de erro já mostrada por montarPayloadExercicios*
 
   const diaIndex = DIAS_SEMANA.findIndex((d) => d.chave === montarTreinoDia);
   const botao = $("[data-acao='confirmar-montar-treino']", modalMontarTreino);
@@ -842,17 +1287,7 @@ async function confirmarMontagemTreino() {
   botao.textContent = "Salvando...";
 
   try {
-    await api.montarTreino(alunoId, {
-      nome,
-      ordem: diaIndex,
-      dia_semana: montarTreinoDia,
-      exercicios: selecionados.map((item) => {
-        const { repeticoes, descanso, numeroSeries, carga } = configResolvida.get(item.categoriaChave || "manual");
-        // Uma linha de série por série de verdade (ex: "4 séries" = 4 linhas o aluno marca uma a uma).
-        const serieRepetida = { repeticoes_alvo: repeticoes, carga_alvo: carga, intervalo_descanso: descanso || null };
-        return { nome: item.nome, series: Array.from({ length: numeroSeries }, () => serieRepetida) };
-      }),
-    });
+    await api.montarTreino(alunoId, { nome, ordem: diaIndex, dia_semana: montarTreinoDia, exercicios });
 
     mostrarToast(`Treino de ${ROTULO_DIA[montarTreinoDia]} criado com ${selecionados.length} exercício(s)!`, "sucesso");
     fecharModal(modalMontarTreino);
@@ -883,6 +1318,7 @@ $("[data-acao='ir-para-exercicios']")?.addEventListener("click", () => {
     return;
   }
   itensSelecionados = montarItensDasCategorias();
+  videosPorItem = {}; // a lista de exercícios mudou — índices antigos não valem mais
   renderizarChecklistExercicios();
   mostrarPassoMontagem(2);
 });
@@ -895,7 +1331,10 @@ $("[data-acao='ir-para-config']")?.addEventListener("click", () => {
     mostrarToast("Marque pelo menos um exercício.", "erro");
     return;
   }
-  renderizarPassoConfig();
+  modoConfigIndividual = false;
+  if (configModoToggleEl) configModoToggleEl.checked = false;
+  renderizarListaVideos();
+  aplicarModoConfig();
   mostrarPassoMontagem(3);
 });
 

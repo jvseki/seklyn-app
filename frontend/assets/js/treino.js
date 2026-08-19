@@ -8,6 +8,7 @@ import { aplicarTemaPersonalizado } from "./tema-personalizado.js";
 import { observarRevelacoes } from "./revelar-ao-rolar.js";
 import { icone } from "./icones.js";
 import { iconeHalter } from "./icones-treino.js";
+import { renderizarPlayerVideo } from "./video-exercicio.js";
 
 const ROTULO_DIA = {
   segunda: "Segunda",
@@ -159,6 +160,7 @@ function blocoExercicio(exercicio) {
         <strong>${escaparHtml(exercicio.nome)}</strong>
       </div>
       ${exercicio.observacoes ? `<p class="bloco-exercicio-obs">${escaparHtml(exercicio.observacoes)}</p>` : ""}
+      ${exercicio.video ? renderizarPlayerVideo(exercicio.video, { altura: 200 }) : ""}
       <div class="lista-series">${exercicio.series.map(linhaSerie).join("")}</div>
     </div>
   `;

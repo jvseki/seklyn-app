@@ -250,9 +250,22 @@
           <input class="input" id="montar-treino-nome" />
         </div>
 
-        <p class="hint-text" style="margin-bottom:var(--espaco-4);">Cada categoria tem sua própria configuração — dá pra deixar peito diferente de perna, por exemplo.</p>
+        <div class="form-group">
+          <span class="label">Vídeos dos exercícios (opcional)</span>
+          <div id="lista-videos-exercicios" style="display:flex;flex-direction:column;gap:var(--espaco-2);"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="label" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;">
+            <input type="checkbox" id="montar-treino-config-individual" />
+            Configurar cada exercício separadamente (em vez de uma config só pro grupo)
+          </label>
+        </div>
+
+        <p class="hint-text" style="margin-bottom:var(--espaco-4);" id="config-modo-explicacao">Cada categoria tem sua própria configuração — dá pra deixar peito diferente de perna, por exemplo.</p>
 
         <div id="config-grupos" style="display:flex;flex-direction:column;gap:var(--espaco-4);"></div>
+        <div id="config-individual" style="display:flex;flex-direction:column;gap:var(--espaco-4);" hidden></div>
 
         <div class="modal-acoes">
           <button class="btn btn-ghost" type="button" data-acao="fechar-modal-montar">Cancelar</button>

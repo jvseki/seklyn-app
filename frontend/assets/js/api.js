@@ -25,7 +25,10 @@ export function estaAutenticado() {
 
 async function apiFetch(caminho, opcoes = {}) {
   const token = obterToken();
-  const headers = { "Content-Type": "application/json", ...(opcoes.headers || {}) };
+  // FormData (upload de arquivo) não pode levar Content-Type manual — o
+  // navegador precisa gerar o boundary do multipart sozinho.
+  const ehFormData = opcoes.body instanceof FormData;
+  const headers = { ...(ehFormData ? {} : { "Content-Type": "application/json" }), ...(opcoes.headers || {}) };
   if (token) headers.Authorization = `Bearer ${token}`;
 
   let resposta;
@@ -119,6 +122,25 @@ export const api = {
   // --- Assinatura / Stripe ---
   statusAssinatura: () => apiFetch("/personal/assinatura"),
   criarCheckoutSession: () => apiFetch("/stripe/criar-checkout-session", { method: "POST" }),
+
+  // --- Vídeos demonstrativos de exercício (reusados por nome, entre alunos) ---
+  buscarVideoExercicio: (nomeExercicio) =>
+    apiFetch(`/personal/videos-exercicio?${new URLSearchParams({ nome_exercicio: nomeExercicio })}`),
+  salvarVideoExercicioYoutube: (nomeExercicio, urlYoutube) => {
+    const form = new FormData();
+    form.append("nome_exercicio", nomeExercicio);
+    form.append("tipo", "youtube");
+    form.append("url_youtube", urlYoutube);
+    return apiFetch("/personal/videos-exercicio", { method: "POST", body: form });
+  },
+  salvarVideoExercicioUpload: (nomeExercicio, arquivo) => {
+    const form = new FormData();
+    form.append("nome_exercicio", nomeExercicio);
+    form.append("tipo", "upload");
+    form.append("arquivo", arquivo);
+    return apiFetch("/personal/videos-exercicio", { method: "POST", body: form });
+  },
+  excluirVideoExercicio: (id) => apiFetch(`/personal/videos-exercicio/${id}`, { method: "DELETE" }),
 
   // --- Painel de administração (só pra conta super admin) ---
   listarPersonaisAdmin: () => apiFetch("/admin/personais"),
