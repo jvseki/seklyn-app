@@ -176,6 +176,21 @@
   background: var(--cor-primaria-suave);
 }
 
+/* Ícone-imagem (halter estilizado) da aba "Treinos" — não usa currentColor
+   por ser um PNG, então fica sempre do mesmo jeito ativo/inativo. */
+.tab-bar-icone-img {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  display: block;
+}
+
+/* Ícone de linha da aba "Recomendações" — roxo fixo (não fica cinza quando
+   inativa) pra combinar com o glow roxo do ícone-imagem do halter. */
+.tab-bar-icone-roxo {
+  color: var(--cor-primaria);
+}
+
 /* Aba "Dicas do seu Personal" — não-invasiva */
 .dicas-intro {
   display: flex;

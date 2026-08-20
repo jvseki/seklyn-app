@@ -47,7 +47,7 @@
       <div class="cabecalho-pagina">
         <div>
           <h1>Recomendações</h1>
-          <p>Cadastre qualquer link de afiliado útil pro aluno: produto, cupom, equipamento. Aparece pra ele como "Dicas do seu Personal", sem interromper o treino.</p>
+          <p>Cadastre qualquer link de afiliado útil pro aluno: produto, cupom, equipamento. Aparece pra ele como "Recomendações", sem interromper o treino.</p>
         </div>
       </div>
 
@@ -65,7 +65,17 @@
             </div>
             <div class="form-group">
               <label class="label" for="rec-categoria">Categoria (opcional)</label>
-              <input class="input" id="rec-categoria" name="categoria" placeholder="Suplemento, equipamento, roupa..." />
+              <select class="input" id="rec-categoria" name="categoria">
+                <option value="">Selecione...</option>
+                <option value="Suplemento">Suplemento</option>
+                <option value="Equipamento">Equipamento</option>
+                <option value="Roupa e calçado">Roupa e calçado</option>
+                <option value="Acessório">Acessório</option>
+                <option value="Cupom de desconto">Cupom de desconto</option>
+                <option value="App ou serviço">App ou serviço</option>
+                <option value="outra">Outra...</option>
+              </select>
+              <input class="input" id="rec-categoria-outra" name="categoria_outra" placeholder="Escreva a categoria" maxlength="60" hidden style="margin-top:var(--espaco-2);" />
             </div>
           </div>
           <div class="form-group">

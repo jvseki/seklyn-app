@@ -281,7 +281,13 @@ def montar_treino(
 
     for ordem_exercicio, exercicio_in in enumerate(dados.exercicios):
         video_id = exercicio_in.video_exercicio_id if exercicio_in.video_exercicio_id in ids_video_validos else None
-        exercicio = Exercicio(treino_id=treino.id, nome=exercicio_in.nome, ordem=ordem_exercicio, video_exercicio_id=video_id)
+        exercicio = Exercicio(
+            treino_id=treino.id,
+            nome=exercicio_in.nome,
+            ordem=ordem_exercicio,
+            video_exercicio_id=video_id,
+            observacoes=exercicio_in.observacoes,
+        )
         db.add(exercicio)
         db.flush()
         for ordem_serie, serie_in in enumerate(exercicio_in.series):

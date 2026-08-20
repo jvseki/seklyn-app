@@ -750,8 +750,8 @@ function renderizarPassoConfig() {
             <input class="input" data-campo="descanso-personalizado" data-grupo-config="${chave}" placeholder="Ex: 60s" maxlength="20" hidden style="margin-top:var(--espaco-2);" />
           </div>
           <div class="form-group">
-            <label class="label">Carga (opcional)</label>
-            <input class="input" data-campo="carga" data-grupo-config="${chave}" placeholder="Deixe em branco se variar por aluno" maxlength="60" />
+            <label class="label">Dica de execução (opcional)</label>
+            <input class="input" data-campo="observacoes" data-grupo-config="${chave}" placeholder="Ex: desça devagar, cuidado com a lombar" maxlength="500" />
           </div>
         </div>
       `;
@@ -812,7 +812,7 @@ function resolverConfigGrupo(chave) {
       cfg.tempo === "outro"
         ? (configGruposEl.querySelector(`[data-campo="tempo-personalizado"][data-grupo-config="${chave}"]`)?.value.trim() || "")
         : String(cfg.tempo);
-    return { repeticoes: tempo, descanso: null, numeroSeries: 1, carga: null };
+    return { repeticoes: tempo, descanso: null, numeroSeries: 1, observacoes: null };
   }
 
   const repeticoes =
@@ -824,8 +824,8 @@ function resolverConfigGrupo(chave) {
       ? (configGruposEl.querySelector(`[data-campo="descanso-personalizado"][data-grupo-config="${chave}"]`)?.value.trim() || "")
       : String(cfg.descanso);
   const numeroSeries = Number(cfg.series) || 3;
-  const carga = configGruposEl.querySelector(`[data-campo="carga"][data-grupo-config="${chave}"]`)?.value.trim() || null;
-  return { repeticoes, descanso, numeroSeries, carga };
+  const observacoes = configGruposEl.querySelector(`[data-campo="observacoes"][data-grupo-config="${chave}"]`)?.value.trim() || null;
+  return { repeticoes, descanso, numeroSeries, observacoes };
 }
 
 // --- Vídeo demonstrativo por exercício (upload ou link do YouTube, reusado por nome) ---
@@ -1249,12 +1249,13 @@ function montarPayloadExerciciosPorGrupo(selecionados) {
 
   return selecionados.map((item) => {
     const indiceOriginal = itensSelecionados.indexOf(item);
-    const { repeticoes, descanso, numeroSeries, carga } = configResolvida.get(item.categoriaChave || "manual");
+    const { repeticoes, descanso, numeroSeries, observacoes } = configResolvida.get(item.categoriaChave || "manual");
     // Uma linha de série por série de verdade (ex: "4 séries" = 4 linhas o aluno marca uma a uma).
-    const serieRepetida = { repeticoes_alvo: repeticoes, carga_alvo: carga, intervalo_descanso: descanso || null };
+    const serieRepetida = { repeticoes_alvo: repeticoes, carga_alvo: null, intervalo_descanso: descanso || null };
     return {
       nome: item.nome,
       video_exercicio_id: videosPorItem[indiceOriginal]?.video_exercicio_id || null,
+      observacoes,
       series: Array.from({ length: numeroSeries }, () => serieRepetida),
     };
   });

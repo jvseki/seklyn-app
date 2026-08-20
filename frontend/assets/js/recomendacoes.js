@@ -9,6 +9,13 @@ protegerPagina();
 const listaEl = $("#lista-recomendacoes");
 const estadoVazioEl = $("#estado-vazio-recomendacoes");
 const formEl = $("#form-recomendacao");
+const categoriaSelectEl = $("#rec-categoria");
+const categoriaOutraEl = $("#rec-categoria-outra");
+
+categoriaSelectEl?.addEventListener("change", () => {
+  categoriaOutraEl.hidden = categoriaSelectEl.value !== "outra";
+  if (categoriaSelectEl.value !== "outra") categoriaOutraEl.value = "";
+});
 
 function linha(rec) {
   return `
@@ -47,16 +54,18 @@ formEl?.addEventListener("submit", async (evento) => {
   const botao = $("button[type='submit']", formEl);
   botao.disabled = true;
   try {
+    const categoria = categoriaSelectEl.value === "outra" ? categoriaOutraEl.value.trim() : categoriaSelectEl.value;
     const dados = {
       titulo: formEl.titulo.value.trim(),
       url_afiliado: formEl.url_afiliado.value.trim(),
-      categoria: formEl.categoria.value.trim() || null,
+      categoria: categoria || null,
       descricao: formEl.descricao.value.trim() || null,
       ordem: 0,
     };
     await api.criarRecomendacao(dados);
     mostrarToast("Recomendação cadastrada!", "sucesso");
     formEl.reset();
+    categoriaOutraEl.hidden = true;
     carregar();
   } catch (erro) {
     mostrarToast(mensagemDeErro(erro), "erro");
