@@ -167,26 +167,33 @@
   margin-bottom: var(--espaco-2);
 }
 
+/* Cada dia é um item de acordeão: a linha compacta sempre visível + um
+   corpo que expande/recolhe (via CSS grid-template-rows, sem JS medindo
+   altura) quando clica em "Editar". */
+.dia-item {
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-md);
+  overflow: hidden;
+  transition: border-color 0.15s ease;
+}
+
+.dia-item.tem-treino {
+  border-color: var(--cor-primaria-clara);
+}
+
 .dia-linha {
   display: grid;
   grid-template-columns: 110px 1fr auto;
   align-items: center;
   gap: var(--espaco-3);
   padding: var(--espaco-3);
-  background: var(--cor-superficie);
-  border: 1px solid var(--cor-borda);
-  border-radius: var(--raio-md);
-  transition: border-color 0.15s ease;
 }
 
 .dia-linha .dia-acoes {
   display: flex;
   gap: var(--espaco-2);
   flex-shrink: 0;
-}
-
-.dia-linha.tem-treino {
-  border-color: var(--cor-primaria-clara);
 }
 
 .dia-linha .dia-nome {
@@ -220,7 +227,132 @@
 
   .dia-linha .dia-acoes {
     display: flex;
+    flex-wrap: wrap;
     gap: var(--espaco-2);
+  }
+}
+
+/* Acordeão genérico (grid-template-rows 0fr → 1fr) — usado tanto pro corpo
+   do dia quanto pro corpo de cada exercício dentro dele. Sem JS medindo
+   altura, e funciona igual em qualquer navegador moderno. */
+.acordeao-secao {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.25s ease;
+}
+
+.acordeao-secao.aberto {
+  grid-template-rows: 1fr;
+}
+
+.acordeao-secao > * {
+  overflow: hidden;
+  min-height: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .acordeao-secao {
+    transition: none;
+  }
+}
+
+/* Corpo do dia expandido — nível 2 da hierarquia (dia > exercício > série) */
+.dia-corpo {
+  padding: 0 var(--espaco-4) var(--espaco-4);
+  border-top: 1px solid var(--cor-borda);
+  background: var(--cor-fundo-alt);
+}
+
+.treino-nome-input {
+  display: block;
+  width: 100%;
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: inherit;
+  color: var(--cor-texto);
+  background: transparent;
+  border: 1.5px solid transparent;
+  border-radius: var(--raio-sm);
+  padding: 8px 10px;
+  margin: var(--espaco-3) 0;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.treino-nome-input:hover {
+  background: var(--cor-superficie);
+}
+
+.treino-nome-input:focus {
+  background: var(--cor-superficie);
+  border-color: var(--cor-primaria-clara);
+  outline: none;
+}
+
+.exercicios-acordeao {
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-sm);
+  overflow: hidden;
+}
+
+/* Nível 3: cada exercício, dentro do dia */
+.exercicio-item {
+  border-top: 1px solid var(--cor-borda);
+}
+
+.exercicio-item:first-child {
+  border-top: none;
+}
+
+.exercicio-cabecalho {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-2);
+  padding: var(--espaco-3);
+  cursor: pointer;
+}
+
+.exercicio-cabecalho:hover {
+  background: var(--cor-fundo-alt);
+}
+
+.exercicio-cabecalho .chevron {
+  flex-shrink: 0;
+  color: var(--cor-texto-muted);
+  transition: transform 0.2s ease;
+}
+
+.exercicio-item.aberto .exercicio-cabecalho .chevron {
+  transform: rotate(90deg);
+}
+
+.exercicio-cabecalho .exercicio-nome {
+  flex: 1;
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.exercicio-cabecalho .exercicio-video-marca {
+  flex-shrink: 0;
+  color: var(--cor-primaria);
+  display: inline-flex;
+}
+
+/* Nível 4: conteúdo do exercício expandido (vídeo, séries, form de série) */
+.exercicio-corpo {
+  padding: 0 var(--espaco-3) var(--espaco-3) calc(var(--espaco-3) + 22px);
+}
+
+@media (max-width: 640px) {
+  .exercicio-cabecalho {
+    flex-wrap: wrap;
+  }
+
+  .exercicio-corpo {
+    padding-left: var(--espaco-3);
   }
 }
 
@@ -408,52 +540,10 @@
   flex-shrink: 0;
 }
 
-/* Editor de treino (aluno-detalhe.html) */
-.editor-treinos {
-  display: flex;
-  flex-direction: column;
-  gap: var(--espaco-4);
-}
-
-.exercicio-bloco {
-  border-radius: var(--raio-sm);
-  padding: 0 var(--espaco-3);
-  margin: 0 calc(var(--espaco-3) * -1);
-  transition: background-color 0.15s ease;
-}
-
-.exercicio-bloco:hover {
-  background: var(--cor-fundo-alt);
-}
-
-.treino-editor-card .exercicio-linha {
-  display: flex;
-  align-items: center;
-  gap: var(--espaco-3);
-  padding: var(--espaco-3) 0;
-  border-top: 1px solid var(--cor-borda);
-}
-
-.treino-editor-card .exercicio-linha:first-of-type {
-  border-top: none;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .exercicio-bloco {
-    transition: none;
-  }
-}
-
-.exercicio-linha .exercicio-nome {
-  font-weight: 600;
-  flex: 1;
-}
-
 .series-linha {
   display: flex;
   align-items: center;
   gap: var(--espaco-3);
-  padding-left: var(--espaco-6);
   color: var(--cor-texto-muted);
   font-size: 0.88rem;
   padding-block: 4px;

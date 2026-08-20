@@ -49,7 +49,6 @@ const cabecalhoLinkEl = $("#aluno-link");
 const whatsappEl = $("#aluno-whatsapp");
 const linkWhatsappEl = $("#aluno-link-whatsapp");
 const fichaWhatsappEl = $("#aluno-ficha-whatsapp");
-const listaTreinosEl = $("#lista-treinos-editor");
 const gradeSemanaEl = $("#grade-semana");
 const analyticsEl = $("#analytics-resumo");
 const avaliacaoProgressoEl = $("#avaliacao-progresso");
@@ -91,6 +90,10 @@ let configPorExercicio = {}; // índice de itensSelecionados → { series, repet
 let videosPorItem = {}; // índice de itensSelecionados → { video_exercicio_id, video } | undefined (sem vídeo)
 let modoConfigIndividual = false; // false = config por grupo/categoria (padrão), true = por exercício
 
+// --- Acordeão da "Organização da semana" (edição direta na grade) ---
+let diaExpandidoChave = null; // chave do dia com o corpo aberto (ex: "segunda") — só um por vez
+let exercicioExpandidoId = null; // id do exercício aberto dentro do dia expandido — só um por vez
+
 const OPCOES_SERIES = [2, 3, 4, 5, 6];
 const OPCOES_REPETICOES = ["6-8", "8-10", "10-12", "12-15", "15-20"];
 const OPCOES_DESCANSO = ["30s", "45s", "60s", "90s", "2min"];
@@ -120,67 +123,86 @@ function linhaSerie(serie) {
   `;
 }
 
-function blocoExercicio(exercicio) {
-  const series = exercicio.series.map(linhaSerie).join("") || `<p class="hint-text" style="padding-left:var(--espaco-6);">Nenhuma série cadastrada ainda.</p>`;
-  const video = exercicio.video ? renderizarPlayerVideo(exercicio.video, { altura: 200 }) : "";
+/** Corpo do exercício quando o accordion dele tá aberto: vídeo, séries, form de nova série. */
+function corpoExercicio(exercicio) {
+  const series = exercicio.series.map(linhaSerie).join("") || `<p class="hint-text" style="margin:0 0 var(--espaco-2);">Nenhuma série cadastrada ainda.</p>`;
+  const videoAtual = exercicio.video ? renderizarPlayerVideo(exercicio.video, { altura: 200 }) : "";
+  const botoesVideo = exercicio.video
+    ? `<button class="btn btn-ghost btn-sm" type="button" data-acao="abrir-video-exercicio" data-id="${exercicio.id}">Trocar vídeo</button>
+       <button class="btn btn-ghost btn-sm" type="button" data-acao="remover-video-exercicio" data-id="${exercicio.id}">Remover vídeo</button>`
+    : `<button class="btn btn-ghost btn-sm" type="button" data-acao="abrir-video-exercicio" data-id="${exercicio.id}">+ Adicionar vídeo</button>`;
+
   return `
-    <div class="exercicio-bloco" data-exercicio-id="${exercicio.id}">
-      <div class="exercicio-linha">
+    ${videoAtual}
+    <div class="video-exercicio-anexo" style="margin:0 0 var(--espaco-3);">${botoesVideo}</div>
+    <div class="video-exercicio-painel" data-painel-video-exercicio="${exercicio.id}" hidden></div>
+    ${series}
+    <form class="form-row" data-acao="form-nova-serie" data-exercicio-id="${exercicio.id}" style="margin-top:var(--espaco-2);">
+      <div class="form-group" style="flex:1;"><input class="input" name="repeticoes_alvo" placeholder="Repetições (ex: 10-12)" maxlength="60" required /></div>
+      <div class="form-group" style="flex:1;"><input class="input" name="carga_alvo" placeholder="Carga (opcional)" maxlength="60" /></div>
+      <div class="form-group" style="flex:1;"><input class="input" name="intervalo_descanso" placeholder="Descanso (ex: 60s)" maxlength="20" /></div>
+      <div class="form-group" style="flex:0;"><button class="btn btn-secondary btn-sm" type="submit">+ Série</button></div>
+    </form>
+  `;
+}
+
+/** Um exercício dentro do dia expandido — cabeçalho sempre visível, corpo em accordion próprio. */
+function itemExercicio(exercicio) {
+  const aberto = exercicioExpandidoId === exercicio.id;
+  return `
+    <div class="exercicio-item ${aberto ? "aberto" : ""}" data-exercicio-id="${exercicio.id}">
+      <div class="exercicio-cabecalho" data-acao="toggle-exercicio" data-id="${exercicio.id}">
+        ${icone("chevron", 16)}
         <span class="exercicio-nome">${escaparHtml(exercicio.nome)}</span>
+        ${exercicio.video ? `<span class="exercicio-video-marca" title="Tem vídeo anexado">${icone("video", 15)}</span>` : ""}
         <button class="btn btn-ghost btn-sm" data-acao="editar-exercicio" data-id="${exercicio.id}" type="button">Editar</button>
-        <button class="btn btn-ghost btn-sm" data-acao="excluir-exercicio" data-id="${exercicio.id}" type="button">Remover exercício</button>
+        <button class="btn btn-ghost btn-sm" data-acao="excluir-exercicio" data-id="${exercicio.id}" type="button">Remover</button>
       </div>
-      ${video}
-      ${series}
-      <form class="form-row" data-acao="form-nova-serie" data-exercicio-id="${exercicio.id}" style="padding-left:var(--espaco-6);margin-top:var(--espaco-2);">
-        <div class="form-group" style="flex:1;"><input class="input" name="repeticoes_alvo" placeholder="Repetições (ex: 10-12)" maxlength="60" required /></div>
-        <div class="form-group" style="flex:1;"><input class="input" name="carga_alvo" placeholder="Carga (opcional)" maxlength="60" /></div>
-        <div class="form-group" style="flex:1;"><input class="input" name="intervalo_descanso" placeholder="Descanso (ex: 60s)" maxlength="20" /></div>
-        <div class="form-group" style="flex:0;"><button class="btn btn-secondary btn-sm" type="submit">+ Série</button></div>
-      </form>
+      <div class="acordeao-secao ${aberto ? "aberto" : ""}" data-exercicio-corpo="${exercicio.id}">
+        <div class="exercicio-corpo">${aberto ? corpoExercicio(exercicio) : ""}</div>
+      </div>
     </div>
   `;
 }
 
-function cardTreino(treino) {
-  const exercicios = treino.exercicios.map(blocoExercicio).join("");
-  const badgeDia = treino.dia_semana
-    ? `<span class="badge badge-neutro" style="margin-left:var(--espaco-2);">${ROTULO_DIA[treino.dia_semana] || treino.dia_semana}</span>`
-    : "";
+/** Corpo do dia expandido: nome do treino editável inline + lista de exercícios em accordion. */
+function corpoDiaExpandido(treino) {
+  const exerciciosHtml =
+    treino.exercicios.map(itemExercicio).join("") ||
+    `<p class="hint-text" style="padding:var(--espaco-3);margin:0;">Esse treino ainda não tem exercícios.</p>`;
   return `
-    <div class="card treino-editor-card" data-treino-id="${treino.id}">
-      <div class="modal-cabecalho">
-        <h3>${escaparHtml(treino.nome)}${badgeDia}</h3>
-        <div style="display:flex;gap:var(--espaco-2);">
-          <button class="btn btn-ghost btn-sm" data-acao="editar-treino" data-id="${treino.id}" type="button">Editar</button>
-          <button class="btn btn-danger btn-sm" data-acao="excluir-treino" data-id="${treino.id}" type="button">Excluir treino</button>
-        </div>
-      </div>
-      ${exercicios}
-      <form class="form-row" data-acao="form-novo-exercicio" data-treino-id="${treino.id}" style="margin-top:var(--espaco-3);">
-        <div class="form-group" style="flex:1;"><input class="input" name="nome" list="lista-exercicios" placeholder="Nome do exercício (ex: Supino reto)" required /></div>
-        <div class="form-group" style="flex:0;"><button class="btn btn-secondary btn-sm" type="submit">+ Exercício</button></div>
-      </form>
-    </div>
+    <input class="treino-nome-input" type="text" value="${escaparHtml(treino.nome)}" data-treino-nome-id="${treino.id}" aria-label="Nome do treino" />
+    <div class="exercicios-acordeao">${exerciciosHtml}</div>
   `;
 }
 
 function linhaDiaSemana(dia, treinoDoDia) {
   const temTreino = Boolean(treinoDoDia);
+  const expandido = temTreino && diaExpandidoChave === dia.chave;
   return `
-    <div class="dia-linha ${temTreino ? "tem-treino" : ""}" data-dia="${dia.chave}">
-      <span class="dia-nome">${dia.rotulo}</span>
-      <span class="dia-treino-nome ${temTreino ? "" : "dia-treino-vazio"}">${
-        temTreino ? escaparHtml(treinoDoDia.nome) : "Dia de descanso"
-      }</span>
-      <div class="dia-acoes">
-        ${
-          temTreino
-            ? `<button class="btn btn-ghost btn-sm" data-acao="montar-treino" data-dia="${dia.chave}" type="button" title="Refazer este dia com o montador">${ICONE_HALTERES} Refazer</button>
-               <button class="btn btn-ghost btn-sm" data-acao="excluir-dia" data-dia="${dia.chave}" data-id="${treinoDoDia.id}" type="button" title="Remover treino deste dia">${ICONE_LIXEIRA}</button>`
-            : `<button class="btn btn-primary btn-sm" data-acao="montar-treino" data-dia="${dia.chave}" type="button">${ICONE_HALTERES} Montar treino</button>`
-        }
+    <div class="dia-item ${temTreino ? "tem-treino" : ""}" data-dia-item="${dia.chave}">
+      <div class="dia-linha" data-dia="${dia.chave}">
+        <span class="dia-nome">${dia.rotulo}</span>
+        <span class="dia-treino-nome ${temTreino ? "" : "dia-treino-vazio"}">${
+          temTreino ? escaparHtml(treinoDoDia.nome) : "Dia de descanso"
+        }</span>
+        <div class="dia-acoes">
+          ${
+            temTreino
+              ? `<button class="btn btn-ghost btn-sm" data-acao="editar-dia" data-dia="${dia.chave}" type="button">${icone("editar", 14)} Editar</button>
+                 <button class="btn btn-ghost btn-sm" data-acao="montar-treino" data-dia="${dia.chave}" type="button" title="Refazer este dia com o montador">${ICONE_HALTERES} Refazer</button>
+                 <button class="btn btn-ghost btn-sm" data-acao="excluir-dia" data-dia="${dia.chave}" data-id="${treinoDoDia.id}" type="button" title="Remover treino deste dia">${ICONE_LIXEIRA}</button>`
+              : `<button class="btn btn-primary btn-sm" data-acao="montar-treino" data-dia="${dia.chave}" type="button">${ICONE_HALTERES} Montar treino</button>`
+          }
+        </div>
       </div>
+      ${
+        temTreino
+          ? `<div class="acordeao-secao ${expandido ? "aberto" : ""}" data-dia-corpo="${dia.chave}">
+              <div class="dia-corpo">${expandido ? corpoDiaExpandido(treinoDoDia) : ""}</div>
+            </div>`
+          : ""
+      }
     </div>
   `;
 }
@@ -195,10 +217,13 @@ function renderizarGradeSemana() {
 async function recarregarTreinos() {
   try {
     treinosCache = await api.listarTreinos(alunoId);
+    // se o dia/exercício que tava aberto não existe mais (foi excluído em
+    // outra aba, por ex.), fecha em vez de tentar renderizar algo que sumiu.
+    if (diaExpandidoChave && !treinosCache.some((t) => t.dia_semana === diaExpandidoChave)) {
+      diaExpandidoChave = null;
+      exercicioExpandidoId = null;
+    }
     renderizarGradeSemana();
-    listaTreinosEl.innerHTML =
-      treinosCache.map(cardTreino).join("") ||
-      `<p class="hint-text">Nenhum treino com exercícios ainda — preencha um dia na semana acima pra começar.</p>`;
   } catch (erro) {
     mostrarToast(mensagemDeErro(erro), "erro");
   }
@@ -219,17 +244,8 @@ function encontrarNoCache(tipo, id) {
 }
 
 const CAMPOS_POR_TIPO = {
-  treino: {
-    titulo: "Editar treino",
-    campos: (item) => `
-      <div class="form-group">
-        <label class="label" for="editar-item-nome">Nome do treino</label>
-        <input class="input" id="editar-item-nome" name="nome" value="${escaparHtml(item.nome)}" required />
-      </div>
-    `,
-    montarPayload: (form) => ({ nome: form.nome.value.trim() }),
-    salvar: (id, payload) => api.atualizarTreino(id, payload),
-  },
+  // "treino" saiu daqui — o nome agora é editado direto na linha do dia
+  // (input inline em .treino-nome-input), sem precisar desse modal.
   exercicio: {
     titulo: "Editar exercício",
     campos: (item) => `
@@ -1383,25 +1399,246 @@ cabecalhoLinkEl?.addEventListener("click", () => {
   if (cabecalhoLinkEl.dataset.link) copiarParaAreaDeTransferencia(cabecalhoLinkEl.dataset.link, cabecalhoLinkEl);
 });
 
-gradeSemanaEl?.addEventListener("click", async (evento) => {
-  const botao = evento.target.closest("button[data-acao]");
-  if (!botao) return;
-  const dia = botao.dataset.dia;
+// --- Vídeo de um exercício já existente (fora do wizard) — mesma lógica de
+// upload/YouTube/reuso, só que salva na hora via atualizarExercicio, em vez
+// de guardar em memória até confirmar o treino inteiro. ---
 
-  if (botao.dataset.acao === "montar-treino") {
-    abrirMontarTreino(dia);
+async function abrirPainelVideoExercicio(exercicioId) {
+  const painel = gradeSemanaEl.querySelector(`[data-painel-video-exercicio="${exercicioId}"]`);
+  if (!painel) return;
+  const exercicio = encontrarNoCache("exercicio", exercicioId);
+  if (!exercicio) return;
+
+  painel.hidden = false;
+  painel.innerHTML = `<p class="hint-text" style="margin:0;">Procurando vídeo salvo pra "${escaparHtml(exercicio.nome)}"...</p>`;
+
+  let salvo = null;
+  try {
+    salvo = await api.buscarVideoExercicio(exercicio.nome);
+  } catch {
+    salvo = null;
+  }
+
+  painel.innerHTML = `
+    ${
+      salvo && salvo.id !== exercicio.video?.id
+        ? `<div>
+            <p class="hint-text" style="margin:0 0 var(--espaco-2);">Já existe um vídeo salvo pra "${escaparHtml(exercicio.nome)}" (de outro treino). Quer reusar?</p>
+            <button class="btn btn-secondary btn-sm" type="button" data-acao="reusar-video-exercicio" data-id="${exercicioId}" data-video-id="${salvo.id}">Usar esse vídeo</button>
+          </div>`
+        : ""
+    }
+    <div class="video-exercicio-abas">
+      <button class="video-exercicio-aba ativa" type="button" data-aba-exercicio="youtube" data-id="${exercicioId}">Link do YouTube</button>
+      <button class="video-exercicio-aba" type="button" data-aba-exercicio="upload" data-id="${exercicioId}">Enviar arquivo MP4</button>
+    </div>
+    <div data-conteudo-aba-exercicio="youtube" data-id="${exercicioId}">
+      <div class="form-row">
+        <div class="form-group" style="flex:1;margin-bottom:0;">
+          <input class="input" type="url" placeholder="https://youtube.com/watch?v=... (pode ser não listado)" data-campo-youtube-exercicio="${exercicioId}" />
+        </div>
+        <div class="form-group" style="flex:0;margin-bottom:0;">
+          <button class="btn btn-primary btn-sm" type="button" data-acao="salvar-video-youtube-exercicio" data-id="${exercicioId}">Salvar</button>
+        </div>
+      </div>
+    </div>
+    <div data-conteudo-aba-exercicio="upload" data-id="${exercicioId}" hidden>
+      <div class="form-group">
+        <input class="input" type="file" accept="video/mp4,video/quicktime,video/webm" data-campo-upload-exercicio="${exercicioId}" />
+        <span class="hint-text">Até 30MB.</span>
+      </div>
+      <div class="form-group">
+        <label class="label" style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-weight:400;">
+          <input type="checkbox" data-campo-direitos-exercicio="${exercicioId}" style="margin-top:3px;" />
+          <span class="hint-text">Confirmo que tenho os direitos de uso desse vídeo (gravei eu mesmo ou tenho autorização) — a responsabilidade pelo conteúdo enviado é minha.</span>
+        </label>
+      </div>
+      <button class="btn btn-primary btn-sm" type="button" data-acao="salvar-video-upload-exercicio" data-id="${exercicioId}">Enviar e salvar</button>
+    </div>
+    <button class="btn btn-ghost btn-sm" type="button" data-acao="fechar-video-exercicio" data-id="${exercicioId}">Cancelar</button>
+  `;
+}
+
+gradeSemanaEl?.addEventListener("click", async (evento) => {
+  // Ações dentro do exercício expandido — checadas antes das mais genéricas
+  // (editar-dia, toggle-exercicio) porque um clique nesses botões também
+  // "bate" no cabeçalho do exercício por baixo, e closest() pega o mais
+  // específico primeiro de qualquer forma, mas deixamos explícito aqui.
+  const editarExercicio = evento.target.closest("[data-acao='editar-exercicio']");
+  if (editarExercicio) return abrirEdicaoItem("exercicio", Number(editarExercicio.dataset.id));
+
+  const editarSerie = evento.target.closest("[data-acao='editar-serie']");
+  if (editarSerie) return abrirEdicaoItem("serie", Number(editarSerie.dataset.id));
+
+  const excluirExercicio = evento.target.closest("[data-acao='excluir-exercicio']");
+  if (excluirExercicio) {
+    const confirmou = await confirmarAcao("Excluir este exercício e suas séries?", { titulo: "Confirmar exclusão", textoConfirmar: "Excluir" });
+    if (!confirmou) return;
+    try {
+      await api.excluirExercicio(Number(excluirExercicio.dataset.id));
+      mostrarToast("Exercício removido.", "sucesso");
+      recarregarTreinos();
+    } catch (erro) {
+      mostrarToast(mensagemDeErro(erro), "erro");
+    }
     return;
   }
 
-  if (botao.dataset.acao === "excluir-dia") {
+  const excluirSerie = evento.target.closest("[data-acao='excluir-serie']");
+  if (excluirSerie) {
+    const confirmou = await confirmarAcao("Remover esta série?", { titulo: "Confirmar exclusão", textoConfirmar: "Excluir" });
+    if (!confirmou) return;
+    try {
+      await api.excluirSerie(Number(excluirSerie.dataset.id));
+      mostrarToast("Série removida.", "sucesso");
+      recarregarTreinos();
+    } catch (erro) {
+      mostrarToast(mensagemDeErro(erro), "erro");
+    }
+    return;
+  }
+
+  // --- vídeo do exercício ---
+  const abrirVideo = evento.target.closest("[data-acao='abrir-video-exercicio']");
+  if (abrirVideo) return abrirPainelVideoExercicio(Number(abrirVideo.dataset.id));
+
+  const fecharVideo = evento.target.closest("[data-acao='fechar-video-exercicio']");
+  if (fecharVideo) {
+    gradeSemanaEl.querySelector(`[data-painel-video-exercicio="${fecharVideo.dataset.id}"]`).hidden = true;
+    return;
+  }
+
+  const removerVideo = evento.target.closest("[data-acao='remover-video-exercicio']");
+  if (removerVideo) {
+    try {
+      await api.atualizarExercicio(Number(removerVideo.dataset.id), { video_exercicio_id: null });
+      mostrarToast("Vídeo removido do exercício.", "sucesso");
+      recarregarTreinos();
+    } catch (erro) {
+      mostrarToast(mensagemDeErro(erro), "erro");
+    }
+    return;
+  }
+
+  const abaExercicio = evento.target.closest("[data-aba-exercicio]");
+  if (abaExercicio) {
+    const painel = abaExercicio.closest(".video-exercicio-painel");
+    $all("[data-aba-exercicio]", painel).forEach((b) => b.classList.toggle("ativa", b === abaExercicio));
+    $all("[data-conteudo-aba-exercicio]", painel).forEach(
+      (c) => (c.hidden = c.dataset.conteudoAbaExercicio !== abaExercicio.dataset.abaExercicio)
+    );
+    return;
+  }
+
+  const reusarVideo = evento.target.closest("[data-acao='reusar-video-exercicio']");
+  if (reusarVideo) {
+    const id = Number(reusarVideo.dataset.id);
+    try {
+      await api.atualizarExercicio(id, { video_exercicio_id: Number(reusarVideo.dataset.videoId) });
+      mostrarToast("Vídeo anexado!", "sucesso");
+      recarregarTreinos();
+    } catch (erro) {
+      mostrarToast(mensagemDeErro(erro), "erro");
+    }
+    return;
+  }
+
+  const salvarYoutube = evento.target.closest("[data-acao='salvar-video-youtube-exercicio']");
+  if (salvarYoutube) {
+    const id = Number(salvarYoutube.dataset.id);
+    const input = gradeSemanaEl.querySelector(`[data-campo-youtube-exercicio="${id}"]`);
+    const url = input.value.trim();
+    if (!url) {
+      mostrarToast("Cole o link do vídeo.", "erro");
+      return;
+    }
+    const exercicio = encontrarNoCache("exercicio", id);
+    salvarYoutube.disabled = true;
+    try {
+      const video = await api.salvarVideoExercicioYoutube(exercicio.nome, url);
+      await api.atualizarExercicio(id, { video_exercicio_id: video.id });
+      mostrarToast("Vídeo salvo!", "sucesso");
+      recarregarTreinos();
+    } catch (erro) {
+      mostrarToast(mensagemDeErro(erro), "erro");
+    } finally {
+      salvarYoutube.disabled = false;
+    }
+    return;
+  }
+
+  const salvarUpload = evento.target.closest("[data-acao='salvar-video-upload-exercicio']");
+  if (salvarUpload) {
+    const id = Number(salvarUpload.dataset.id);
+    const inputArquivo = gradeSemanaEl.querySelector(`[data-campo-upload-exercicio="${id}"]`);
+    const arquivo = inputArquivo.files[0];
+    if (!arquivo) {
+      mostrarToast("Escolha um arquivo de vídeo.", "erro");
+      return;
+    }
+    if (arquivo.size > 30 * 1024 * 1024) {
+      mostrarToast("Vídeo muito grande — o limite é 30MB.", "erro");
+      return;
+    }
+    const confirmaDireitos = gradeSemanaEl.querySelector(`[data-campo-direitos-exercicio="${id}"]`);
+    if (!confirmaDireitos?.checked) {
+      mostrarToast("Confirme que você tem os direitos de uso desse vídeo antes de enviar.", "erro");
+      return;
+    }
+    const exercicio = encontrarNoCache("exercicio", id);
+    salvarUpload.disabled = true;
+    const textoOriginal = salvarUpload.textContent;
+    salvarUpload.textContent = "Enviando...";
+    try {
+      const video = await api.salvarVideoExercicioUpload(exercicio.nome, arquivo);
+      await api.atualizarExercicio(id, { video_exercicio_id: video.id });
+      mostrarToast("Vídeo salvo!", "sucesso");
+      recarregarTreinos();
+    } catch (erro) {
+      mostrarToast(mensagemDeErro(erro), "erro");
+    } finally {
+      salvarUpload.disabled = false;
+      salvarUpload.textContent = textoOriginal;
+    }
+    return;
+  }
+
+  // --- accordions (dia / exercício) ---
+  const toggleExercicio = evento.target.closest("[data-acao='toggle-exercicio']");
+  if (toggleExercicio) {
+    const id = Number(toggleExercicio.dataset.id);
+    exercicioExpandidoId = exercicioExpandidoId === id ? null : id;
+    renderizarGradeSemana();
+    return;
+  }
+
+  const editarDia = evento.target.closest("[data-acao='editar-dia']");
+  if (editarDia) {
+    const dia = editarDia.dataset.dia;
+    diaExpandidoChave = diaExpandidoChave === dia ? null : dia;
+    exercicioExpandidoId = null; // troca de dia sempre começa com os exercícios recolhidos
+    renderizarGradeSemana();
+    return;
+  }
+
+  const montarTreinoBtn = evento.target.closest("[data-acao='montar-treino']");
+  if (montarTreinoBtn) {
+    abrirMontarTreino(montarTreinoBtn.dataset.dia);
+    return;
+  }
+
+  const excluirDia = evento.target.closest("[data-acao='excluir-dia']");
+  if (excluirDia) {
+    const dia = excluirDia.dataset.dia;
     const confirmou = await confirmarAcao(`Remover o treino de ${ROTULO_DIA[dia]} e todos os seus exercícios/séries?`, {
       titulo: "Remover treino",
       textoConfirmar: "Remover",
     });
     if (!confirmou) return;
     try {
-      await api.excluirTreino(Number(botao.dataset.id));
+      await api.excluirTreino(Number(excluirDia.dataset.id));
       mostrarToast("Treino removido.", "sucesso");
+      if (diaExpandidoChave === dia) diaExpandidoChave = null;
       recarregarTreinos();
     } catch (erro) {
       mostrarToast(mensagemDeErro(erro), "erro");
@@ -1409,72 +1646,61 @@ gradeSemanaEl?.addEventListener("click", async (evento) => {
   }
 });
 
-listaTreinosEl?.addEventListener("submit", async (evento) => {
+gradeSemanaEl?.addEventListener("submit", async (evento) => {
+  if (evento.target.dataset.acao !== "form-nova-serie") return;
+  evento.preventDefault();
   const alvo = evento.target;
-
-  if (alvo.dataset.acao === "form-novo-exercicio") {
-    evento.preventDefault();
-    const treinoId = Number(alvo.dataset.treinoId);
-    const nome = alvo.nome.value.trim();
-    if (!nome) return;
-    try {
-      await api.criarExercicio(treinoId, { nome, ordem: 0 });
-      mostrarToast("Exercício adicionado!", "sucesso");
-      recarregarTreinos();
-    } catch (erro) {
-      mostrarToast(mensagemDeErro(erro), "erro");
-    }
-  }
-
-  if (alvo.dataset.acao === "form-nova-serie") {
-    evento.preventDefault();
-    const exercicioId = Number(alvo.dataset.exercicioId);
-    const repeticoesAlvo = alvo.repeticoes_alvo.value.trim();
-    const cargaAlvo = alvo.carga_alvo.value.trim() || null;
-    const intervaloDescanso = alvo.intervalo_descanso.value.trim() || null;
-    if (!repeticoesAlvo) return;
-    try {
-      await api.criarSerie(exercicioId, {
-        ordem: 0,
-        repeticoes_alvo: repeticoesAlvo,
-        carga_alvo: cargaAlvo,
-        intervalo_descanso: intervaloDescanso,
-      });
-      mostrarToast("Série adicionada!", "sucesso");
-      recarregarTreinos();
-    } catch (erro) {
-      mostrarToast(mensagemDeErro(erro), "erro");
-    }
-  }
-});
-
-listaTreinosEl?.addEventListener("click", async (evento) => {
-  const botao = evento.target.closest("button[data-acao]");
-  if (!botao) return;
-  const id = Number(botao.dataset.id);
-  const acao = botao.dataset.acao;
-
-  if (acao === "editar-treino") return abrirEdicaoItem("treino", id);
-  if (acao === "editar-exercicio") return abrirEdicaoItem("exercicio", id);
-  if (acao === "editar-serie") return abrirEdicaoItem("serie", id);
-
-  const confirmacoes = {
-    "excluir-treino": "Excluir este treino e todos os seus exercícios/séries?",
-    "excluir-exercicio": "Excluir este exercício e suas séries?",
-    "excluir-serie": "Remover esta série?",
-  };
-  if (confirmacoes[acao]) {
-    const confirmou = await confirmarAcao(confirmacoes[acao], { titulo: "Confirmar exclusão", textoConfirmar: "Excluir" });
-    if (!confirmou) return;
-  }
-
+  const exercicioId = Number(alvo.dataset.exercicioId);
+  const repeticoesAlvo = alvo.repeticoes_alvo.value.trim();
+  const cargaAlvo = alvo.carga_alvo.value.trim() || null;
+  const intervaloDescanso = alvo.intervalo_descanso.value.trim() || null;
+  if (!repeticoesAlvo) return;
   try {
-    if (acao === "excluir-treino") await api.excluirTreino(id);
-    if (acao === "excluir-exercicio") await api.excluirExercicio(id);
-    if (acao === "excluir-serie") await api.excluirSerie(id);
+    await api.criarSerie(exercicioId, {
+      ordem: 0,
+      repeticoes_alvo: repeticoesAlvo,
+      carga_alvo: cargaAlvo,
+      intervalo_descanso: intervaloDescanso,
+    });
+    mostrarToast("Série adicionada!", "sucesso");
     recarregarTreinos();
   } catch (erro) {
     mostrarToast(mensagemDeErro(erro), "erro");
+  }
+});
+
+// Nome do treino editável direto na linha — salva ao sair do campo ou apertar Enter.
+// "blur" não borbulha por padrão, por isso o listener vai na fase de captura.
+gradeSemanaEl?.addEventListener(
+  "blur",
+  async (evento) => {
+    const input = evento.target.closest?.(".treino-nome-input");
+    if (!input) return;
+    const treinoId = Number(input.dataset.treinoNomeId);
+    const treino = encontrarNoCache("treino", treinoId);
+    const nome = input.value.trim();
+    if (!treino) return;
+    if (!nome || nome === treino.nome) {
+      input.value = treino.nome; // não deixa salvar vazio nem faz chamada à toa
+      return;
+    }
+    try {
+      await api.atualizarTreino(treinoId, { nome });
+      treino.nome = nome;
+      mostrarToast("Nome do treino atualizado.", "sucesso");
+      renderizarGradeSemana();
+    } catch (erro) {
+      mostrarToast(mensagemDeErro(erro), "erro");
+      input.value = treino.nome;
+    }
+  },
+  true
+);
+
+gradeSemanaEl?.addEventListener("keydown", (evento) => {
+  if (evento.key === "Enter" && evento.target.closest(".treino-nome-input")) {
+    evento.preventDefault();
+    evento.target.blur();
   }
 });
 
