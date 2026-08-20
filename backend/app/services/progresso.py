@@ -288,8 +288,9 @@ def calcular_analytics_detalhado(db: Session, aluno: Aluno, periodo_dias: int = 
     execucoes_ordenadas = sorted(execucoes, key=lambda e: e.criado_em, reverse=True)[:150]
     execucoes_recentes = [
         ExecucaoDetalheOut(
-            data=e.data_execucao,
+            data_marcacao=e.criado_em.astimezone(FUSO_BRASIL).date(),
             hora=e.criado_em.astimezone(FUSO_BRASIL).strftime("%H:%M"),
+            data_treino=e.data_execucao,
             treino_nome=e.serie.exercicio.treino.nome,
             exercicio_nome=e.serie.exercicio.nome,
         )

@@ -29,10 +29,15 @@ class PontoDesempenhoOut(BaseModel):
 
 
 class ExecucaoDetalheOut(BaseModel):
-    """Uma marcação individual, com hora real — pra dar transparência ao personal."""
+    """Uma marcação individual — data e hora REAIS de quando o aluno clicou
+    (data_marcacao/hora), separado do dia do treino a que a série pertence
+    (data_treino). Os dois só divergem quando o aluno marca atrasado (ex:
+    treino de segunda marcado só na terça de noite) — é isso que dá
+    transparência de verdade ao personal, não só o check verde."""
 
-    data: date
+    data_marcacao: date
     hora: str  # "HH:MM", já no horário de Brasília
+    data_treino: date
     treino_nome: str
     exercicio_nome: str
 

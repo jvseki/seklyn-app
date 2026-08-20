@@ -843,6 +843,16 @@
   color: var(--cor-texto);
 }
 
+/* Aparece quando a série foi marcada num dia diferente do dia do treino a
+   que ela pertence — ex: treino de segunda, marcado só na terça de noite. */
+.execucao-item-atraso {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--cor-aviso);
+  font-weight: 600;
+}
+
 .avatar-pequeno {
   width: 28px;
   height: 28px;

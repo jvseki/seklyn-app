@@ -48,12 +48,18 @@ function renderizarGrafico(pontos) {
   `;
 }
 
-/** Junta em uma linha só as séries seguidas do mesmo exercício/horário (ex: 3 séries de Prancha às 22:49 viram "3x Prancha"). */
+/** Junta em uma linha só as séries seguidas do mesmo exercício/horário/treino (ex: 3 séries de Prancha às 22:49 viram "3x Prancha"). */
 function agruparExecucoesRepetidas(itens) {
   const grupos = [];
   for (const item of itens) {
     const ultimo = grupos[grupos.length - 1];
-    if (ultimo && ultimo.hora === item.hora && ultimo.exercicio_nome === item.exercicio_nome && ultimo.treino_nome === item.treino_nome) {
+    if (
+      ultimo &&
+      ultimo.hora === item.hora &&
+      ultimo.exercicio_nome === item.exercicio_nome &&
+      ultimo.treino_nome === item.treino_nome &&
+      ultimo.data_treino === item.data_treino
+    ) {
       ultimo.quantidade += 1;
     } else {
       grupos.push({ ...item, quantidade: 1 });
@@ -69,30 +75,33 @@ function renderizarExecucoes(execucoes) {
     return;
   }
 
-  // Agrupa por dia pra destacar visualmente quando muita coisa foi marcada junto.
-  const porDia = new Map();
+  // Agrupa pelo dia REAL em que o aluno marcou (data_marcacao) — não pelo dia
+  // do treino (data_treino). São coisas diferentes: um treino de segunda
+  // marcado só na terça de noite tem que aparecer sob "terça", com um aviso
+  // de que era treino de outro dia — não escondido debaixo de "segunda".
+  const porDiaMarcacao = new Map();
   execucoes.forEach((e) => {
-    if (!porDia.has(e.data)) porDia.set(e.data, []);
-    porDia.get(e.data).push(e);
+    if (!porDiaMarcacao.has(e.data_marcacao)) porDiaMarcacao.set(e.data_marcacao, []);
+    porDiaMarcacao.get(e.data_marcacao).push(e);
   });
 
-  container.innerHTML = Array.from(porDia.entries())
-    .map(([data, itens]) => {
+  container.innerHTML = Array.from(porDiaMarcacao.entries())
+    .map(([dataMarcacao, itens]) => {
       const horarios = itens.map((i) => i.hora).sort();
       const suspeito = itens.length >= 3 && horariosMuitoProximos(horarios);
       const grupos = agruparExecucoesRepetidas(itens);
       return `
         <div class="execucao-dia-bloco ${suspeito ? "suspeito" : ""}">
           <p class="execucao-dia-titulo">
-            ${formatarDataCompleta(data)}
+            Marcado em ${formatarDataCompleta(dataMarcacao)}
             ${suspeito ? `<span class="badge badge-aviso">${icone("aviso", 14)} marcações muito próximas</span>` : ""}
           </p>
           <div class="execucao-dia-itens">
             ${grupos
-              .map(
-                (g) =>
-                  `<span class="execucao-item">${escaparHtml(g.hora)} · ${g.quantidade > 1 ? `${g.quantidade}x ` : ""}${escaparHtml(g.exercicio_nome)} <span class="hint-text">(${escaparHtml(g.treino_nome)})</span></span>`
-              )
+              .map((g) => {
+                const atrasado = g.data_treino !== dataMarcacao;
+                return `<span class="execucao-item">${escaparHtml(g.hora)} · ${g.quantidade > 1 ? `${g.quantidade}x ` : ""}${escaparHtml(g.exercicio_nome)} <span class="hint-text">(${escaparHtml(g.treino_nome)})</span>${atrasado ? ` <span class="execucao-item-atraso">${icone("aviso", 12)} treino do dia ${formatarDataCompleta(g.data_treino)}</span>` : ""}</span>`;
+              })
               .join("")}
           </div>
         </div>
