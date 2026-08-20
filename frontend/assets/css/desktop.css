@@ -215,6 +215,13 @@
   font-style: italic;
 }
 
+.link-acesso-acoes {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-2);
+  flex-wrap: wrap;
+}
+
 @media (max-width: 640px) {
   .dia-linha {
     grid-template-columns: 1fr;
