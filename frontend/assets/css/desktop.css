@@ -84,6 +84,12 @@
 .conteudo-personal {
   padding: var(--espaco-6) var(--espaco-7);
   max-width: 1120px;
+  /* É o item do grid de .app-personal (1fr) — sem isso, qualquer
+     conteúdo interno "não quebrável" (texto com white-space:nowrap,
+     URL sem espaço, etc.) força esse item a crescer além da tela toda,
+     mesmo que aquele elemento específico já tenha overflow:hidden. Essa
+     é a causa raiz por trás de vários estouros horizontais no mobile. */
+  min-width: 0;
 }
 
 .cabecalho-pagina {

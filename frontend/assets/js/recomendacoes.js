@@ -19,7 +19,7 @@ categoriaSelectEl?.addEventListener("change", () => {
 
 function linha(rec) {
   return `
-    <div class="card" data-id="${rec.id}" style="display:flex;align-items:center;gap:var(--espaco-4);">
+    <div class="card" data-id="${rec.id}" style="display:flex;align-items:center;gap:var(--espaco-4);min-width:0;flex-wrap:wrap;">
       <div style="flex:1;min-width:0;">
         <strong>${escaparHtml(rec.titulo)}</strong>
         ${rec.categoria ? `<span class="badge badge-neutro" style="margin-left:8px;">${escaparHtml(rec.categoria)}</span>` : ""}
