@@ -255,27 +255,12 @@ const CAMPOS_POR_TIPO = {
         <input class="input" id="editar-item-nome" name="nome" list="lista-exercicios" value="${escaparHtml(item.nome)}" required />
       </div>
       <div class="form-group">
-        <span class="label">Grupo muscular (opcional)</span>
-        <input type="hidden" name="categoria" value="${escaparHtml(item.categoria || "")}" />
-        <div class="grade-categorias" id="editar-item-grade-categoria" style="grid-template-columns:repeat(auto-fill, minmax(90px, 1fr));">
-          ${CATEGORIAS_TREINO.map(
-            (c) => `
-              <button class="categoria-chip ${item.categoria === c.chave ? "selecionada" : ""}" type="button" data-categoria="${c.chave}" style="padding:var(--espaco-2);">
-                <span class="emoji">${iconeCategoriaTreino(c.chave)}</span>
-                <span style="font-size:0.8rem;">${escaparHtml(c.rotulo)}</span>
-              </button>
-            `
-          ).join("")}
-        </div>
-      </div>
-      <div class="form-group">
         <label class="label" for="editar-item-observacoes">Observações (opcional)</label>
         <textarea class="textarea" id="editar-item-observacoes" name="observacoes">${escaparHtml(item.observacoes || "")}</textarea>
       </div>
     `,
     montarPayload: (form) => ({
       nome: form.nome.value.trim(),
-      categoria: form.categoria.value || null,
       observacoes: form.observacoes.value.trim() || null,
     }),
     salvar: (id, payload) => api.atualizarExercicio(id, payload),
@@ -1813,24 +1798,6 @@ formEditarAluno?.addEventListener("submit", async (evento) => {
 document.querySelectorAll("[data-acao='fechar-modal-item']").forEach((el) =>
   el.addEventListener("click", () => fecharModal(modalEditarItem))
 );
-
-// Grade de categoria no "Editar exercício" — seleção única (clicar de novo
-// desmarca, voltando pra "nenhum"). O valor vive no <input type="hidden">.
-editarItemCampos.addEventListener("click", (evento) => {
-  const chip = evento.target.closest(".categoria-chip");
-  if (!chip) return;
-  const grade = chip.closest("#editar-item-grade-categoria");
-  if (!grade) return;
-  const jaSelecionada = chip.classList.contains("selecionada");
-  grade.querySelectorAll(".categoria-chip").forEach((c) => c.classList.remove("selecionada"));
-  const inputCategoria = editarItemCampos.querySelector("input[name='categoria']");
-  if (jaSelecionada) {
-    inputCategoria.value = "";
-  } else {
-    chip.classList.add("selecionada");
-    inputCategoria.value = chip.dataset.categoria;
-  }
-});
 
 formEditarItem?.addEventListener("submit", async (evento) => {
   evento.preventDefault();
