@@ -9,6 +9,7 @@ class ExercicioCriar(BaseModel):
     nome: str = Field(min_length=1, max_length=120)
     ordem: int = 0
     observacoes: str | None = None
+    categoria: str | None = Field(default=None, max_length=30)
     video_exercicio_id: int | None = None
 
 
@@ -16,6 +17,7 @@ class ExercicioAtualizar(BaseModel):
     nome: str | None = Field(default=None, min_length=1, max_length=120)
     ordem: int | None = None
     observacoes: str | None = None
+    categoria: str | None = Field(default=None, max_length=30)
     video_exercicio_id: int | None = None
 
 
@@ -25,6 +27,7 @@ class ExercicioOut(OrmModel):
     nome: str
     ordem: int
     observacoes: str | None
+    categoria: str | None = None
     series: list[SerieOut] = []
     video: VideoExercicioOut | None = None
 
@@ -35,6 +38,7 @@ class ExercicioComProgressoOut(OrmModel):
     id: int
     nome: str
     observacoes: str | None
+    categoria: str | None = None
     series: list[SerieComExecucaoOut] = []
     concluido_hoje: bool = False
     video: VideoExercicioOut | None = None

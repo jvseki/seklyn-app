@@ -14,6 +14,11 @@ class Exercicio(Base):
     nome: Mapped[str] = mapped_column(String(120), nullable=False)
     ordem: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     observacoes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Chave do grupo muscular (ex: "peito", "costas" — as mesmas chaves do
+    # catálogo de categorias do frontend). Livre/nullable porque exercícios
+    # digitados manualmente (ou criados antes desse campo existir) podem não
+    # ter categoria — não é FK pra nada, só uma string organizacional.
+    categoria: Mapped[str | None] = mapped_column(String(30), nullable=True)
     # Vídeo demonstrativo (reusado de outros alunos com o mesmo exercício,
     # ou anexado na hora) — None = sem vídeo, o normal.
     video_exercicio_id: Mapped[int | None] = mapped_column(

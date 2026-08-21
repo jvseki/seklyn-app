@@ -154,6 +154,7 @@ function itemExercicio(exercicio) {
       <div class="exercicio-cabecalho" data-acao="toggle-exercicio" data-id="${exercicio.id}">
         ${icone("chevron", 16)}
         <span class="exercicio-nome">${escaparHtml(exercicio.nome)}</span>
+        ${exercicio.categoria ? `<span class="badge badge-neutro">${escaparHtml(obterCategoria(exercicio.categoria)?.rotulo || exercicio.categoria)}</span>` : ""}
         ${exercicio.video ? `<span class="exercicio-video-marca" title="Tem vídeo anexado">${icone("video", 15)}</span>` : ""}
         <button class="btn btn-ghost btn-sm" data-acao="editar-exercicio" data-id="${exercicio.id}" type="button">Editar</button>
         <button class="btn btn-ghost btn-sm" data-acao="excluir-exercicio" data-id="${exercicio.id}" type="button">Remover</button>
@@ -254,11 +255,24 @@ const CAMPOS_POR_TIPO = {
         <input class="input" id="editar-item-nome" name="nome" list="lista-exercicios" value="${escaparHtml(item.nome)}" required />
       </div>
       <div class="form-group">
+        <label class="label" for="editar-item-categoria">Grupo muscular (opcional)</label>
+        <select class="input" id="editar-item-categoria" name="categoria">
+          <option value="">Nenhum</option>
+          ${CATEGORIAS_TREINO.map(
+            (c) => `<option value="${c.chave}" ${item.categoria === c.chave ? "selected" : ""}>${escaparHtml(c.rotulo)}</option>`
+          ).join("")}
+        </select>
+      </div>
+      <div class="form-group">
         <label class="label" for="editar-item-observacoes">Observações (opcional)</label>
         <textarea class="textarea" id="editar-item-observacoes" name="observacoes">${escaparHtml(item.observacoes || "")}</textarea>
       </div>
     `,
-    montarPayload: (form) => ({ nome: form.nome.value.trim(), observacoes: form.observacoes.value.trim() || null }),
+    montarPayload: (form) => ({
+      nome: form.nome.value.trim(),
+      categoria: form.categoria.value || null,
+      observacoes: form.observacoes.value.trim() || null,
+    }),
     salvar: (id, payload) => api.atualizarExercicio(id, payload),
   },
   serie: {
@@ -1256,6 +1270,7 @@ function montarPayloadExerciciosPorGrupo(selecionados) {
       nome: item.nome,
       video_exercicio_id: videosPorItem[indiceOriginal]?.video_exercicio_id || null,
       observacoes,
+      categoria: item.categoriaChave || null,
       series: Array.from({ length: numeroSeries }, () => serieRepetida),
     };
   });
@@ -1264,7 +1279,7 @@ function montarPayloadExerciciosPorGrupo(selecionados) {
 function montarPayloadExerciciosIndividual() {
   const comIndice = itensSelecionados.map((item, indice) => ({ ...item, indice })).filter((item) => item.incluido);
   const payload = [];
-  for (const { nome, indice } of comIndice) {
+  for (const { nome, categoriaChave, indice } of comIndice) {
     const resolvido = resolverConfigExercicio(indice);
     if (!resolvido.repeticoes) {
       const campo = configPorExercicio[indice]?.tipo === "tempo" ? "o tempo" : "as repetições";
@@ -1274,6 +1289,7 @@ function montarPayloadExerciciosIndividual() {
     payload.push({
       nome,
       video_exercicio_id: videosPorItem[indice]?.video_exercicio_id || null,
+      categoria: categoriaChave || null,
       series: resolvido.cargas.map((carga) => ({
         repeticoes_alvo: resolvido.repeticoes,
         carga_alvo: carga,

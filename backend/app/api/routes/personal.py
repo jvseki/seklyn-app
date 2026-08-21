@@ -287,6 +287,7 @@ def montar_treino(
             ordem=ordem_exercicio,
             video_exercicio_id=video_id,
             observacoes=exercicio_in.observacoes,
+            categoria=exercicio_in.categoria,
         )
         db.add(exercicio)
         db.flush()
@@ -358,7 +359,12 @@ def criar_exercicio(
     treino = obter_treino_do_personal(treino_id, personal, db)
     video_id = _validar_video_do_personal(dados.video_exercicio_id, personal, db)
     exercicio = Exercicio(
-        treino_id=treino.id, nome=dados.nome, ordem=dados.ordem, observacoes=dados.observacoes, video_exercicio_id=video_id
+        treino_id=treino.id,
+        nome=dados.nome,
+        ordem=dados.ordem,
+        observacoes=dados.observacoes,
+        categoria=dados.categoria,
+        video_exercicio_id=video_id,
     )
     db.add(exercicio)
     db.commit()
