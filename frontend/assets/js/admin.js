@@ -12,6 +12,7 @@ protegerPagina();
 adicionarBlobsEm("#painel-hero-admin");
 
 const corpoTabelaEl = $("#tabela-corpo");
+const cartoesMobileEl = $("#admin-cards-mobile");
 const estadoVazioEl = $("#estado-vazio-admin");
 const statTotalEl = $("#stat-total");
 const statAtivasEl = $("#stat-ativas");
@@ -59,6 +60,41 @@ function linhaPersonal(p) {
   `;
 }
 
+/** Mesmo dado da linha da tabela, só que em card — usado abaixo de 900px
+   (a tabela de 8 colunas não cabe numa tela de celular). */
+function cartaoPersonal(p) {
+  const temaPonto = p.tema_personalizado
+    ? `<span class="tema-ponto" style="background:var(--cor-primaria);"></span>${escaparHtml(p.tema_personalizado)}`
+    : `<span class="hint-text">padrão</span>`;
+  const botaoAlternar =
+    p.assinatura_status === "active" || p.assinatura_status === "trialing"
+      ? `<button class="btn btn-ghost btn-sm" data-acao="desativar" data-id="${p.id}">Desativar</button>`
+      : `<button class="btn btn-primary btn-sm" data-acao="ativar" data-id="${p.id}">Ativar</button>`;
+
+  return `
+    <div class="admin-card" data-linha="${p.id}">
+      <div class="admin-card-topo">
+        <div>
+          <strong>${escaparHtml(p.nome)}</strong>${p.is_admin ? ' <span class="badge badge-primaria" style="margin-left:6px;">Admin</span>' : ""}
+          <div class="hint-text">${p.email_verificado ? "E-mail confirmado" : "E-mail pendente"}</div>
+        </div>
+        ${badgeAssinatura(p.assinatura_status)}
+      </div>
+      <div class="admin-card-email">${escaparHtml(p.email)}</div>
+      <div class="admin-card-grid">
+        <div><span class="admin-card-rotulo">Tema</span>${temaPonto}</div>
+        <div><span class="admin-card-rotulo">Alunos</span>${p.total_alunos}</div>
+        <div>
+          <span class="admin-card-rotulo">Limite</span>
+          <input class="limite-input" type="number" min="0" placeholder="—" value="${p.limite_alunos ?? ""}" data-limite-input data-id="${p.id}" />
+        </div>
+        <div><span class="admin-card-rotulo">Criado em</span>${formatarDataHora(p.criado_em)}</div>
+      </div>
+      <div class="admin-card-acoes">${botaoAlternar}</div>
+    </div>
+  `;
+}
+
 function renderizarStats(lista) {
   const ativas = lista.filter((p) => p.assinatura_status === "active" || p.assinatura_status === "trialing").length;
   statTotalEl.textContent = String(lista.length);
@@ -72,11 +108,13 @@ function renderizar() {
   renderizarStats(listaAtual);
   if (listaAtual.length === 0) {
     corpoTabelaEl.innerHTML = "";
+    cartoesMobileEl.innerHTML = "";
     estadoVazioEl.hidden = false;
     return;
   }
   estadoVazioEl.hidden = true;
   corpoTabelaEl.innerHTML = listaAtual.map(linhaPersonal).join("");
+  cartoesMobileEl.innerHTML = listaAtual.map(cartaoPersonal).join("");
 }
 
 async function carregar() {
@@ -99,7 +137,9 @@ function atualizarLinha(atualizado) {
   renderizar();
 }
 
-corpoTabelaEl.addEventListener("click", async (evento) => {
+// Tabela (desktop) e cards (mobile) mostram os mesmos dados de listaAtual,
+// então os dois containers recebem os mesmos handlers de clique/troca.
+async function aoClicarAcao(evento) {
   const botaoAtivar = evento.target.closest("[data-acao='ativar']");
   const botaoDesativar = evento.target.closest("[data-acao='desativar']");
 
@@ -130,9 +170,9 @@ corpoTabelaEl.addEventListener("click", async (evento) => {
       mostrarToast(mensagemDeErro(erro), "erro");
     }
   }
-});
+}
 
-corpoTabelaEl.addEventListener("change", async (evento) => {
+async function aoTrocarLimite(evento) {
   const input = evento.target.closest("[data-limite-input]");
   if (!input) return;
   const id = Number(input.dataset.id);
@@ -145,6 +185,11 @@ corpoTabelaEl.addEventListener("change", async (evento) => {
   } catch (erro) {
     mostrarToast(mensagemDeErro(erro), "erro");
   }
-});
+}
+
+for (const el of [corpoTabelaEl, cartoesMobileEl]) {
+  el.addEventListener("click", aoClicarAcao);
+  el.addEventListener("change", aoTrocarLimite);
+}
 
 carregar();

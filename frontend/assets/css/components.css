@@ -494,7 +494,7 @@
   }
 }
 
-.tabela-admin .tema-ponto {
+.tema-ponto {
   display: inline-block;
   width: 10px;
   height: 10px;
@@ -503,7 +503,7 @@
   margin-right: 6px;
 }
 
-.tabela-admin .limite-input {
+.limite-input {
   width: 64px;
   padding: 4px 8px;
   border-radius: var(--raio-sm);
@@ -511,6 +511,71 @@
   background: var(--cor-fundo);
   color: var(--cor-texto);
   font-size: 0.85rem;
+}
+
+/* Painel admin no mobile: a tabela de 8 colunas não cabe numa tela
+   estreita (virava desktop cortado com scroll horizontal). Abaixo de
+   900px troca por uma lista de cards, cada Personal em um bloco — a
+   tabela em si continua exatamente igual no desktop. */
+.admin-cards-mobile {
+  display: none;
+}
+
+.admin-card {
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-md);
+  padding: var(--espaco-4);
+}
+
+.admin-card + .admin-card {
+  margin-top: var(--espaco-3);
+}
+
+.admin-card-topo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--espaco-3);
+  margin-bottom: var(--espaco-2);
+}
+
+.admin-card-email {
+  font-size: 0.85rem;
+  color: var(--cor-texto-muted);
+  overflow-wrap: anywhere;
+  margin-bottom: var(--espaco-3);
+}
+
+.admin-card-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--espaco-3);
+  margin-bottom: var(--espaco-3);
+}
+
+.admin-card-rotulo {
+  display: block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--cor-texto-muted);
+  margin-bottom: 2px;
+}
+
+.admin-card-acoes {
+  padding-top: var(--espaco-3);
+  border-top: 1px solid var(--cor-borda);
+}
+
+@media (max-width: 900px) {
+  .tabela-scroll {
+    display: none;
+  }
+
+  .admin-cards-mobile {
+    display: block;
+  }
 }
 
 /* Barra de progresso */

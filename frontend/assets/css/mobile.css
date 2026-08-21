@@ -165,6 +165,19 @@
   color: var(--cor-texto-muted);
   font-size: 0.75rem;
   font-weight: 600;
+  /* Reset do <button> nativo — sem isso o navegador mostra a borda cinza
+     padrão por baixo, mesmo com border-radius/background definidos. */
+  border: 1px solid var(--cor-borda);
+  background: var(--cor-superficie);
+  /* Efeito 3D: sombra colorida "de baixo" (efeito lâmina) + elevação leve,
+     usa --cor-primaria então acompanha o tema de cada conta (custom ou não). */
+  box-shadow: 0 2px 0 color-mix(in srgb, var(--cor-primaria) 22%, transparent), 0 1px 3px rgba(0, 0, 0, 0.06);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.tab-bar-item:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--cor-primaria) 22%, transparent), 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
 .tab-bar-item .emoji {
@@ -174,6 +187,8 @@
 .tab-bar-item.ativa {
   color: var(--cor-primaria);
   background: var(--cor-primaria-suave);
+  border-color: color-mix(in srgb, var(--cor-primaria) 35%, transparent);
+  box-shadow: 0 2px 0 var(--cor-primaria), 0 2px 8px color-mix(in srgb, var(--cor-primaria) 30%, transparent);
 }
 
 /* Ícone-imagem (halter estilizado) da aba "Treinos" — não usa currentColor
