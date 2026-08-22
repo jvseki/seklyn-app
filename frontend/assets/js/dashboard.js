@@ -22,6 +22,9 @@ adicionarBlobsEm("#painel-hero-dashboard");
 
 const listaEl = $("#lista-alunos");
 const estadoVazioEl = $("#estado-vazio-alunos");
+const secaoSumidosEl = $("#secao-alunos-sumidos");
+const listaSumidosEl = $("#lista-alunos-sumidos");
+const DIAS_PARA_CONSIDERAR_SUMIDO = 4;
 const statTotalEl = $("#stat-total-alunos");
 const modalAluno = $("#modal-aluno");
 const formAluno = $("#form-aluno");
@@ -62,6 +65,49 @@ function cardAluno(aluno) {
   `;
 }
 
+function itemAlunoSumido(aluno) {
+  const primeiroNome = aluno.nome.split(" ")[0];
+  const mensagem =
+    aluno.dias_sem_treinar == null
+      ? `Oi ${primeiroNome}! Vi que você ainda não começou a treinar por aqui — bora marcar um horário?`
+      : `Oi ${primeiroNome}! Notei que faz ${aluno.dias_sem_treinar} dias que você não treina, tá tudo bem? Bora retomar? 💪`;
+  const whatsapp = linkWhatsApp(aluno.telefone, mensagem);
+  const textoStatus = aluno.dias_sem_treinar == null ? "nunca treinou" : `${aluno.dias_sem_treinar} dias sem treinar`;
+  return `
+    <div class="aluno-sumido-linha">
+      <a href="aluno-detalhe.html?id=${aluno.id}" class="aluno-sumido-nome">
+        <strong>${escaparHtml(aluno.nome)}</strong> <span class="hint-text">— ${textoStatus}</span>
+      </a>
+      ${
+        whatsapp
+          ? `<a class="btn btn-secondary btn-sm" href="${whatsapp}" target="_blank" rel="noopener noreferrer">${icone("whatsapp", 15)} Chamar</a>`
+          : `<span class="hint-text">sem WhatsApp cadastrado</span>`
+      }
+    </div>
+  `;
+}
+
+/** "Sumido" = ativo e sem marcar nenhuma série há DIAS_PARA_CONSIDERAR_SUMIDO
+ * dias (ou nunca treinou e já foi cadastrado há esse tempo, pra não pegar
+ * aluno recém-criado que ainda nem teve chance de começar). */
+function renderizarAlunosSumidos(alunos) {
+  const agora = Date.now();
+  const sumidos = alunos.filter((a) => {
+    if (!a.ativo) return false;
+    if (a.dias_sem_treinar != null) return a.dias_sem_treinar >= DIAS_PARA_CONSIDERAR_SUMIDO;
+    const diasDesdeCadastro = (agora - new Date(a.criado_em).getTime()) / 86400000;
+    return diasDesdeCadastro >= DIAS_PARA_CONSIDERAR_SUMIDO;
+  });
+  sumidos.sort((a, b) => (b.dias_sem_treinar ?? 9999) - (a.dias_sem_treinar ?? 9999));
+
+  if (sumidos.length === 0) {
+    secaoSumidosEl.hidden = true;
+    return;
+  }
+  secaoSumidosEl.hidden = false;
+  listaSumidosEl.innerHTML = sumidos.map(itemAlunoSumido).join("");
+}
+
 let totalAlunosAtual = 0;
 let limiteAlunosAtual = null; // null = sem limite no plano
 
@@ -72,6 +118,7 @@ function renderizarStatAlunos() {
 function renderizarAlunos(alunos) {
   totalAlunosAtual = alunos.length;
   renderizarStatAlunos();
+  renderizarAlunosSumidos(alunos);
   if (alunos.length === 0) {
     listaEl.innerHTML = "";
     estadoVazioEl.hidden = false;

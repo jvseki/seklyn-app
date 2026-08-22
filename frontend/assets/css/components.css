@@ -1239,3 +1239,32 @@
 .fotos-galeria-legenda .btn {
   padding: 2px 6px;
 }
+
+/* Card "Alunos sumidos" no dashboard — tom de aviso, mesma cor usada em
+   "marcações muito próximas" pra manter o vocabulário visual consistente. */
+.alerta-sumidos {
+  border-color: var(--cor-aviso);
+  background: var(--cor-aviso-clara);
+}
+
+.aluno-sumido-linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--espaco-2);
+  padding: var(--espaco-2) var(--espaco-3);
+  border-radius: var(--raio-sm);
+  background: var(--cor-superficie);
+}
+
+.aluno-sumido-nome {
+  text-decoration: none;
+  color: inherit;
+  flex: 1;
+  min-width: 160px;
+}
+
+.aluno-sumido-nome:hover strong {
+  text-decoration: underline;
+}

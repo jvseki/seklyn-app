@@ -37,6 +37,7 @@ class AlunoOut(OrmModel):
     ativo: bool
     criado_em: datetime
     link_acesso: str = ""  # preenchido na rota (depende do FRONTEND_URL)
+    dias_sem_treinar: int | None = None  # None = nunca marcou nenhuma série; preenchido na rota
 
 
 class AlunoPublicoOut(BaseModel):

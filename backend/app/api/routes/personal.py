@@ -9,6 +9,7 @@ from datetime import date
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import Response
+from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.config import get_settings
@@ -28,6 +29,7 @@ from app.deps import (
 from app.models.aluno import Aluno
 from app.models.assinatura import Assinatura
 from app.models.avaliacao_fisica import AvaliacaoFisica
+from app.models.execucao import Execucao
 from app.models.exercicio import Exercicio
 from app.models.foto_progresso import FotoProgresso
 from app.models.personal import Personal
@@ -63,7 +65,25 @@ def listar_alunos(
     db: Session = Depends(get_db),
 ) -> list[AlunoOut]:
     alunos = db.query(Aluno).filter(Aluno.personal_id == personal.id).order_by(Aluno.nome).all()
-    return [_aluno_out(a) for a in alunos]
+
+    ids_alunos = [a.id for a in alunos]
+    ultima_execucao_por_aluno: dict[int, date] = {}
+    if ids_alunos:
+        ultima_execucao_por_aluno = dict(
+            db.query(Execucao.aluno_id, func.max(Execucao.data_execucao))
+            .filter(Execucao.aluno_id.in_(ids_alunos), Execucao.concluida.is_(True))
+            .group_by(Execucao.aluno_id)
+            .all()
+        )
+
+    hoje = hoje_brasil()
+    resultado = []
+    for a in alunos:
+        saida = _aluno_out(a)
+        ultima = ultima_execucao_por_aluno.get(a.id)
+        saida.dias_sem_treinar = (hoje - ultima).days if ultima else None
+        resultado.append(saida)
+    return resultado
 
 
 @router.post("/alunos", response_model=AlunoOut, status_code=status.HTTP_201_CREATED)
