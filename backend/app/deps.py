@@ -13,6 +13,7 @@ from app.models.aluno import Aluno
 from app.models.assinatura import Assinatura
 from app.models.avaliacao_fisica import AvaliacaoFisica
 from app.models.exercicio import Exercicio
+from app.models.foto_progresso import FotoProgresso
 from app.models.personal import Personal
 from app.models.serie import Serie
 from app.models.treino import Treino
@@ -110,3 +111,11 @@ def obter_avaliacao_do_personal(avaliacao_id: int, personal: Personal, db: Sessi
     if avaliacao is None or avaliacao.aluno.personal_id != personal.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Avaliação não encontrada.")
     return avaliacao
+
+
+def obter_foto_do_personal(foto_id: int, personal: Personal, db: Session) -> FotoProgresso:
+    """Garante que a foto de progresso pertence a um aluno do Personal autenticado."""
+    foto = db.get(FotoProgresso, foto_id)
+    if foto is None or foto.aluno.personal_id != personal.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Foto não encontrada.")
+    return foto

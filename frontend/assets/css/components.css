@@ -1174,3 +1174,68 @@
   border-color: var(--cor-primaria);
   color: var(--cor-primaria-contraste);
 }
+
+/* Fotos de progresso — comparação automática (mais antiga x mais recente)
+   + galeria de todas. Grid/flex responsivos, mesma regra pra desktop e
+   mobile: reflui sozinho, sem precisar de media query. */
+.fotos-comparacao {
+  display: flex;
+  gap: var(--espaco-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--espaco-4);
+}
+
+.fotos-comparacao-item {
+  flex: 1;
+  min-width: 140px;
+  max-width: 260px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--espaco-2);
+}
+
+.fotos-comparacao-item img {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: var(--raio-md);
+  border: 1px solid var(--cor-borda);
+  background: var(--cor-fundo-alt);
+}
+
+.fotos-galeria {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: var(--espaco-3);
+}
+
+.fotos-galeria-item img {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: var(--raio-md);
+  border: 1px solid var(--cor-borda);
+  background: var(--cor-fundo-alt);
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.fotos-galeria-item img:hover {
+  opacity: 0.85;
+  transform: translateY(-2px);
+}
+
+.fotos-galeria-legenda {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-2);
+  margin-top: 4px;
+  font-size: 0.76rem;
+  color: var(--cor-texto-muted);
+}
+
+.fotos-galeria-legenda .btn {
+  padding: 2px 6px;
+}

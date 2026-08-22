@@ -92,6 +92,14 @@
         <div id="avaliacao-historico" style="margin-top:var(--espaco-3);"></div>
       </div>
 
+      <div class="card spotlight-card" style="margin-bottom:var(--espaco-6);">
+        <div class="cabecalho-pagina" style="margin-bottom:var(--espaco-3);">
+          <h3 style="margin:0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-3px;flex-shrink:0;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> Fotos de progresso</h3>
+          <button class="btn btn-secondary btn-sm" type="button" data-acao="abrir-nova-foto">+ Enviar foto</button>
+        </div>
+        <div id="fotos-progresso-conteudo"></div>
+      </div>
+
       <h3 style="margin-bottom:var(--espaco-2);">Organização da semana</h3>
       <p class="hint-text" style="margin-bottom:var(--espaco-4);">Clique em "Montar treino" no dia que quiser preencher, ou "Editar" pra ajustar exercícios e séries de um treino já montado.</p>
 
@@ -164,6 +172,33 @@
           <label class="label" for="avaliacao-peso">Peso em kg</label>
           <input class="input" id="avaliacao-peso" name="peso_kg" type="number" step="0.1" min="0" required />
         </div>
+        <details class="form-group">
+          <summary class="hint-text" style="cursor:pointer;font-weight:700;">+ Medidas corporais (opcional)</summary>
+          <div class="form-row" style="margin-top:var(--espaco-3);">
+            <div class="form-group">
+              <label class="label" for="avaliacao-cintura">Cintura (cm)</label>
+              <input class="input" id="avaliacao-cintura" name="cintura_cm" type="number" step="0.1" min="0" />
+            </div>
+            <div class="form-group">
+              <label class="label" for="avaliacao-quadril">Quadril (cm)</label>
+              <input class="input" id="avaliacao-quadril" name="quadril_cm" type="number" step="0.1" min="0" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="label" for="avaliacao-braco">Braço (cm)</label>
+              <input class="input" id="avaliacao-braco" name="braco_cm" type="number" step="0.1" min="0" />
+            </div>
+            <div class="form-group">
+              <label class="label" for="avaliacao-coxa">Coxa (cm)</label>
+              <input class="input" id="avaliacao-coxa" name="coxa_cm" type="number" step="0.1" min="0" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="label" for="avaliacao-peito">Peito (cm)</label>
+            <input class="input" id="avaliacao-peito" name="peito_cm" type="number" step="0.1" min="0" />
+          </div>
+        </details>
         <div class="form-group">
           <label class="label" for="avaliacao-observacoes">Observações (opcional)</label>
           <input class="input" id="avaliacao-observacoes" name="observacoes" placeholder="Ex: início do cutting" />
@@ -171,6 +206,34 @@
         <div class="modal-acoes">
           <button type="button" class="btn btn-ghost" data-acao="fechar-modal-avaliacao">Cancelar</button>
           <button type="submit" class="btn btn-primary">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-fundo" id="modal-nova-foto" hidden>
+    <div class="modal" style="max-width:400px;">
+      <div class="modal-cabecalho">
+        <h3>Enviar foto de progresso</h3>
+        <button class="btn btn-ghost btn-icon" data-acao="fechar-modal-foto"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-3px;flex-shrink:0;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <form id="form-nova-foto">
+        <div class="form-group">
+          <label class="label" for="foto-data">Data</label>
+          <input class="input" id="foto-data" name="data" type="date" required />
+        </div>
+        <div class="form-group">
+          <label class="label" for="foto-arquivo">Foto (JPG, PNG ou WEBP, até 8MB)</label>
+          <input class="input" id="foto-arquivo" name="arquivo" type="file" accept="image/jpeg,image/png,image/webp" required />
+        </div>
+        <div class="form-group">
+          <label class="label" for="foto-observacoes">Observações (opcional)</label>
+          <input class="input" id="foto-observacoes" name="observacoes" placeholder="Ex: início do programa" />
+        </div>
+        <p class="hint-text" id="foto-consentimento-aviso">Confirme com o aluno que ele autoriza você a guardar essa foto — ela fica visível só pra vocês dois, aqui no painel.</p>
+        <div class="modal-acoes">
+          <button type="button" class="btn btn-ghost" data-acao="fechar-modal-foto">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Enviar</button>
         </div>
       </form>
     </div>

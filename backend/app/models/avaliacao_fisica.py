@@ -20,6 +20,14 @@ class AvaliacaoFisica(Base):
     aluno_id: Mapped[int] = mapped_column(ForeignKey("alunos.id", ondelete="CASCADE"), nullable=False)
     data: Mapped[date] = mapped_column(Date, nullable=False)
     peso_kg: Mapped[float | None] = mapped_column(Float, nullable=True)
+    # Medidas corporais (cm), todas opcionais — o Personal registra só o que
+    # acompanha. Ficam na mesma avaliação/data do peso, não numa tabela à
+    # parte, porque na prática são tiradas juntas na mesma "pesada".
+    cintura_cm: Mapped[float | None] = mapped_column(Float, nullable=True)
+    quadril_cm: Mapped[float | None] = mapped_column(Float, nullable=True)
+    braco_cm: Mapped[float | None] = mapped_column(Float, nullable=True)
+    coxa_cm: Mapped[float | None] = mapped_column(Float, nullable=True)
+    peito_cm: Mapped[float | None] = mapped_column(Float, nullable=True)
     observacoes: Mapped[str | None] = mapped_column(String(255), nullable=True)
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

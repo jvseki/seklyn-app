@@ -12,6 +12,7 @@ from app.models.assinatura import Assinatura
 from app.models.recomendacao import RecomendacaoProduto
 from app.models.avaliacao_fisica import AvaliacaoFisica
 from app.models.video_exercicio import VideoExercicio
+from app.models.foto_progresso import FotoProgresso
 
 __all__ = [
     "Personal",
@@ -24,4 +25,5 @@ __all__ = [
     "RecomendacaoProduto",
     "AvaliacaoFisica",
     "VideoExercicio",
+    "FotoProgresso",
 ]

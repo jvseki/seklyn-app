@@ -84,11 +84,22 @@ export const api = {
   analyticsDetalhadoAluno: (id, periodoDias = 30) =>
     apiFetch(`/personal/alunos/${id}/analytics-detalhado?periodo_dias=${periodoDias}`),
 
-  // --- Avaliações físicas (peso ao longo do tempo) ---
+  // --- Avaliações físicas (peso e medidas ao longo do tempo) ---
   listarAvaliacoes: (alunoId) => apiFetch(`/personal/alunos/${alunoId}/avaliacoes`),
   criarAvaliacao: (alunoId, dados) =>
     apiFetch(`/personal/alunos/${alunoId}/avaliacoes`, { method: "POST", body: JSON.stringify(dados) }),
   excluirAvaliacao: (id) => apiFetch(`/personal/avaliacoes/${id}`, { method: "DELETE" }),
+
+  // --- Fotos de progresso (antes/depois) ---
+  listarFotos: (alunoId) => apiFetch(`/personal/alunos/${alunoId}/fotos`),
+  enviarFoto: (alunoId, { arquivo, data, observacoes }) => {
+    const form = new FormData();
+    form.append("arquivo", arquivo);
+    if (data) form.append("data", data);
+    if (observacoes) form.append("observacoes", observacoes);
+    return apiFetch(`/personal/alunos/${alunoId}/fotos`, { method: "POST", body: form });
+  },
+  excluirFoto: (id) => apiFetch(`/personal/fotos/${id}`, { method: "DELETE" }),
 
   // --- Treinos ---
   listarTreinos: (alunoId) => apiFetch(`/personal/alunos/${alunoId}/treinos`),

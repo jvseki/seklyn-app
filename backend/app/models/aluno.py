@@ -37,3 +37,6 @@ class Aluno(Base):
     avaliacoes: Mapped[list["AvaliacaoFisica"]] = relationship(
         back_populates="aluno", cascade="all, delete-orphan", order_by="AvaliacaoFisica.data.desc()"
     )
+    fotos_progresso: Mapped[list["FotoProgresso"]] = relationship(
+        back_populates="aluno", cascade="all, delete-orphan", order_by="FotoProgresso.data.desc()"
+    )

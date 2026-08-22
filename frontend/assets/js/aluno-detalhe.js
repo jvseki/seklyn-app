@@ -56,6 +56,9 @@ const avaliacaoHistoricoEl = $("#avaliacao-historico");
 const fichaImpressaoEl = $("#ficha-impressao");
 const modalNovaAvaliacao = $("#modal-nova-avaliacao");
 const formNovaAvaliacao = $("#form-nova-avaliacao");
+const fotosProgressoEl = $("#fotos-progresso-conteudo");
+const modalNovaFoto = $("#modal-nova-foto");
+const formNovaFoto = $("#form-nova-foto");
 const modalEditarAluno = $("#modal-editar-aluno");
 const formEditarAluno = $("#form-editar-aluno");
 const avisoMetaSemPesoEl = $("#aviso-meta-sem-peso");
@@ -82,6 +85,7 @@ const listaVideosEl = $("#lista-videos-exercicios");
 let alunoAtual = null;
 let treinosCache = []; // guarda os dados carregados pra preencher os modais de edição sem outra chamada à API
 let avaliacoesCache = []; // histórico de peso do aluno, mais recente primeiro (vem assim da API)
+let fotosCache = []; // fotos de progresso, mais recente primeiro (vem assim da API)
 let montarTreinoDia = null; // dia da semana sendo montado no modal assistido
 let categoriasSelecionadas = []; // chaves das categorias escolhidas no passo 1 (pode ser mais de uma)
 let itensSelecionados = []; // [{ nome, incluido, categoria, categoriaChave }] — exercícios sugeridos das categorias escolhidas
@@ -112,6 +116,9 @@ const DIAS_SEMANA = [
 const ROTULO_DIA = Object.fromEntries(DIAS_SEMANA.map((d) => [d.chave, d.rotulo]));
 const ICONE_HALTERES = iconeHalter(16);
 const ICONE_LIXEIRA = icone("lixeira", 16);
+// Fotos de progresso ficam servidas pela API (uploads/), igual vídeo — a
+// URL que vem do backend é relativa ("/uploads/fotos/...").
+const ORIGEM_UPLOADS = API_BASE_URL.replace(/\/api\/?$/, "");
 
 function linhaSerie(serie) {
   return `
@@ -407,6 +414,16 @@ function renderizarAvaliacaoProgresso() {
   `;
 }
 
+const ROTULO_MEDIDA = { cintura_cm: "Cintura", quadril_cm: "Quadril", braco_cm: "Braço", coxa_cm: "Coxa", peito_cm: "Peito" };
+
+/** "Cintura 80cm · Braço 35cm" — só as medidas que essa avaliação tem. */
+function formatarMedidas(a) {
+  return Object.entries(ROTULO_MEDIDA)
+    .filter(([campo]) => a[campo] != null)
+    .map(([campo, rotulo]) => `${rotulo} ${a[campo]}cm`)
+    .join(" · ");
+}
+
 function renderizarAvaliacaoHistorico() {
   if (avaliacoesCache.length === 0) {
     avaliacaoHistoricoEl.innerHTML = "";
@@ -417,14 +434,18 @@ function renderizarAvaliacaoHistorico() {
       <summary class="hint-text" style="cursor:pointer;font-weight:700;">Ver histórico (${avaliacoesCache.length})</summary>
       <div style="display:flex;flex-direction:column;gap:var(--espaco-2);margin-top:var(--espaco-2);">
         ${avaliacoesCache
-          .map(
-            (a) => `
-              <div class="series-linha" data-avaliacao-id="${a.id}">
-                <span>${formatarData(a.data)} — <strong>${a.peso_kg}kg</strong>${a.observacoes ? " · " + escaparHtml(a.observacoes) : ""}</span>
+          .map((a) => {
+            const medidas = formatarMedidas(a);
+            return `
+              <div class="series-linha" data-avaliacao-id="${a.id}" style="align-items:flex-start;">
+                <span>
+                  ${formatarData(a.data)} — <strong>${a.peso_kg}kg</strong>${a.observacoes ? " · " + escaparHtml(a.observacoes) : ""}
+                  ${medidas ? `<br><span class="hint-text">${medidas}</span>` : ""}
+                </span>
                 <button class="btn btn-ghost btn-sm" data-acao="excluir-avaliacao" data-id="${a.id}" type="button">${ICONE_LIXEIRA}</button>
               </div>
-            `
-          )
+            `;
+          })
           .join("")}
       </div>
     </details>
@@ -462,9 +483,15 @@ formNovaAvaliacao?.addEventListener("submit", async (evento) => {
   const botao = $("button[type='submit']", formNovaAvaliacao);
   botao.disabled = true;
   try {
+    const medida = (campo) => (formNovaAvaliacao[campo].value.trim() ? Number(formNovaAvaliacao[campo].value) : null);
     await api.criarAvaliacao(alunoId, {
       data: formNovaAvaliacao.data.value || null,
       peso_kg: Number(formNovaAvaliacao.peso_kg.value),
+      cintura_cm: medida("cintura_cm"),
+      quadril_cm: medida("quadril_cm"),
+      braco_cm: medida("braco_cm"),
+      coxa_cm: medida("coxa_cm"),
+      peito_cm: medida("peito_cm"),
       observacoes: formNovaAvaliacao.observacoes.value.trim() || null,
     });
     mostrarToast("Peso registrado!", "sucesso");
@@ -491,6 +518,132 @@ avaliacaoHistoricoEl?.addEventListener("click", async (evento) => {
     carregarAvaliacoes();
   } catch (erro) {
     mostrarToast(mensagemDeErro(erro), "erro");
+  }
+});
+
+// --- Fotos de progresso (antes/depois) ---
+
+function urlFotoCompleta(foto) {
+  return foto.url.startsWith("http") ? foto.url : `${ORIGEM_UPLOADS}${foto.url}`;
+}
+
+function renderizarFotosProgresso() {
+  if (fotosCache.length === 0) {
+    fotosProgressoEl.innerHTML = `<p class="hint-text">Nenhuma foto enviada ainda.</p>`;
+    return;
+  }
+
+  const ordenadasCronologicas = [...fotosCache].sort((a, b) => a.data.localeCompare(b.data));
+  const primeira = ordenadasCronologicas[0];
+  const ultima = ordenadasCronologicas[ordenadasCronologicas.length - 1];
+
+  fotosProgressoEl.innerHTML = `
+    ${
+      fotosCache.length >= 2
+        ? `
+          <div class="fotos-comparacao">
+            <div class="fotos-comparacao-item">
+              <img src="${urlFotoCompleta(primeira)}" alt="Foto de ${formatarData(primeira.data)}" loading="lazy" />
+              <span class="hint-text">Antes · ${formatarData(primeira.data)}</span>
+            </div>
+            <div class="fotos-comparacao-item">
+              <img src="${urlFotoCompleta(ultima)}" alt="Foto de ${formatarData(ultima.data)}" loading="lazy" />
+              <span class="hint-text">Depois · ${formatarData(ultima.data)}</span>
+            </div>
+          </div>
+        `
+        : ""
+    }
+    <div class="fotos-galeria">
+      ${fotosCache
+        .map(
+          (f) => `
+            <div class="fotos-galeria-item">
+              <img src="${urlFotoCompleta(f)}" alt="Foto de ${formatarData(f.data)}" loading="lazy" data-acao="abrir-foto-ampliada" data-id="${f.id}" />
+              <div class="fotos-galeria-legenda">
+                <span>${formatarData(f.data)}</span>
+                <button class="btn btn-ghost btn-sm" data-acao="excluir-foto" data-id="${f.id}" type="button">${ICONE_LIXEIRA}</button>
+              </div>
+            </div>
+          `
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+let fotosRequisicaoId = 0; // evita que uma resposta antiga (fora de ordem) sobrescreva uma mais nova
+
+async function carregarFotos() {
+  const idDestaRequisicao = ++fotosRequisicaoId;
+  try {
+    const dados = await api.listarFotos(alunoId);
+    if (idDestaRequisicao !== fotosRequisicaoId) return;
+    fotosCache = dados;
+    renderizarFotosProgresso();
+  } catch (erro) {
+    if (idDestaRequisicao !== fotosRequisicaoId) return;
+    fotosProgressoEl.innerHTML = `<p class="hint-text">Não foi possível carregar as fotos agora.</p>`;
+  }
+}
+
+$("[data-acao='abrir-nova-foto']")?.addEventListener("click", () => {
+  formNovaFoto.reset();
+  formNovaFoto.data.value = new Date().toISOString().slice(0, 10);
+  abrirModal(modalNovaFoto);
+});
+
+document
+  .querySelectorAll("[data-acao='fechar-modal-foto']")
+  .forEach((el) => el.addEventListener("click", () => fecharModal(modalNovaFoto)));
+
+formNovaFoto?.addEventListener("submit", async (evento) => {
+  evento.preventDefault();
+  const arquivo = formNovaFoto.arquivo.files[0];
+  if (!arquivo) return;
+  const botao = $("button[type='submit']", formNovaFoto);
+  const textoOriginal = botao.textContent;
+  botao.disabled = true;
+  botao.textContent = "Enviando...";
+  try {
+    await api.enviarFoto(alunoId, {
+      arquivo,
+      data: formNovaFoto.data.value || null,
+      observacoes: formNovaFoto.observacoes.value.trim() || null,
+    });
+    mostrarToast("Foto enviada!", "sucesso");
+    fecharModal(modalNovaFoto);
+    carregarFotos();
+  } catch (erro) {
+    mostrarToast(mensagemDeErro(erro), "erro");
+  } finally {
+    botao.disabled = false;
+    botao.textContent = textoOriginal;
+  }
+});
+
+fotosProgressoEl?.addEventListener("click", async (evento) => {
+  const botaoExcluir = evento.target.closest("[data-acao='excluir-foto']");
+  if (botaoExcluir) {
+    const confirmou = await confirmarAcao("Remover essa foto de progresso?", {
+      titulo: "Remover foto",
+      textoConfirmar: "Remover",
+    });
+    if (!confirmou) return;
+    try {
+      await api.excluirFoto(Number(botaoExcluir.dataset.id));
+      mostrarToast("Foto removida.", "sucesso");
+      carregarFotos();
+    } catch (erro) {
+      mostrarToast(mensagemDeErro(erro), "erro");
+    }
+    return;
+  }
+
+  const imgAmpliar = evento.target.closest("[data-acao='abrir-foto-ampliada']");
+  if (imgAmpliar) {
+    const foto = fotosCache.find((f) => f.id === Number(imgAmpliar.dataset.id));
+    if (foto) window.open(urlFotoCompleta(foto), "_blank", "noopener");
   }
 });
 
@@ -1821,3 +1974,4 @@ carregarAluno();
 recarregarTreinos();
 carregarAnalytics();
 carregarAvaliacoes();
+carregarFotos();

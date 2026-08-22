@@ -3,9 +3,11 @@ Rotas de gestão do Personal: alunos, treinos, exercícios, séries e
 analytics de aderência. Leitura é liberada para qualquer Personal logado;
 criação/edição/exclusão exige assinatura ativa.
 """
+import os
+import uuid
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import Response
 from sqlalchemy.orm import Session, joinedload
 
@@ -19,6 +21,7 @@ from app.deps import (
     obter_aluno_do_personal,
     obter_avaliacao_do_personal,
     obter_exercicio_do_personal,
+    obter_foto_do_personal,
     obter_serie_do_personal,
     obter_treino_do_personal,
 )
@@ -26,6 +29,7 @@ from app.models.aluno import Aluno
 from app.models.assinatura import Assinatura
 from app.models.avaliacao_fisica import AvaliacaoFisica
 from app.models.exercicio import Exercicio
+from app.models.foto_progresso import FotoProgresso
 from app.models.personal import Personal
 from app.models.serie import Serie
 from app.models.treino import Treino
@@ -34,6 +38,7 @@ from app.schemas.aluno import AlunoAtualizar, AlunoCriar, AlunoOut
 from app.schemas.analytics import AderenciaOut, AnalyticsDetalhadoOut
 from app.schemas.avaliacao_fisica import AvaliacaoFisicaCriar, AvaliacaoFisicaOut
 from app.schemas.exercicio import ExercicioAtualizar, ExercicioCriar, ExercicioOut
+from app.schemas.foto_progresso import FotoProgressoOut
 from app.schemas.serie import SerieAtualizar, SerieCriar, SerieOut
 from app.schemas.treino import MontarTreinoIn, TreinoAtualizar, TreinoCriar, TreinoOut
 from app.services.aluno_export import build_aluno_xlsx
@@ -483,6 +488,11 @@ def criar_avaliacao(
         aluno_id=aluno.id,
         data=dados.data or hoje_brasil(),
         peso_kg=dados.peso_kg,
+        cintura_cm=dados.cintura_cm,
+        quadril_cm=dados.quadril_cm,
+        braco_cm=dados.braco_cm,
+        coxa_cm=dados.coxa_cm,
+        peito_cm=dados.peito_cm,
         observacoes=dados.observacoes,
     )
     db.add(avaliacao)
@@ -499,4 +509,78 @@ def excluir_avaliacao(
 ) -> None:
     avaliacao = obter_avaliacao_do_personal(avaliacao_id, personal, db)
     db.delete(avaliacao)
+    db.commit()
+
+
+# ---------- Fotos de progresso (antes/depois) ----------
+
+PASTA_FOTOS = "uploads/fotos"
+TAMANHO_MAXIMO_FOTO_BYTES = 8 * 1024 * 1024  # 8MB — foto de celular cabe folgado
+TIPOS_FOTO_ACEITOS = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}
+
+
+@router.get("/alunos/{aluno_id}/fotos", response_model=list[FotoProgressoOut])
+def listar_fotos(
+    aluno_id: int,
+    personal: Personal = Depends(get_current_personal),
+    db: Session = Depends(get_db),
+) -> list[FotoProgresso]:
+    aluno = obter_aluno_do_personal(aluno_id, personal, db)
+    return (
+        db.query(FotoProgresso).filter(FotoProgresso.aluno_id == aluno.id).order_by(FotoProgresso.data.desc()).all()
+    )
+
+
+@router.post("/alunos/{aluno_id}/fotos", response_model=FotoProgressoOut, status_code=status.HTTP_201_CREATED)
+async def enviar_foto(
+    aluno_id: int,
+    data: date | None = Form(None),
+    observacoes: str | None = Form(None),
+    arquivo: UploadFile = File(...),
+    personal: Personal = Depends(exigir_assinatura_ativa),
+    db: Session = Depends(get_db),
+) -> FotoProgresso:
+    aluno = obter_aluno_do_personal(aluno_id, personal, db)
+
+    extensao = TIPOS_FOTO_ACEITOS.get(arquivo.content_type or "")
+    if not extensao:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Formato não suportado — envie JPG, PNG ou WEBP."
+        )
+    conteudo = await arquivo.read()
+    if len(conteudo) > TAMANHO_MAXIMO_FOTO_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Foto muito grande — o limite é 8MB."
+        )
+
+    pasta_personal = f"{PASTA_FOTOS}/{personal.id}"
+    os.makedirs(pasta_personal, exist_ok=True)
+    nome_arquivo = f"{uuid.uuid4().hex}.{extensao}"
+    with open(f"{pasta_personal}/{nome_arquivo}", "wb") as f:
+        f.write(conteudo)
+
+    foto = FotoProgresso(
+        aluno_id=aluno.id,
+        data=data or hoje_brasil(),
+        url=f"/uploads/fotos/{personal.id}/{nome_arquivo}",
+        observacoes=observacoes,
+    )
+    db.add(foto)
+    db.commit()
+    db.refresh(foto)
+    return foto
+
+
+@router.delete("/fotos/{foto_id}", status_code=status.HTTP_204_NO_CONTENT)
+def excluir_foto(
+    foto_id: int,
+    personal: Personal = Depends(exigir_assinatura_ativa),
+    db: Session = Depends(get_db),
+) -> None:
+    foto = obter_foto_do_personal(foto_id, personal, db)
+    if foto.url.startswith("/uploads/"):
+        caminho = foto.url.lstrip("/")
+        if os.path.exists(caminho):
+            os.remove(caminho)
+    db.delete(foto)
     db.commit()

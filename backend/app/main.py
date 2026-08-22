@@ -41,9 +41,10 @@ app.include_router(stripe_webhook.router)
 app.include_router(admin.router)
 app.include_router(videos.router)
 
-# Vídeos enviados (upload direto) — fica em uploads/, montado no volume
-# persistente do Docker pra sobreviver a rebuild/restart do container.
+# Vídeos e fotos enviados (upload direto) — fica em uploads/, montado no
+# volume persistente do Docker pra sobreviver a rebuild/restart do container.
 os.makedirs("uploads/videos", exist_ok=True)
+os.makedirs("uploads/fotos", exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 
