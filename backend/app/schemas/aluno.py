@@ -53,3 +53,4 @@ class AlunoPainelOut(BaseModel):
 
     aluno: AlunoPublicoOut
     semana: list[DiaSemanaAlunoOut] = []
+    streak_atual: int = 0  # dias seguidos com o treino do dia concluído

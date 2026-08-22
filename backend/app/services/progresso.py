@@ -126,6 +126,39 @@ def montar_treino_detalhe(db: Session, treino: Treino, dia: date | None = None) 
     )
 
 
+def calcular_streak(db: Session, aluno: Aluno) -> int:
+    """
+    Sequência de dias consecutivos (de hoje pra trás) em que o aluno
+    completou o treino do dia. Dia de descanso (sem treino cadastrado
+    pra aquele dia da semana) é pulado, não quebra a sequência. Hoje só
+    quebra a sequência se já tiver algum treino cadastrado e ele decidir
+    não fazer — enquanto o dia não "vira", um hoje incompleto não conta
+    contra nem a favor.
+    """
+    treino_por_dia_semana = {t.dia_semana: t for t in aluno.treinos if t.dia_semana and t.ativo}
+    if not treino_por_dia_semana:
+        return 0
+
+    hoje = hoje_brasil()
+    streak = 0
+    dia = hoje
+    primeiro_dia = True
+    limite = hoje - timedelta(days=400)  # trava de segurança contra loop infinito
+
+    while dia > limite:
+        treino = treino_por_dia_semana.get(DIAS_SEMANA_CHAVES[dia.weekday()])
+        if treino:
+            if montar_treino_resumo(db, treino, dia=dia).concluido_hoje:
+                streak += 1
+            elif not primeiro_dia:
+                break
+            # se for hoje e ainda não concluído: nem soma nem quebra, só segue pro dia anterior
+        dia -= timedelta(days=1)
+        primeiro_dia = False
+
+    return streak
+
+
 def alternar_execucao_serie(db: Session, serie: Serie, aluno_id: int, dia: date | None = None) -> bool:
     """
     Alterna o estado 'concluída hoje' de uma série: cria o log de execução

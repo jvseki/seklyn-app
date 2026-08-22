@@ -35,6 +35,8 @@ const els = {
   app: $("#app-conteudo"),
   saudacaoNome: $("#saudacao-nome"),
   saudacaoPersonal: $("#saudacao-personal"),
+  streakBadge: $("#streak-badge"),
+  streakNumero: $("#streak-numero"),
   secaoLista: $("#secao-lista"),
   secaoExecucao: $("#secao-execucao"),
   secaoDicas: $("#secao-dicas"),
@@ -276,6 +278,12 @@ async function iniciar() {
     els.saudacaoPersonal.textContent = `Treinos por ${painelCache.aluno.personal_nome}`;
     aplicarTemaPersonalizado(painelCache.aluno.personal_tema);
     renderizarSemana(painelCache.semana);
+
+    if (painelCache.streak_atual > 0) {
+      els.streakNumero.textContent = painelCache.streak_atual;
+      els.streakBadge.title = `${painelCache.streak_atual} dia${painelCache.streak_atual > 1 ? "s" : ""} seguido${painelCache.streak_atual > 1 ? "s" : ""} treinando`;
+      els.streakBadge.hidden = false;
+    }
 
     els.carregando.hidden = true;
     els.app.hidden = false;

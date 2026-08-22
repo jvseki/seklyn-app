@@ -22,6 +22,7 @@ from app.schemas.treino import DiaSemanaAlunoOut, TreinoDetalheOut
 from app.services.progresso import (
     DIAS_SEMANA_CHAVES,
     alternar_execucao_serie,
+    calcular_streak,
     datas_semana_atual,
     montar_treino_detalhe,
     montar_treino_resumo,
@@ -86,6 +87,7 @@ def painel_aluno(
             personal_tema=aluno.personal.tema_personalizado,
         ),
         semana=dias_da_semana,
+        streak_atual=calcular_streak(db, aluno),
     )
 
 
