@@ -101,6 +101,11 @@ export const api = {
   },
   excluirFoto: (id) => apiFetch(`/personal/fotos/${id}`, { method: "DELETE" }),
 
+  // --- Anamnese (ficha de avaliação inicial, um registro por aluno) ---
+  obterAnamnese: (alunoId) => apiFetch(`/personal/alunos/${alunoId}/anamnese`),
+  salvarAnamnese: (alunoId, dados) =>
+    apiFetch(`/personal/alunos/${alunoId}/anamnese`, { method: "PUT", body: JSON.stringify(dados) }),
+
   // --- Treinos ---
   listarTreinos: (alunoId) => apiFetch(`/personal/alunos/${alunoId}/treinos`),
   criarTreino: (alunoId, dados) =>

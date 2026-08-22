@@ -14,6 +14,7 @@ from app.models.avaliacao_fisica import AvaliacaoFisica
 from app.models.video_exercicio import VideoExercicio
 from app.models.foto_progresso import FotoProgresso
 from app.models.treino_template import TreinoTemplate
+from app.models.anamnese import Anamnese
 
 __all__ = [
     "Personal",
@@ -28,4 +29,5 @@ __all__ = [
     "VideoExercicio",
     "FotoProgresso",
     "TreinoTemplate",
+    "Anamnese",
 ]

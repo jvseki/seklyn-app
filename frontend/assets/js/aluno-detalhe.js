@@ -56,6 +56,9 @@ const avaliacaoHistoricoEl = $("#avaliacao-historico");
 const fichaImpressaoEl = $("#ficha-impressao");
 const modalNovaAvaliacao = $("#modal-nova-avaliacao");
 const formNovaAvaliacao = $("#form-nova-avaliacao");
+const anamneseEl = $("#anamnese-conteudo");
+const modalAnamnese = $("#modal-anamnese");
+const formAnamnese = $("#form-anamnese");
 const fotosProgressoEl = $("#fotos-progresso-conteudo");
 const modalNovaFoto = $("#modal-nova-foto");
 const formNovaFoto = $("#form-nova-foto");
@@ -90,6 +93,7 @@ let alunoAtual = null;
 let treinosCache = []; // guarda os dados carregados pra preencher os modais de edição sem outra chamada à API
 let avaliacoesCache = []; // histórico de peso do aluno, mais recente primeiro (vem assim da API)
 let fotosCache = []; // fotos de progresso, mais recente primeiro (vem assim da API)
+let anamneseCache = null; // null = ainda não preenchida (ou não carregada)
 let montarTreinoDia = null; // dia da semana sendo montado no modal assistido
 let templateDiaAlvo = null; // dia da semana sendo salvo/preenchido via modelo
 let templatesCache = null; // null = ainda não carregado (carrega sob demanda ao abrir "Usar modelo")
@@ -526,6 +530,76 @@ avaliacaoHistoricoEl?.addEventListener("click", async (evento) => {
     carregarAvaliacoes();
   } catch (erro) {
     mostrarToast(mensagemDeErro(erro), "erro");
+  }
+});
+
+// --- Anamnese (ficha de avaliação inicial — um registro por aluno) ---
+
+const ROTULO_NIVEL_EXPERIENCIA = { iniciante: "Iniciante", intermediario: "Intermediário", avancado: "Avançado" };
+
+function renderizarAnamnese() {
+  const a = anamneseCache;
+  const temAlgo = a && (a.nivel_experiencia || a.objetivo || a.lesoes_e_limitacoes || a.condicoes_saude || a.observacoes);
+  if (!temAlgo) {
+    anamneseEl.innerHTML = `<p class="hint-text">Nenhuma anamnese preenchida ainda.</p>`;
+    return;
+  }
+  const linha = (rotulo, valor) =>
+    valor ? `<p style="margin:0 0 var(--espaco-2);"><strong>${rotulo}:</strong> ${escaparHtml(valor)}</p>` : "";
+  anamneseEl.innerHTML = `
+    ${linha("Nível", ROTULO_NIVEL_EXPERIENCIA[a.nivel_experiencia] || null)}
+    ${linha("Objetivo", a.objetivo)}
+    ${linha("Lesões e limitações", a.lesoes_e_limitacoes)}
+    ${linha("Condições de saúde", a.condicoes_saude)}
+    ${linha("Observações", a.observacoes)}
+  `;
+}
+
+async function carregarAnamnese() {
+  try {
+    anamneseCache = await api.obterAnamnese(alunoId);
+    renderizarAnamnese();
+  } catch {
+    anamneseEl.innerHTML = `<p class="hint-text">Não foi possível carregar a anamnese agora.</p>`;
+  }
+}
+
+$("[data-acao='abrir-anamnese']")?.addEventListener("click", () => {
+  formAnamnese.reset();
+  const a = anamneseCache;
+  if (a) {
+    formAnamnese.nivel_experiencia.value = a.nivel_experiencia || "";
+    formAnamnese.objetivo.value = a.objetivo || "";
+    formAnamnese.lesoes_e_limitacoes.value = a.lesoes_e_limitacoes || "";
+    formAnamnese.condicoes_saude.value = a.condicoes_saude || "";
+    formAnamnese.observacoes.value = a.observacoes || "";
+  }
+  abrirModal(modalAnamnese);
+});
+
+document
+  .querySelectorAll("[data-acao='fechar-modal-anamnese']")
+  .forEach((el) => el.addEventListener("click", () => fecharModal(modalAnamnese)));
+
+formAnamnese?.addEventListener("submit", async (evento) => {
+  evento.preventDefault();
+  const botao = $("button[type='submit']", formAnamnese);
+  botao.disabled = true;
+  try {
+    anamneseCache = await api.salvarAnamnese(alunoId, {
+      nivel_experiencia: formAnamnese.nivel_experiencia.value || null,
+      objetivo: formAnamnese.objetivo.value.trim() || null,
+      lesoes_e_limitacoes: formAnamnese.lesoes_e_limitacoes.value.trim() || null,
+      condicoes_saude: formAnamnese.condicoes_saude.value.trim() || null,
+      observacoes: formAnamnese.observacoes.value.trim() || null,
+    });
+    mostrarToast("Anamnese salva!", "sucesso");
+    fecharModal(modalAnamnese);
+    renderizarAnamnese();
+  } catch (erro) {
+    mostrarToast(mensagemDeErro(erro), "erro");
+  } finally {
+    botao.disabled = false;
   }
 });
 
@@ -2113,3 +2187,4 @@ recarregarTreinos();
 carregarAnalytics();
 carregarAvaliacoes();
 carregarFotos();
+carregarAnamnese();

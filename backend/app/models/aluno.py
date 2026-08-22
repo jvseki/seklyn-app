@@ -40,3 +40,6 @@ class Aluno(Base):
     fotos_progresso: Mapped[list["FotoProgresso"]] = relationship(
         back_populates="aluno", cascade="all, delete-orphan", order_by="FotoProgresso.data.desc()"
     )
+    anamnese: Mapped["Anamnese | None"] = relationship(
+        back_populates="aluno", cascade="all, delete-orphan", uselist=False
+    )

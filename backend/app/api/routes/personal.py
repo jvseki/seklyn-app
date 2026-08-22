@@ -27,6 +27,7 @@ from app.deps import (
     obter_treino_do_personal,
 )
 from app.models.aluno import Aluno
+from app.models.anamnese import Anamnese
 from app.models.assinatura import Assinatura
 from app.models.avaliacao_fisica import AvaliacaoFisica
 from app.models.execucao import Execucao
@@ -38,6 +39,7 @@ from app.models.treino import Treino
 from app.models.treino_template import TreinoTemplate
 from app.models.video_exercicio import VideoExercicio
 from app.schemas.aluno import AlunoAtualizar, AlunoCriar, AlunoOut
+from app.schemas.anamnese import AnamneseAtualizar, AnamneseOut
 from app.schemas.analytics import AderenciaOut, AnalyticsDetalhadoOut
 from app.schemas.avaliacao_fisica import AvaliacaoFisicaCriar, AvaliacaoFisicaOut
 from app.schemas.exercicio import ExercicioAtualizar, ExercicioCriar, ExercicioOut
@@ -341,6 +343,40 @@ def montar_treino(
     """Usado pelo montador assistido por categoria — ver _criar_ou_substituir_treino."""
     aluno = obter_aluno_do_personal(aluno_id, personal, db)
     return _criar_ou_substituir_treino(db, personal, aluno, dados.nome, dados.ordem, dados.dia_semana, dados.exercicios)
+
+
+# ---------- Anamnese (ficha de avaliação inicial — um registro por aluno) ----------
+
+
+@router.get("/alunos/{aluno_id}/anamnese", response_model=AnamneseOut | None)
+def obter_anamnese(
+    aluno_id: int,
+    personal: Personal = Depends(get_current_personal),
+    db: Session = Depends(get_db),
+) -> Anamnese | None:
+    aluno = obter_aluno_do_personal(aluno_id, personal, db)
+    return db.query(Anamnese).filter(Anamnese.aluno_id == aluno.id).first()
+
+
+@router.put("/alunos/{aluno_id}/anamnese", response_model=AnamneseOut)
+def salvar_anamnese(
+    aluno_id: int,
+    dados: AnamneseAtualizar,
+    personal: Personal = Depends(exigir_assinatura_ativa),
+    db: Session = Depends(get_db),
+) -> Anamnese:
+    """Upsert: cria a ficha na primeira vez, atualiza depois — é sempre um
+    registro só por aluno, não um histórico."""
+    aluno = obter_aluno_do_personal(aluno_id, personal, db)
+    anamnese = db.query(Anamnese).filter(Anamnese.aluno_id == aluno.id).first()
+    if anamnese is None:
+        anamnese = Anamnese(aluno_id=aluno.id)
+        db.add(anamnese)
+    for campo, valor in dados.model_dump().items():
+        setattr(anamnese, campo, valor)
+    db.commit()
+    db.refresh(anamnese)
+    return anamnese
 
 
 # ---------- Templates de treino (modelos reutilizáveis entre alunos) ----------
