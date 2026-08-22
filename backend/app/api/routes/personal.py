@@ -35,6 +35,7 @@ from app.models.foto_progresso import FotoProgresso
 from app.models.personal import Personal
 from app.models.serie import Serie
 from app.models.treino import Treino
+from app.models.treino_template import TreinoTemplate
 from app.models.video_exercicio import VideoExercicio
 from app.schemas.aluno import AlunoAtualizar, AlunoCriar, AlunoOut
 from app.schemas.analytics import AderenciaOut, AnalyticsDetalhadoOut
@@ -42,9 +43,10 @@ from app.schemas.avaliacao_fisica import AvaliacaoFisicaCriar, AvaliacaoFisicaOu
 from app.schemas.exercicio import ExercicioAtualizar, ExercicioCriar, ExercicioOut
 from app.schemas.foto_progresso import FotoProgressoOut
 from app.schemas.serie import SerieAtualizar, SerieCriar, SerieOut
-from app.schemas.treino import MontarTreinoIn, TreinoAtualizar, TreinoCriar, TreinoOut
+from app.schemas.treino import ExercicioRapidoIn, MontarTreinoIn, TreinoAtualizar, TreinoCriar, TreinoOut
+from app.schemas.treino_template import AplicarTemplateIn, TreinoTemplateCriar, TreinoTemplateOut
 from app.services.aluno_export import build_aluno_xlsx
-from app.services.progresso import calcular_aderencia, calcular_analytics_detalhado
+from app.services.progresso import DIAS_SEMANA_CHAVES, calcular_aderencia, calcular_analytics_detalhado
 
 router = APIRouter(prefix="/api/personal", tags=["Personal"])
 settings = get_settings()
@@ -255,46 +257,39 @@ def criar_treino(
     return treino
 
 
-@router.post(
-    "/alunos/{aluno_id}/treinos/montar",
-    response_model=TreinoOut,
-    status_code=status.HTTP_201_CREATED,
-)
-def montar_treino(
-    aluno_id: int,
-    dados: MontarTreinoIn,
-    personal: Personal = Depends(exigir_assinatura_ativa),
-    db: Session = Depends(get_db),
+def _criar_ou_substituir_treino(
+    db: Session,
+    personal: Personal,
+    aluno: Aluno,
+    nome: str,
+    ordem: int,
+    dia_semana: str | None,
+    exercicios: list[ExercicioRapidoIn],
 ) -> Treino:
     """
-    Cria (ou refaz do zero) o treino de um dia inteiro numa única requisição:
-    usado pelo montador assistido por categoria. Se já existir um treino
-    nesse dia, os exercícios/séries antigos são substituídos pelos novos.
+    Cria (ou refaz do zero) o treino de um dia inteiro numa tacada só. Se já
+    existir um treino nesse dia, os exercícios/séries antigos são
+    substituídos pelos novos. Usado tanto pelo montador assistido por
+    categoria (montar_treino) quanto por "aplicar modelo" (aplicar_template).
     """
-    aluno = obter_aluno_do_personal(aluno_id, personal, db)
-
     treino = None
-    if dados.dia_semana:
-        treino = (
-            db.query(Treino)
-            .filter(Treino.aluno_id == aluno.id, Treino.dia_semana == dados.dia_semana)
-            .first()
-        )
+    if dia_semana:
+        treino = db.query(Treino).filter(Treino.aluno_id == aluno.id, Treino.dia_semana == dia_semana).first()
 
     if treino:
-        treino.nome = dados.nome
-        treino.ordem = dados.ordem
+        treino.nome = nome
+        treino.ordem = ordem
         # Cascade da relação já apaga exercícios/séries antigos ao limpar a lista.
         treino.exercicios.clear()
         db.flush()
     else:
-        treino = Treino(aluno_id=aluno.id, nome=dados.nome, ordem=dados.ordem, dia_semana=dados.dia_semana)
+        treino = Treino(aluno_id=aluno.id, nome=nome, ordem=ordem, dia_semana=dia_semana)
         db.add(treino)
         db.flush()
 
     # IDs de vídeo pedidos que realmente pertencem a esse Personal — evita
     # um Personal referenciar vídeo de outra conta só adivinhando o id.
-    ids_video_pedidos = {e.video_exercicio_id for e in dados.exercicios if e.video_exercicio_id}
+    ids_video_pedidos = {e.video_exercicio_id for e in exercicios if e.video_exercicio_id}
     ids_video_validos = set()
     if ids_video_pedidos:
         ids_video_validos = {
@@ -304,7 +299,7 @@ def montar_treino(
             .all()
         }
 
-    for ordem_exercicio, exercicio_in in enumerate(dados.exercicios):
+    for ordem_exercicio, exercicio_in in enumerate(exercicios):
         video_id = exercicio_in.video_exercicio_id if exercicio_in.video_exercicio_id in ids_video_validos else None
         exercicio = Exercicio(
             treino_id=treino.id,
@@ -330,6 +325,120 @@ def montar_treino(
     db.commit()
     db.refresh(treino)
     return treino
+
+
+@router.post(
+    "/alunos/{aluno_id}/treinos/montar",
+    response_model=TreinoOut,
+    status_code=status.HTTP_201_CREATED,
+)
+def montar_treino(
+    aluno_id: int,
+    dados: MontarTreinoIn,
+    personal: Personal = Depends(exigir_assinatura_ativa),
+    db: Session = Depends(get_db),
+) -> Treino:
+    """Usado pelo montador assistido por categoria — ver _criar_ou_substituir_treino."""
+    aluno = obter_aluno_do_personal(aluno_id, personal, db)
+    return _criar_ou_substituir_treino(db, personal, aluno, dados.nome, dados.ordem, dados.dia_semana, dados.exercicios)
+
+
+# ---------- Templates de treino (modelos reutilizáveis entre alunos) ----------
+
+
+def _template_out(template: TreinoTemplate) -> TreinoTemplateOut:
+    return TreinoTemplateOut.model_validate(template)
+
+
+def _obter_template_do_personal(template_id: int, personal: Personal, db: Session) -> TreinoTemplate:
+    template = (
+        db.query(TreinoTemplate)
+        .filter(TreinoTemplate.id == template_id, TreinoTemplate.personal_id == personal.id)
+        .first()
+    )
+    if template is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Modelo não encontrado.")
+    return template
+
+
+@router.get("/templates", response_model=list[TreinoTemplateOut])
+def listar_templates(
+    personal: Personal = Depends(get_current_personal),
+    db: Session = Depends(get_db),
+) -> list[TreinoTemplateOut]:
+    templates = (
+        db.query(TreinoTemplate)
+        .filter(TreinoTemplate.personal_id == personal.id)
+        .order_by(TreinoTemplate.nome)
+        .all()
+    )
+    return [_template_out(t) for t in templates]
+
+
+@router.post("/templates", response_model=TreinoTemplateOut, status_code=status.HTTP_201_CREATED)
+def criar_template(
+    dados: TreinoTemplateCriar,
+    personal: Personal = Depends(exigir_assinatura_ativa),
+    db: Session = Depends(get_db),
+) -> TreinoTemplateOut:
+    """Salva um treino (nome + exercícios/séries) como modelo — sem vídeo,
+    sem vínculo com aluno nenhum, só a estrutura pra reaplicar depois."""
+    template = TreinoTemplate(
+        personal_id=personal.id,
+        nome=dados.nome,
+        dados_json={"exercicios": [e.model_dump() for e in dados.exercicios]},
+    )
+    db.add(template)
+    db.commit()
+    db.refresh(template)
+    return _template_out(template)
+
+
+@router.delete("/templates/{template_id}", status_code=status.HTTP_204_NO_CONTENT)
+def excluir_template(
+    template_id: int,
+    personal: Personal = Depends(exigir_assinatura_ativa),
+    db: Session = Depends(get_db),
+) -> None:
+    template = _obter_template_do_personal(template_id, personal, db)
+    db.delete(template)
+    db.commit()
+
+
+@router.post(
+    "/alunos/{aluno_id}/templates/{template_id}/aplicar",
+    response_model=TreinoOut,
+    status_code=status.HTTP_201_CREATED,
+)
+def aplicar_template(
+    aluno_id: int,
+    template_id: int,
+    dados: AplicarTemplateIn,
+    personal: Personal = Depends(exigir_assinatura_ativa),
+    db: Session = Depends(get_db),
+) -> Treino:
+    """Carimba o modelo num aluno/dia da semana — mesma lógica de
+    criar/substituir do montar_treino, só que a lista de exercícios vem do
+    template salvo em vez de vir direto do assistente."""
+    aluno = obter_aluno_do_personal(aluno_id, personal, db)
+    template = _obter_template_do_personal(template_id, personal, db)
+
+    exercicios = [
+        ExercicioRapidoIn(
+            nome=e["nome"],
+            categoria=e.get("categoria"),
+            observacoes=e.get("observacoes"),
+            series=e["series"],
+            video_exercicio_id=None,
+        )
+        for e in template.dados_json.get("exercicios", [])
+    ]
+    nome_treino = dados.nome_treino or template.nome
+    # Mesma convenção do montador assistido: ordem = índice do dia da semana
+    # (segunda=0 ... domingo=6), pra grade da semana ordenar certo.
+    ordem = DIAS_SEMANA_CHAVES.index(dados.dia_semana)
+
+    return _criar_ou_substituir_treino(db, personal, aluno, nome_treino, ordem, dados.dia_semana, exercicios)
 
 
 @router.put("/treinos/{treino_id}", response_model=TreinoOut)

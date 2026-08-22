@@ -59,6 +59,10 @@ const formNovaAvaliacao = $("#form-nova-avaliacao");
 const fotosProgressoEl = $("#fotos-progresso-conteudo");
 const modalNovaFoto = $("#modal-nova-foto");
 const formNovaFoto = $("#form-nova-foto");
+const modalSalvarTemplate = $("#modal-salvar-template");
+const formSalvarTemplate = $("#form-salvar-template");
+const modalUsarTemplate = $("#modal-usar-template");
+const listaTemplatesUsarEl = $("#lista-templates-usar");
 const modalEditarAluno = $("#modal-editar-aluno");
 const formEditarAluno = $("#form-editar-aluno");
 const avisoMetaSemPesoEl = $("#aviso-meta-sem-peso");
@@ -87,6 +91,8 @@ let treinosCache = []; // guarda os dados carregados pra preencher os modais de 
 let avaliacoesCache = []; // histórico de peso do aluno, mais recente primeiro (vem assim da API)
 let fotosCache = []; // fotos de progresso, mais recente primeiro (vem assim da API)
 let montarTreinoDia = null; // dia da semana sendo montado no modal assistido
+let templateDiaAlvo = null; // dia da semana sendo salvo/preenchido via modelo
+let templatesCache = null; // null = ainda não carregado (carrega sob demanda ao abrir "Usar modelo")
 let categoriasSelecionadas = []; // chaves das categorias escolhidas no passo 1 (pode ser mais de uma)
 let itensSelecionados = []; // [{ nome, incluido, categoria, categoriaChave }] — exercícios sugeridos das categorias escolhidas
 let configPorGrupo = {}; // chave da categoria (ou "manual") → { series, repeticoes, descanso }
@@ -199,8 +205,10 @@ function linhaDiaSemana(dia, treinoDoDia) {
             temTreino
               ? `<button class="btn btn-ghost btn-sm" data-acao="editar-dia" data-dia="${dia.chave}" type="button">${icone("editar", 14)} Editar</button>
                  <button class="btn btn-ghost btn-sm" data-acao="montar-treino" data-dia="${dia.chave}" type="button" title="Refazer este dia com o montador">${ICONE_HALTERES} Refazer</button>
+                 <button class="btn btn-ghost btn-sm btn-icon" data-acao="salvar-template" data-dia="${dia.chave}" type="button" title="Salvar este treino como modelo">${icone("salvar", 14)}</button>
                  <button class="btn btn-ghost btn-sm" data-acao="excluir-dia" data-dia="${dia.chave}" data-id="${treinoDoDia.id}" type="button" title="Remover treino deste dia">${ICONE_LIXEIRA}</button>`
-              : `<button class="btn btn-primary btn-sm" data-acao="montar-treino" data-dia="${dia.chave}" type="button">${ICONE_HALTERES} Montar treino</button>`
+              : `<button class="btn btn-primary btn-sm" data-acao="montar-treino" data-dia="${dia.chave}" type="button">${ICONE_HALTERES} Montar treino</button>
+                 <button class="btn btn-ghost btn-sm" data-acao="usar-template" data-dia="${dia.chave}" type="button">${icone("copiar", 14)} Usar modelo</button>`
           }
         </div>
       </div>
@@ -1391,6 +1399,124 @@ function abrirMontarTreino(dia) {
   abrirModal(modalMontarTreino);
 }
 
+// --- Templates de treino (modelos reutilizáveis entre alunos) ---
+
+function abrirSalvarTemplate(dia) {
+  templateDiaAlvo = dia;
+  formSalvarTemplate.reset();
+  const treino = treinosCache.find((t) => t.dia_semana === dia);
+  if (treino) formSalvarTemplate.nome.value = treino.nome;
+  abrirModal(modalSalvarTemplate);
+}
+
+document
+  .querySelectorAll("[data-acao='fechar-modal-salvar-template']")
+  .forEach((el) => el.addEventListener("click", () => fecharModal(modalSalvarTemplate)));
+
+formSalvarTemplate?.addEventListener("submit", async (evento) => {
+  evento.preventDefault();
+  const treino = treinosCache.find((t) => t.dia_semana === templateDiaAlvo);
+  if (!treino) return;
+  const botao = $("button[type='submit']", formSalvarTemplate);
+  botao.disabled = true;
+  try {
+    const exercicios = treino.exercicios.map((ex) => ({
+      nome: ex.nome,
+      categoria: ex.categoria || null,
+      observacoes: ex.observacoes || null,
+      series: ex.series.map((s) => ({
+        repeticoes_alvo: s.repeticoes_alvo,
+        carga_alvo: s.carga_alvo || null,
+        intervalo_descanso: s.intervalo_descanso || null,
+      })),
+    }));
+    await api.criarTemplate({ nome: formSalvarTemplate.nome.value.trim(), exercicios });
+    mostrarToast("Modelo salvo!", "sucesso");
+    fecharModal(modalSalvarTemplate);
+    templatesCache = null; // força recarregar na próxima vez que "Usar modelo" abrir
+  } catch (erro) {
+    mostrarToast(mensagemDeErro(erro), "erro");
+  } finally {
+    botao.disabled = false;
+  }
+});
+
+async function carregarTemplatesSeNecessario() {
+  if (templatesCache) return templatesCache;
+  templatesCache = await api.listarTemplates();
+  return templatesCache;
+}
+
+function itemTemplateUsar(template) {
+  const qtd = template.dados_json?.exercicios?.length || 0;
+  return `
+    <div class="series-linha" data-template-id="${template.id}">
+      <span><strong>${escaparHtml(template.nome)}</strong> <span class="hint-text">${qtd} exercício${qtd !== 1 ? "s" : ""}</span></span>
+      <div style="display:flex;gap:var(--espaco-2);">
+        <button class="btn btn-primary btn-sm" data-acao="aplicar-template" data-id="${template.id}" type="button">Aplicar</button>
+        <button class="btn btn-ghost btn-sm" data-acao="excluir-template" data-id="${template.id}" type="button">${ICONE_LIXEIRA}</button>
+      </div>
+    </div>
+  `;
+}
+
+async function abrirUsarTemplate(dia) {
+  templateDiaAlvo = dia;
+  listaTemplatesUsarEl.innerHTML = `<p class="hint-text">Carregando…</p>`;
+  abrirModal(modalUsarTemplate);
+  try {
+    const templates = await carregarTemplatesSeNecessario();
+    if (templates.length === 0) {
+      listaTemplatesUsarEl.innerHTML = `<p class="hint-text">Nenhum modelo salvo ainda. Monte um treino e clique no ícone de salvar na grade da semana pra criar o primeiro.</p>`;
+      return;
+    }
+    listaTemplatesUsarEl.innerHTML = templates.map(itemTemplateUsar).join("");
+  } catch {
+    listaTemplatesUsarEl.innerHTML = `<p class="hint-text">Não foi possível carregar os modelos agora.</p>`;
+  }
+}
+
+document
+  .querySelectorAll("[data-acao='fechar-modal-usar-template']")
+  .forEach((el) => el.addEventListener("click", () => fecharModal(modalUsarTemplate)));
+
+listaTemplatesUsarEl?.addEventListener("click", async (evento) => {
+  const aplicarBtn = evento.target.closest("[data-acao='aplicar-template']");
+  if (aplicarBtn) {
+    const id = Number(aplicarBtn.dataset.id);
+    aplicarBtn.disabled = true;
+    aplicarBtn.textContent = "Aplicando…";
+    try {
+      await api.aplicarTemplate(alunoId, id, { dia_semana: templateDiaAlvo });
+      mostrarToast(`Modelo aplicado em ${ROTULO_DIA[templateDiaAlvo]}!`, "sucesso");
+      fecharModal(modalUsarTemplate);
+      recarregarTreinos();
+    } catch (erro) {
+      mostrarToast(mensagemDeErro(erro), "erro");
+      aplicarBtn.disabled = false;
+      aplicarBtn.textContent = "Aplicar";
+    }
+    return;
+  }
+
+  const excluirBtn = evento.target.closest("[data-acao='excluir-template']");
+  if (excluirBtn) {
+    const confirmou = await confirmarAcao("Excluir esse modelo? Não afeta os treinos já aplicados a partir dele.", {
+      titulo: "Excluir modelo",
+      textoConfirmar: "Excluir",
+    });
+    if (!confirmou) return;
+    try {
+      await api.excluirTemplate(Number(excluirBtn.dataset.id));
+      mostrarToast("Modelo excluído.", "sucesso");
+      templatesCache = null;
+      abrirUsarTemplate(templateDiaAlvo);
+    } catch (erro) {
+      mostrarToast(mensagemDeErro(erro), "erro");
+    }
+  }
+});
+
 function montarPayloadExerciciosPorGrupo(selecionados) {
   const grupos = gruposAtivos();
   const configResolvida = new Map();
@@ -1784,6 +1910,18 @@ gradeSemanaEl?.addEventListener("click", async (evento) => {
   const montarTreinoBtn = evento.target.closest("[data-acao='montar-treino']");
   if (montarTreinoBtn) {
     abrirMontarTreino(montarTreinoBtn.dataset.dia);
+    return;
+  }
+
+  const salvarTemplateBtn = evento.target.closest("[data-acao='salvar-template']");
+  if (salvarTemplateBtn) {
+    abrirSalvarTemplate(salvarTemplateBtn.dataset.dia);
+    return;
+  }
+
+  const usarTemplateBtn = evento.target.closest("[data-acao='usar-template']");
+  if (usarTemplateBtn) {
+    abrirUsarTemplate(usarTemplateBtn.dataset.dia);
     return;
   }
 

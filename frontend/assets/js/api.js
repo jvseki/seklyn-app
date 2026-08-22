@@ -110,6 +110,16 @@ export const api = {
   montarTreino: (alunoId, dados) =>
     apiFetch(`/personal/alunos/${alunoId}/treinos/montar`, { method: "POST", body: JSON.stringify(dados) }),
 
+  // --- Templates de treino (modelos reutilizáveis entre alunos) ---
+  listarTemplates: () => apiFetch("/personal/templates"),
+  criarTemplate: (dados) => apiFetch("/personal/templates", { method: "POST", body: JSON.stringify(dados) }),
+  excluirTemplate: (id) => apiFetch(`/personal/templates/${id}`, { method: "DELETE" }),
+  aplicarTemplate: (alunoId, templateId, dados) =>
+    apiFetch(`/personal/alunos/${alunoId}/templates/${templateId}/aplicar`, {
+      method: "POST",
+      body: JSON.stringify(dados),
+    }),
+
   // --- Exercícios ---
   criarExercicio: (treinoId, dados) =>
     apiFetch(`/personal/treinos/${treinoId}/exercicios`, { method: "POST", body: JSON.stringify(dados) }),

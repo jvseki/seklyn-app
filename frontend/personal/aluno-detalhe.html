@@ -239,6 +239,37 @@
     </div>
   </div>
 
+  <div class="modal-fundo" id="modal-salvar-template" hidden>
+    <div class="modal" style="max-width:400px;">
+      <div class="modal-cabecalho">
+        <h3>Salvar como modelo</h3>
+        <button class="btn btn-ghost btn-icon" data-acao="fechar-modal-salvar-template"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-3px;flex-shrink:0;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <form id="form-salvar-template">
+        <div class="form-group">
+          <label class="label" for="salvar-template-nome">Nome do modelo</label>
+          <input class="input" id="salvar-template-nome" name="nome" required />
+        </div>
+        <p class="hint-text">Salva os exercícios e séries desse treino pra reaplicar em qualquer aluno depois, com um clique — sem vídeo anexado (isso fica por conta de cada aluno).</p>
+        <div class="modal-acoes">
+          <button type="button" class="btn btn-ghost" data-acao="fechar-modal-salvar-template">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar modelo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-fundo" id="modal-usar-template" hidden>
+    <div class="modal" style="max-width:440px;">
+      <div class="modal-cabecalho">
+        <h3>Usar modelo</h3>
+        <button class="btn btn-ghost btn-icon" data-acao="fechar-modal-usar-template"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-3px;flex-shrink:0;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <p class="hint-text" style="margin-bottom:var(--espaco-3);">Aplica um modelo salvo direto nesse dia — substitui o treino atual do dia, se já tiver algum.</p>
+      <div id="lista-templates-usar" style="display:flex;flex-direction:column;gap:var(--espaco-2);max-height:340px;overflow-y:auto;"></div>
+    </div>
+  </div>
+
   <div class="modal-fundo" id="modal-editar-item" hidden>
     <div class="modal">
       <div class="modal-cabecalho">
