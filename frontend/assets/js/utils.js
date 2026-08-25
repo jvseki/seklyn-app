@@ -20,7 +20,9 @@ export function formatarDataHora(isoString) {
   return data.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
-/** Mostra uma notificação temporária no canto da tela. */
+/** Mostra uma notificação temporária no topo da tela. Um toast por vez —
+ * o novo substitui o anterior em vez de empilhar (ex: "Vídeo reusado." não
+ * fica preso em cima do botão "Salvar" por vários segundos). */
 export function mostrarToast(mensagem, tipo = "info") {
   let container = $(".toast-container");
   if (!container) {
@@ -28,11 +30,12 @@ export function mostrarToast(mensagem, tipo = "info") {
     container.className = "toast-container";
     document.body.appendChild(container);
   }
+  container.innerHTML = ""; // substitui qualquer toast anterior ainda visível
   const toast = document.createElement("div");
   toast.className = `toast ${tipo === "erro" ? "erro" : tipo === "sucesso" ? "sucesso" : ""}`.trim();
   toast.textContent = mensagem;
   container.appendChild(toast);
-  setTimeout(() => toast.remove(), 4000);
+  setTimeout(() => toast.remove(), 2500);
 }
 
 /**
@@ -118,11 +121,50 @@ export function preencherSelect(elemento, opcoes, valorSelecionado) {
   }
 }
 
+// Trava o scroll do body enquanto algum modal tá aberto — sem isso, no iOS,
+// o teclado abrindo faz o conteúdo por trás da página rolar e o modal fica
+// descolado do fundo escurecido. `scrollTravadoEm` guarda a posição pra
+// restaurar exatamente onde a página tava; fica null quando destravado.
+let scrollTravadoEm = null;
+
 /** Alterna a exibição de um modal (elemento com classe .modal-fundo). */
 export function abrirModal(modalEl) {
   modalEl.hidden = false;
+  if (scrollTravadoEm === null) {
+    scrollTravadoEm = window.scrollY;
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollTravadoEm}px`;
+    document.body.style.left = "0";
+    document.body.style.right = "0";
+  }
 }
 
 export function fecharModal(modalEl) {
   modalEl.hidden = true;
+  // Só destrava se não sobrou nenhum outro modal aberto (ex: confirmarAcao()
+  // por cima de um form) — todos usam a mesma classe .modal-fundo.
+  const aindaTemModalAberto = document.querySelector(".modal-fundo:not([hidden])");
+  if (!aindaTemModalAberto && scrollTravadoEm !== null) {
+    document.body.style.position = "";
+    document.body.style.top = "";
+    document.body.style.left = "";
+    document.body.style.right = "";
+    window.scrollTo(0, scrollTravadoEm);
+    scrollTravadoEm = null;
+  }
 }
+
+// Quando um input/textarea/select dentro de um modal recebe foco, garante
+// que ele fica visível mesmo com o teclado do celular aberto — sem isso,
+// no iOS o campo (e o botão de confirmar) some atrás do teclado. `focus`
+// não borbulha, por isso a escuta é na fase de captura.
+document.addEventListener(
+  "focus",
+  (evento) => {
+    const alvo = evento.target;
+    if (!alvo.matches?.("input, textarea, select")) return;
+    if (!alvo.closest(".modal-fundo")) return;
+    setTimeout(() => alvo.scrollIntoView({ block: "center", behavior: "smooth" }), 250);
+  },
+  true
+);

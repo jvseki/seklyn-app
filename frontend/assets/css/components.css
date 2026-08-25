@@ -699,14 +699,23 @@
 }
 
 /* Toasts / alertas */
+/* Fica no topo (não embaixo) de propósito: embaixo é onde ficam os botões
+   de ação dos modais (.modal-acoes) e a tab-bar do aluno — um toast bottom
+   ficava em cima de "Salvar"/"Confirmar" e bloqueava o clique por
+   segundos. pointer-events:none garante que nunca intercepta clique,
+   mesmo que acabe sobrepondo algo. */
 .toast-container {
   position: fixed;
-  bottom: var(--espaco-5);
-  right: var(--espaco-5);
+  top: var(--espaco-5);
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: var(--espaco-2);
   z-index: 1000;
+  pointer-events: none;
+  max-width: calc(100vw - var(--espaco-5) * 2);
 }
 
 .toast {
@@ -779,7 +788,10 @@
   padding: var(--espaco-6);
   width: 100%;
   max-width: 480px;
-  max-height: 90vh;
+  max-height: 90vh; /* fallback pra navegador sem suporte a dvh */
+  max-height: 90dvh; /* acompanha a altura visível de verdade — no iOS, 90vh
+                         não encolhe quando o teclado abre, e o rodapé do
+                         modal (Salvar/Cancelar) fica escondido atrás dele */
   overflow-y: auto;
   box-shadow: var(--sombra-lg);
 }
@@ -789,6 +801,12 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: var(--espaco-4);
+  position: sticky;
+  top: calc(var(--espaco-6) * -1);
+  padding-top: var(--espaco-6);
+  margin-top: calc(var(--espaco-6) * -1);
+  background: var(--cor-superficie);
+  z-index: 2;
 }
 
 .modal-acoes {
@@ -796,6 +814,12 @@
   justify-content: flex-end;
   gap: var(--espaco-3);
   margin-top: var(--espaco-5);
+  position: sticky;
+  bottom: calc(var(--espaco-6) * -1);
+  padding-bottom: var(--espaco-6);
+  margin-bottom: calc(var(--espaco-6) * -1);
+  background: var(--cor-superficie);
+  z-index: 2;
 }
 
 /* Avatar */

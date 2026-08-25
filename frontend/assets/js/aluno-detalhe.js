@@ -83,6 +83,8 @@ const gradeCategoriasEl = $("#grade-categorias");
 const montarTreinoNomeInput = $("#montar-treino-nome");
 const listaExerciciosSugeridosEl = $("#lista-exercicios-sugeridos");
 const outroExercicioInput = $("#montar-treino-outro-exercicio");
+const outroCategoriaGrupoEl = $("#montar-treino-outro-categoria-grupo");
+const outroCategoriaSelectEl = $("#montar-treino-outro-categoria");
 const configGruposEl = $("#config-grupos");
 const configIndividualEl = $("#config-individual");
 const configModoExplicacaoEl = $("#config-modo-explicacao");
@@ -169,12 +171,18 @@ function itemExercicio(exercicio) {
   return `
     <div class="exercicio-item ${aberto ? "aberto" : ""}" data-exercicio-id="${exercicio.id}">
       <div class="exercicio-cabecalho" data-acao="toggle-exercicio" data-id="${exercicio.id}">
-        ${icone("chevron", 16)}
-        <span class="exercicio-nome">${escaparHtml(exercicio.nome)}</span>
-        ${exercicio.categoria ? `<span class="badge badge-neutro">${escaparHtml(obterCategoria(exercicio.categoria)?.rotulo || exercicio.categoria)}</span>` : ""}
-        ${exercicio.video ? `<span class="exercicio-video-marca" title="Tem vídeo anexado">${icone("video", 15)}</span>` : ""}
-        <button class="btn btn-ghost btn-sm" data-acao="editar-exercicio" data-id="${exercicio.id}" type="button">Editar</button>
-        <button class="btn btn-ghost btn-sm" data-acao="excluir-exercicio" data-id="${exercicio.id}" type="button">Remover</button>
+        <div class="exercicio-cabecalho-linha1">
+          ${icone("chevron", 16)}
+          <span class="exercicio-nome">${escaparHtml(exercicio.nome)}</span>
+          ${exercicio.video ? `<span class="exercicio-video-marca" title="Tem vídeo anexado">${icone("video", 15)}</span>` : ""}
+        </div>
+        <div class="exercicio-cabecalho-linha2">
+          ${exercicio.categoria ? `<span class="badge badge-neutro">${escaparHtml(obterCategoria(exercicio.categoria)?.rotulo || exercicio.categoria)}</span>` : ""}
+          <div class="exercicio-cabecalho-acoes">
+            <button class="btn btn-ghost btn-sm" data-acao="editar-exercicio" data-id="${exercicio.id}" type="button">Editar</button>
+            <button class="btn btn-ghost btn-sm" data-acao="excluir-exercicio" data-id="${exercicio.id}" type="button">Remover</button>
+          </div>
+        </div>
       </div>
       <div class="acordeao-secao ${aberto ? "aberto" : ""}" data-exercicio-corpo="${exercicio.id}">
         <div class="exercicio-corpo">${aberto ? corpoExercicio(exercicio) : ""}</div>
@@ -270,8 +278,25 @@ const CAMPOS_POR_TIPO = {
     titulo: "Editar exercício",
     campos: (item) => `
       <div class="form-group">
-        <label class="label" for="editar-item-nome">Nome do exercício</label>
-        <input class="input" id="editar-item-nome" name="nome" list="lista-exercicios" value="${escaparHtml(item.nome)}" required />
+        <span class="label">Nome do exercício</span>
+        <div class="editar-exercicio-nome-atual">
+          <strong id="editar-item-nome-texto">${escaparHtml(item.nome)}</strong>
+          <button class="btn btn-ghost btn-sm" type="button" data-acao="trocar-exercicio">Trocar exercício</button>
+        </div>
+        <input type="hidden" id="editar-item-nome" name="nome" value="${escaparHtml(item.nome)}" />
+        <input type="hidden" id="editar-item-categoria" name="categoria" value="${escaparHtml(item.categoria || "")}" />
+
+        <div class="editar-exercicio-trocar" id="editar-exercicio-trocar-painel" hidden>
+          <div class="form-group">
+            <label class="label" for="editar-exercicio-categoria-select">Categoria</label>
+            <select class="input" id="editar-exercicio-categoria-select">
+              ${CATEGORIAS_TREINO.map(
+                (c) => `<option value="${c.chave}" ${item.categoria === c.chave ? "selected" : ""}>${escaparHtml(c.rotulo)}</option>`
+              ).join("")}
+            </select>
+          </div>
+          <div id="editar-exercicio-lista-catalogo"></div>
+        </div>
       </div>
       <div class="form-group">
         <label class="label" for="editar-item-observacoes">Observações (opcional)</label>
@@ -280,6 +305,7 @@ const CAMPOS_POR_TIPO = {
     `,
     montarPayload: (form) => ({
       nome: form.nome.value.trim(),
+      categoria: form.categoria.value || null,
       observacoes: form.observacoes.value.trim() || null,
     }),
     salvar: (id, payload) => api.atualizarExercicio(id, payload),
@@ -319,8 +345,94 @@ function abrirEdicaoItem(tipo, id) {
   editarItemCampos.innerHTML = config.campos(item);
   formEditarItem.dataset.tipo = tipo;
   formEditarItem.dataset.id = id;
+  if (tipo === "exercicio") {
+    const categoriaInicial = item.categoria || CATEGORIAS_TREINO[0]?.chave;
+    renderizarListaCatalogoTrocar(categoriaInicial);
+  }
   abrirModal(modalEditarItem);
 }
+
+/** Lista de exercícios do catálogo pra "Trocar exercício" — sempre a
+ * categoria escolhida no select acima da lista, com "Outro" no fim pra
+ * digitar um nome que não está no catálogo. */
+function renderizarListaCatalogoTrocar(categoriaChave) {
+  const listaEl = $("#editar-exercicio-lista-catalogo");
+  if (!listaEl) return;
+  const categoria = obterCategoria(categoriaChave);
+  const exercicios = categoria?.exercicios || [];
+  listaEl.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:var(--espaco-2);max-height:220px;overflow-y:auto;padding-right:4px;">
+      ${exercicios
+        .map(
+          (ex) =>
+            `<button type="button" class="btn btn-ghost btn-sm" style="justify-content:flex-start;" data-acao="escolher-exercicio-catalogo" data-nome="${escaparHtml(ex.nome)}">${escaparHtml(ex.nome)}</button>`
+        )
+        .join("")}
+      <button type="button" class="btn btn-ghost btn-sm" style="justify-content:flex-start;font-style:italic;" data-acao="escolher-exercicio-outro">+ Outro — digitar manualmente</button>
+    </div>
+    <div id="editar-exercicio-outro-input" hidden style="margin-top:var(--espaco-2);display:flex;gap:var(--espaco-2);">
+      <input class="input" type="text" id="editar-exercicio-outro-texto" placeholder="Nome do exercício" style="flex:1;" />
+      <button type="button" class="btn btn-primary btn-sm" data-acao="confirmar-exercicio-outro">OK</button>
+    </div>
+  `;
+}
+
+/** Fecha o painel de "trocar exercício" e volta pra visão só-leitura do nome atual. */
+function fecharPainelTrocarExercicio() {
+  const painel = $("#editar-exercicio-trocar-painel");
+  if (painel) painel.hidden = true;
+}
+
+editarItemCampos?.addEventListener("click", (evento) => {
+  const trocar = evento.target.closest("[data-acao='trocar-exercicio']");
+  if (trocar) {
+    const painel = $("#editar-exercicio-trocar-painel");
+    if (painel) painel.hidden = !painel.hidden;
+    return;
+  }
+
+  const escolherCatalogo = evento.target.closest("[data-acao='escolher-exercicio-catalogo']");
+  if (escolherCatalogo) {
+    const nome = escolherCatalogo.dataset.nome;
+    const categoriaSelect = $("#editar-exercicio-categoria-select");
+    $("#editar-item-nome").value = nome;
+    $("#editar-item-categoria").value = categoriaSelect?.value || "";
+    $("#editar-item-nome-texto").textContent = nome;
+    fecharPainelTrocarExercicio();
+    return;
+  }
+
+  const escolherOutro = evento.target.closest("[data-acao='escolher-exercicio-outro']");
+  if (escolherOutro) {
+    const painelOutro = $("#editar-exercicio-outro-input");
+    if (painelOutro) {
+      painelOutro.hidden = false;
+      $("#editar-exercicio-outro-texto")?.focus();
+    }
+    return;
+  }
+
+  const confirmarOutro = evento.target.closest("[data-acao='confirmar-exercicio-outro']");
+  if (confirmarOutro) {
+    const texto = $("#editar-exercicio-outro-texto")?.value.trim();
+    if (!texto) {
+      mostrarToast("Digite o nome do exercício.", "erro");
+      return;
+    }
+    const categoriaSelect = $("#editar-exercicio-categoria-select");
+    $("#editar-item-nome").value = texto;
+    $("#editar-item-categoria").value = categoriaSelect?.value || "";
+    $("#editar-item-nome-texto").textContent = texto;
+    fecharPainelTrocarExercicio();
+  }
+});
+
+editarItemCampos?.addEventListener("change", (evento) => {
+  const categoriaSelect = evento.target.closest("#editar-exercicio-categoria-select");
+  if (categoriaSelect) {
+    renderizarListaCatalogoTrocar(categoriaSelect.value);
+  }
+});
 
 async function carregarAluno() {
   try {
@@ -945,6 +1057,47 @@ function renderizarChipsConfig(container, opcoes, valorAtual, grupo, permitirPer
   container.innerHTML = chipsPreset + chipOutro;
 }
 
+/** Bloco de campos "quantas séries / repetições / descanso / carga
+ * progressiva / carga / dica de execução" — usado tanto na config por
+ * categoria (grupo) quanto por exercício individual, sempre na mesma
+ * ordem e com os mesmos campos, pra nunca existirem duas versões
+ * divergentes do formulário. `atributo` já vem pronto como
+ * `data-grupo-config="x"` ou `data-exercicio-config="x"`; `chaveChip` é
+ * o mesmo valor `x`, usado nos wrappers de carga única/progressiva. */
+function camposConfigSeries(atributo, chaveChip) {
+  return `
+    <div class="form-group">
+      <span class="label">Quantas séries</span>
+      <div class="grade-chips" data-chips="series" ${atributo}></div>
+    </div>
+    <div class="form-group">
+      <span class="label">Repetições por série</span>
+      <div class="grade-chips" data-chips="repeticoes" ${atributo}></div>
+      <input class="input" data-campo="repeticoes-personalizado" ${atributo} placeholder="Ex: 10-12" maxlength="60" hidden style="margin-top:var(--espaco-2);" />
+    </div>
+    <div class="form-group">
+      <span class="label">Descanso entre séries</span>
+      <div class="grade-chips" data-chips="descanso" ${atributo}></div>
+      <input class="input" data-campo="descanso-personalizado" ${atributo} placeholder="Ex: 60s" maxlength="20" hidden style="margin-top:var(--espaco-2);" />
+    </div>
+    <div class="form-group">
+      <label class="label" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <input type="checkbox" data-campo="carga-progressiva" ${atributo} />
+        Carga progressiva (uma carga diferente por série)
+      </label>
+    </div>
+    <div class="form-group" data-carga-unica="${chaveChip}">
+      <label class="label">Carga (opcional)</label>
+      <input class="input" data-campo="carga" ${atributo} placeholder="Deixe em branco se variar por aluno" maxlength="60" />
+    </div>
+    <div data-carga-progressiva="${chaveChip}" hidden></div>
+    <div class="form-group">
+      <label class="label">Dica de execução (opcional)</label>
+      <input class="input" data-campo="observacoes" ${atributo} placeholder="Ex: desça devagar, cuidado com a lombar" maxlength="500" />
+    </div>
+  `;
+}
+
 function renderizarPassoConfig() {
   const grupos = gruposAtivos();
   configPorGrupo = {};
@@ -974,24 +1127,7 @@ function renderizarPassoConfig() {
       return `
         <div class="config-grupo">
           <p class="config-grupo-titulo">${escaparHtml(rotulo)} ${contagem}</p>
-          <div class="form-group">
-            <span class="label">Quantas séries</span>
-            <div class="grade-chips" data-chips="series" data-grupo-config="${chave}"></div>
-          </div>
-          <div class="form-group">
-            <span class="label">Repetições por série</span>
-            <div class="grade-chips" data-chips="repeticoes" data-grupo-config="${chave}"></div>
-            <input class="input" data-campo="repeticoes-personalizado" data-grupo-config="${chave}" placeholder="Ex: 10-12" maxlength="60" hidden style="margin-top:var(--espaco-2);" />
-          </div>
-          <div class="form-group">
-            <span class="label">Descanso entre séries</span>
-            <div class="grade-chips" data-chips="descanso" data-grupo-config="${chave}"></div>
-            <input class="input" data-campo="descanso-personalizado" data-grupo-config="${chave}" placeholder="Ex: 60s" maxlength="20" hidden style="margin-top:var(--espaco-2);" />
-          </div>
-          <div class="form-group">
-            <label class="label">Dica de execução (opcional)</label>
-            <input class="input" data-campo="observacoes" data-grupo-config="${chave}" placeholder="Ex: desça devagar, cuidado com a lombar" maxlength="500" />
-          </div>
+          ${camposConfigSeries(`data-grupo-config="${chave}"`, chave)}
         </div>
       `;
     })
@@ -1018,6 +1154,8 @@ function renderizarPassoConfig() {
       series: 3,
       repeticoes: padrao.repeticoes_alvo,
       descanso: padrao.intervalo_descanso || "60s",
+      cargaModo: "unica",
+      cargasPorSerie: [],
     };
 
     renderizarChipsConfig(
@@ -1051,7 +1189,7 @@ function resolverConfigGrupo(chave) {
       cfg.tempo === "outro"
         ? (configGruposEl.querySelector(`[data-campo="tempo-personalizado"][data-grupo-config="${chave}"]`)?.value.trim() || "")
         : String(cfg.tempo);
-    return { repeticoes: tempo, descanso: null, numeroSeries: 1, observacoes: null };
+    return { repeticoes: tempo, descanso: null, cargas: [null], observacoes: null };
   }
 
   const repeticoes =
@@ -1064,7 +1202,16 @@ function resolverConfigGrupo(chave) {
       : String(cfg.descanso);
   const numeroSeries = Number(cfg.series) || 3;
   const observacoes = configGruposEl.querySelector(`[data-campo="observacoes"][data-grupo-config="${chave}"]`)?.value.trim() || null;
-  return { repeticoes, descanso, numeroSeries, observacoes };
+
+  let cargas;
+  if (cfg.cargaModo === "progressiva") {
+    cargas = Array.from({ length: numeroSeries }, (_, i) => cfg.cargasPorSerie[i] || null);
+  } else {
+    const cargaUnica = configGruposEl.querySelector(`[data-campo="carga"][data-grupo-config="${chave}"]`)?.value.trim() || null;
+    cargas = Array.from({ length: numeroSeries }, () => cargaUnica);
+  }
+
+  return { repeticoes, descanso, numeroSeries, observacoes, cargas };
 }
 
 // --- Vídeo demonstrativo por exercício (upload ou link do YouTube, reusado por nome) ---
@@ -1265,31 +1412,7 @@ function renderizarPassoConfigIndividual() {
       return `
         <div class="config-grupo">
           <p class="config-grupo-titulo">${escaparHtml(nome)}</p>
-          <div class="form-group">
-            <span class="label">Quantas séries</span>
-            <div class="grade-chips" data-chips="series" data-exercicio-config="${indice}"></div>
-          </div>
-          <div class="form-group">
-            <span class="label">Repetições por série</span>
-            <div class="grade-chips" data-chips="repeticoes" data-exercicio-config="${indice}"></div>
-            <input class="input" data-campo="repeticoes-personalizado" data-exercicio-config="${indice}" placeholder="Ex: 10-12" maxlength="60" hidden style="margin-top:var(--espaco-2);" />
-          </div>
-          <div class="form-group">
-            <span class="label">Descanso entre séries</span>
-            <div class="grade-chips" data-chips="descanso" data-exercicio-config="${indice}"></div>
-            <input class="input" data-campo="descanso-personalizado" data-exercicio-config="${indice}" placeholder="Ex: 60s" maxlength="20" hidden style="margin-top:var(--espaco-2);" />
-          </div>
-          <div class="form-group">
-            <label class="label" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-              <input type="checkbox" data-campo="carga-progressiva" data-exercicio-config="${indice}" />
-              Carga progressiva (uma carga diferente por série)
-            </label>
-          </div>
-          <div class="form-group" data-carga-unica="${indice}">
-            <label class="label">Carga (opcional)</label>
-            <input class="input" data-campo="carga" data-exercicio-config="${indice}" placeholder="Deixe em branco se variar por aluno" maxlength="60" />
-          </div>
-          <div data-carga-progressiva="${indice}" hidden></div>
+          ${camposConfigSeries(`data-exercicio-config="${indice}"`, indice)}
         </div>
       `;
     })
@@ -1342,23 +1465,23 @@ function renderizarPassoConfigIndividual() {
   });
 }
 
-function regenerarCargasProgressivas(indice) {
-  const numeroSeries = Number(configPorExercicio[indice].series) || 3;
-  const bloco = configIndividualEl.querySelector(`[data-carga-progressiva="${indice}"]`);
+/** Gera os campos "Carga na série N" quando a carga progressiva tá
+ * ligada — compartilhado pelos dois modos (grupo e exercício), só muda o
+ * objeto de config, o container e os atributos data-* de cada um. */
+function regenerarCargasProgressivas(config, container, atributo, chaveChip) {
+  const numeroSeries = Number(config.series) || 3;
+  const bloco = container.querySelector(`[data-carga-progressiva="${chaveChip}"]`);
   if (!bloco) return;
   bloco.innerHTML = Array.from(
     { length: numeroSeries },
     (_, i) => `
       <div class="form-group" style="margin-bottom:var(--espaco-2);">
         <label class="label">Carga na série ${i + 1}</label>
-        <input class="input" data-campo="carga-serie" data-exercicio-config="${indice}" data-serie-numero="${i}" placeholder="Ex: 10kg" maxlength="60" value="${escaparHtml(configPorExercicio[indice].cargasPorSerie[i] || "")}" />
+        <input class="input" data-campo="carga-serie" ${atributo} data-serie-numero="${i}" placeholder="Ex: 10kg" maxlength="60" value="${escaparHtml(config.cargasPorSerie[i] || "")}" />
       </div>
     `
   ).join("");
-  configPorExercicio[indice].cargasPorSerie = Array.from(
-    { length: numeroSeries },
-    (_, i) => configPorExercicio[indice].cargasPorSerie[i] || ""
-  );
+  config.cargasPorSerie = Array.from({ length: numeroSeries }, (_, i) => config.cargasPorSerie[i] || "");
 }
 
 configIndividualEl?.addEventListener("click", (evento) => {
@@ -1381,7 +1504,7 @@ configIndividualEl?.addEventListener("click", (evento) => {
   }
 
   if (campo === "series" && configPorExercicio[indice].cargaModo === "progressiva") {
-    regenerarCargasProgressivas(indice);
+    regenerarCargasProgressivas(configPorExercicio[indice], configIndividualEl, `data-exercicio-config="${indice}"`, indice);
   }
 });
 
@@ -1393,7 +1516,7 @@ configIndividualEl?.addEventListener("change", (evento) => {
     configPorExercicio[indice].cargaModo = ligado ? "progressiva" : "unica";
     configIndividualEl.querySelector(`[data-carga-unica="${indice}"]`).hidden = ligado;
     configIndividualEl.querySelector(`[data-carga-progressiva="${indice}"]`).hidden = !ligado;
-    if (ligado) regenerarCargasProgressivas(indice);
+    if (ligado) regenerarCargasProgressivas(configPorExercicio[indice], configIndividualEl, `data-exercicio-config="${indice}"`, indice);
     return;
   }
 
@@ -1414,7 +1537,7 @@ function resolverConfigExercicio(indice) {
       cfg.tempo === "outro"
         ? (configIndividualEl.querySelector(`[data-campo="tempo-personalizado"][data-exercicio-config="${indice}"]`)?.value.trim() || "")
         : String(cfg.tempo);
-    return { repeticoes: tempo, descanso: null, cargas: [null] };
+    return { repeticoes: tempo, descanso: null, cargas: [null], observacoes: null };
   }
 
   const repeticoes =
@@ -1426,6 +1549,7 @@ function resolverConfigExercicio(indice) {
       ? (configIndividualEl.querySelector(`[data-campo="descanso-personalizado"][data-exercicio-config="${indice}"]`)?.value.trim() || "")
       : String(cfg.descanso);
   const numeroSeries = Number(cfg.series) || 3;
+  const observacoes = configIndividualEl.querySelector(`[data-campo="observacoes"][data-exercicio-config="${indice}"]`)?.value.trim() || null;
 
   let cargas;
   if (cfg.cargaModo === "progressiva") {
@@ -1435,7 +1559,7 @@ function resolverConfigExercicio(indice) {
     cargas = Array.from({ length: numeroSeries }, () => cargaUnica);
   }
 
-  return { repeticoes, descanso, cargas };
+  return { repeticoes, descanso, cargas, observacoes };
 }
 
 function aplicarModoConfig() {
@@ -1606,15 +1730,20 @@ function montarPayloadExerciciosPorGrupo(selecionados) {
 
   return selecionados.map((item) => {
     const indiceOriginal = itensSelecionados.indexOf(item);
-    const { repeticoes, descanso, numeroSeries, observacoes } = configResolvida.get(item.categoriaChave || "manual");
+    const { repeticoes, descanso, cargas, observacoes } = configResolvida.get(item.categoriaChave || "manual");
     // Uma linha de série por série de verdade (ex: "4 séries" = 4 linhas o aluno marca uma a uma).
-    const serieRepetida = { repeticoes_alvo: repeticoes, carga_alvo: null, intervalo_descanso: descanso || null };
+    // cargas já vem com uma entrada por série (mesma carga repetida no modo
+    // único, ou uma carga diferente por série no modo progressivo).
     return {
       nome: item.nome,
       video_exercicio_id: videosPorItem[indiceOriginal]?.video_exercicio_id || null,
       observacoes,
       categoria: item.categoriaChave || null,
-      series: Array.from({ length: numeroSeries }, () => serieRepetida),
+      series: cargas.map((carga) => ({
+        repeticoes_alvo: repeticoes,
+        carga_alvo: carga,
+        intervalo_descanso: descanso || null,
+      })),
     };
   });
 }
@@ -1633,6 +1762,7 @@ function montarPayloadExerciciosIndividual() {
       nome,
       video_exercicio_id: videosPorItem[indice]?.video_exercicio_id || null,
       categoria: categoriaChave || null,
+      observacoes: resolvido.observacoes,
       series: resolvido.cargas.map((carga) => ({
         repeticoes_alvo: resolvido.repeticoes,
         carga_alvo: carga,
@@ -1688,6 +1818,17 @@ gradeCategoriasEl?.addEventListener("click", (evento) => {
   renderizarGradeCategorias();
 });
 
+/** Select "Em qual categoria?" pro exercício manual — só aparece quando tem
+ * mais de uma categoria escolhida (com uma só, não tem ambiguidade). */
+function renderizarSeletorCategoriaManual() {
+  const multiplas = categoriasSelecionadas.length > 1;
+  outroCategoriaGrupoEl.hidden = !multiplas;
+  if (!multiplas) return;
+  outroCategoriaSelectEl.innerHTML = categoriasSelecionadas
+    .map((chave) => `<option value="${chave}">${escaparHtml(obterCategoria(chave)?.rotulo || chave)}</option>`)
+    .join("");
+}
+
 $("[data-acao='ir-para-exercicios']")?.addEventListener("click", () => {
   if (categoriasSelecionadas.length === 0) {
     mostrarToast("Escolha pelo menos uma categoria.", "erro");
@@ -1696,6 +1837,7 @@ $("[data-acao='ir-para-exercicios']")?.addEventListener("click", () => {
   itensSelecionados = montarItensDasCategorias();
   videosPorItem = {}; // a lista de exercícios mudou — índices antigos não valem mais
   renderizarChecklistExercicios();
+  renderizarSeletorCategoriaManual();
   mostrarPassoMontagem(2);
 });
 
@@ -1722,10 +1864,40 @@ listaExerciciosSugeridosEl?.addEventListener("change", (evento) => {
   checkbox.closest(".exercicio-sugerido").classList.toggle("selecionado", checkbox.checked);
 });
 
+/** Sem acento e minúsculo, pra "Rosca Direta" e "rosca direta" baterem como o mesmo exercício. */
+function normalizarNomeExercicio(nome) {
+  return nome
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
 $("[data-acao='adicionar-outro-exercicio']")?.addEventListener("click", () => {
   const nome = outroExercicioInput.value.trim();
   if (!nome) return;
-  itensSelecionados.push({ nome, incluido: true, categoria: null, categoriaChave: null });
+
+  // Já existe (mesmo nome, ignorando acento/maiúscula) na lista atual? Só marca o que já tem, não duplica.
+  const nomeNormalizado = normalizarNomeExercicio(nome);
+  const existente = itensSelecionados.find((item) => normalizarNomeExercicio(item.nome) === nomeNormalizado);
+  if (existente) {
+    existente.incluido = true;
+    outroExercicioInput.value = "";
+    renderizarChecklistExercicios();
+    return;
+  }
+
+  // Cai na categoria escolhida no seletor (quando tem mais de uma) ou na única categoria ativa.
+  const chaveCategoria =
+    categoriasSelecionadas.length > 1 ? outroCategoriaSelectEl.value : categoriasSelecionadas[0] || null;
+  const categoria = chaveCategoria ? obterCategoria(chaveCategoria) : null;
+
+  itensSelecionados.push({
+    nome,
+    incluido: true,
+    categoria: categoria?.rotulo || null,
+    categoriaChave: chaveCategoria || null,
+  });
   outroExercicioInput.value = "";
   renderizarChecklistExercicios();
 });
@@ -1746,6 +1918,30 @@ configGruposEl?.addEventListener("click", (evento) => {
       personalizadoEl.hidden = valor !== "outro";
       if (valor === "outro") personalizadoEl.focus();
     }
+  }
+
+  if (campo === "series" && configPorGrupo[chaveGrupo].cargaModo === "progressiva") {
+    regenerarCargasProgressivas(configPorGrupo[chaveGrupo], configGruposEl, `data-grupo-config="${chaveGrupo}"`, chaveGrupo);
+  }
+});
+
+configGruposEl?.addEventListener("change", (evento) => {
+  const toggleProgressiva = evento.target.closest("[data-campo='carga-progressiva']");
+  if (toggleProgressiva) {
+    const chave = toggleProgressiva.dataset.grupoConfig;
+    const ligado = toggleProgressiva.checked;
+    configPorGrupo[chave].cargaModo = ligado ? "progressiva" : "unica";
+    configGruposEl.querySelector(`[data-carga-unica="${chave}"]`).hidden = ligado;
+    configGruposEl.querySelector(`[data-carga-progressiva="${chave}"]`).hidden = !ligado;
+    if (ligado) regenerarCargasProgressivas(configPorGrupo[chave], configGruposEl, `data-grupo-config="${chave}"`, chave);
+    return;
+  }
+
+  const cargaSerieInput = evento.target.closest("[data-campo='carga-serie']");
+  if (cargaSerieInput) {
+    const chave = cargaSerieInput.dataset.grupoConfig;
+    const numeroSerie = Number(cargaSerieInput.dataset.serieNumero);
+    configPorGrupo[chave].cargasPorSerie[numeroSerie] = cargaSerieInput.value.trim();
   }
 });
 

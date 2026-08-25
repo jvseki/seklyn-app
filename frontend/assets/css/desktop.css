@@ -317,16 +317,29 @@
   border-top: none;
 }
 
+/* Duas linhas sempre (desktop e mobile): linha 1 = chevron + nome (pode
+   quebrar em 2 linhas, sem ellipsis — é a informação mais importante da
+   linha, nunca pode ficar ilegível) + ícone de vídeo; linha 2 = badge da
+   categoria + ações. Nome sozinho na própria linha evita a disputa de
+   espaço com badge/botões que cortava o texto pra 1-3 caracteres no
+   mobile mesmo já tendo min-width:0 (o nome sempre "cabia" encolhendo em
+   vez de quebrar, porque min-width:0 deixa ele minimizar ao infinito). */
 .exercicio-cabecalho {
   display: flex;
-  align-items: center;
-  gap: var(--espaco-2);
+  flex-direction: column;
+  gap: 6px;
   padding: var(--espaco-3);
   cursor: pointer;
 }
 
 .exercicio-cabecalho:hover {
   background: var(--cor-fundo-alt);
+}
+
+.exercicio-cabecalho-linha1 {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-2);
 }
 
 .exercicio-cabecalho .chevron {
@@ -340,12 +353,10 @@
 }
 
 .exercicio-cabecalho .exercicio-nome {
-  flex: 1;
+  flex: 1 1 auto;
   font-weight: 600;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: break-word;
 }
 
 .exercicio-cabecalho .exercicio-video-marca {
@@ -354,16 +365,35 @@
   display: inline-flex;
 }
 
+.exercicio-cabecalho-linha2 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--espaco-2);
+  padding-left: 24px; /* alinha com o nome, depois do chevron */
+}
+
+.exercicio-cabecalho-acoes {
+  display: flex;
+  gap: var(--espaco-1);
+  margin-left: auto;
+}
+
+/* Área de toque mínima de 44px (recomendação de acessibilidade mobile),
+   sem alterar o .btn-sm visual usado no resto do site inteiro. */
+.exercicio-cabecalho-acoes .btn {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
 /* Nível 4: conteúdo do exercício expandido (vídeo, séries, form de série) */
 .exercicio-corpo {
   padding: 0 var(--espaco-3) var(--espaco-3) calc(var(--espaco-3) + 22px);
 }
 
 @media (max-width: 640px) {
-  .exercicio-cabecalho {
-    flex-wrap: wrap;
-  }
-
   .exercicio-corpo {
     padding-left: var(--espaco-3);
   }
@@ -404,6 +434,28 @@
 
 .categoria-chip .emoji {
   font-size: 1.6rem;
+}
+
+/* Modal "Editar exercício" — nome vira leitura + "Trocar exercício"
+   (bug: nome livre desassociava do catálogo/categoria). */
+.editar-exercicio-nome-atual {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-2);
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-md);
+  background: var(--cor-fundo-alt);
+}
+
+.editar-exercicio-trocar {
+  margin-top: var(--espaco-3);
+  padding: var(--espaco-3);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-md);
+  background: var(--cor-superficie);
 }
 
 /* Indicador "passo 1 de 3" no topo do montador assistido */
