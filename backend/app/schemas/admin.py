@@ -1,6 +1,12 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, EmailStr
+
+# Mesmas 7 chaves com bloco de CSS em variables.css ([data-tema-personalizado="X"]).
+# Uma cor nova sempre exige desenhar o bloco de CSS antes — por isso o admin só
+# escolhe entre essas, nunca digita livre (evitaria tema "aplicado" sem estilo).
+TemaPersonalizado = Literal["rosa", "verde", "azul", "celeste", "choque", "amarelo", "laranja"]
 
 
 class AdminEmailIn(BaseModel):
@@ -22,6 +28,10 @@ class AdminAssinaturaOut(BaseModel):
 
 class AdminLimiteIn(BaseModel):
     limite_alunos: int | None = None
+
+
+class AdminTemaIn(BaseModel):
+    tema_personalizado: TemaPersonalizado | None = None  # None = tema padrão (roxo)
 
 
 class AdminPersonalListaOut(BaseModel):

@@ -22,6 +22,7 @@ from app.schemas.admin import (
     AdminEmailIn,
     AdminLimiteIn,
     AdminPersonalListaOut,
+    AdminTemaIn,
 )
 
 router = APIRouter(prefix="/api/admin", tags=["Admin"])
@@ -137,5 +138,17 @@ def definir_limite_personal(
     personal = _obter_personal_por_id(db, personal_id)
     assinatura = _obter_ou_criar_assinatura(db, personal)
     assinatura.limite_alunos = dados.limite_alunos
+    db.commit()
+    return _linha_admin(db, personal)
+
+
+@router.put(
+    "/personais/{personal_id}/tema", response_model=AdminPersonalListaOut, dependencies=[Depends(exigir_admin)]
+)
+def definir_tema_personal(personal_id: int, dados: AdminTemaIn, db: Session = Depends(get_db)) -> AdminPersonalListaOut:
+    """Troca a cor da conta entre as 7 já desenhadas em variables.css (ou
+    volta pro roxo padrão com null) — sem precisar de SSH/SQL direto."""
+    personal = _obter_personal_por_id(db, personal_id)
+    personal.tema_personalizado = dados.tema_personalizado
     db.commit()
     return _linha_admin(db, personal)

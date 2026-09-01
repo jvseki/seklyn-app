@@ -26,6 +26,28 @@ const ROTULO_STATUS = {
   canceled: "Cancelada",
 };
 
+// As mesmas 7 chaves com bloco de CSS pronto em variables.css. Uma cor nova
+// sempre exige desenhar o CSS antes (não dá pra digitar livre aqui) — é
+// esse o limite entre "o site resolve sozinho" e "eu mexo no código".
+const TEMAS_DISPONIVEIS = [
+  { chave: "", rotulo: "Padrão (roxo)" },
+  { chave: "rosa", rotulo: "Rosa" },
+  { chave: "verde", rotulo: "Verde" },
+  { chave: "azul", rotulo: "Azul" },
+  { chave: "celeste", rotulo: "Celeste" },
+  { chave: "choque", rotulo: "Choque" },
+  { chave: "amarelo", rotulo: "Amarelo" },
+  { chave: "laranja", rotulo: "Laranja" },
+];
+
+function seletorTema(p) {
+  const opcoes = TEMAS_DISPONIVEIS.map(
+    (t) =>
+      `<option value="${t.chave}" ${(p.tema_personalizado || "") === t.chave ? "selected" : ""}>${t.rotulo}</option>`
+  ).join("");
+  return `<select class="input tema-select" data-tema-select data-id="${p.id}">${opcoes}</select>`;
+}
+
 function badgeAssinatura(status) {
   const rotulo = ROTULO_STATUS[status] || status;
   const classe = status === "active" || status === "trialing" ? "badge-sucesso" : "badge-perigo";
@@ -33,9 +55,6 @@ function badgeAssinatura(status) {
 }
 
 function linhaPersonal(p) {
-  const temaPonto = p.tema_personalizado
-    ? `<span class="tema-ponto" style="background:var(--cor-primaria);" title="${escaparHtml(p.tema_personalizado)}"></span>${escaparHtml(p.tema_personalizado)}`
-    : `<span class="hint-text">padrão</span>`;
   const botaoAlternar =
     p.assinatura_status === "active" || p.assinatura_status === "trialing"
       ? `<button class="btn btn-ghost btn-sm" data-acao="desativar" data-id="${p.id}">Desativar</button>`
@@ -48,7 +67,7 @@ function linhaPersonal(p) {
         <div class="hint-text">${p.email_verificado ? "E-mail confirmado" : "E-mail pendente"}</div>
       </td>
       <td>${escaparHtml(p.email)}</td>
-      <td>${temaPonto}</td>
+      <td>${seletorTema(p)}</td>
       <td>${p.total_alunos}</td>
       <td>${badgeAssinatura(p.assinatura_status)}</td>
       <td>
@@ -63,9 +82,6 @@ function linhaPersonal(p) {
 /** Mesmo dado da linha da tabela, só que em card — usado abaixo de 900px
    (a tabela de 8 colunas não cabe numa tela de celular). */
 function cartaoPersonal(p) {
-  const temaPonto = p.tema_personalizado
-    ? `<span class="tema-ponto" style="background:var(--cor-primaria);"></span>${escaparHtml(p.tema_personalizado)}`
-    : `<span class="hint-text">padrão</span>`;
   const botaoAlternar =
     p.assinatura_status === "active" || p.assinatura_status === "trialing"
       ? `<button class="btn btn-ghost btn-sm" data-acao="desativar" data-id="${p.id}">Desativar</button>`
@@ -82,7 +98,7 @@ function cartaoPersonal(p) {
       </div>
       <div class="admin-card-email">${escaparHtml(p.email)}</div>
       <div class="admin-card-grid">
-        <div><span class="admin-card-rotulo">Tema</span>${temaPonto}</div>
+        <div><span class="admin-card-rotulo">Tema</span>${seletorTema(p)}</div>
         <div><span class="admin-card-rotulo">Alunos</span>${p.total_alunos}</div>
         <div>
           <span class="admin-card-rotulo">Limite</span>
@@ -187,9 +203,23 @@ async function aoTrocarLimite(evento) {
   }
 }
 
+async function aoTrocarTema(evento) {
+  const select = evento.target.closest("[data-tema-select]");
+  if (!select) return;
+  const id = Number(select.dataset.id);
+  try {
+    const atualizado = await api.definirTemaPersonalAdmin(id, select.value || null);
+    atualizarLinha(atualizado);
+    mostrarToast("Cor da conta atualizada.", "sucesso");
+  } catch (erro) {
+    mostrarToast(mensagemDeErro(erro), "erro");
+  }
+}
+
 for (const el of [corpoTabelaEl, cartoesMobileEl]) {
   el.addEventListener("click", aoClicarAcao);
   el.addEventListener("change", aoTrocarLimite);
+  el.addEventListener("change", aoTrocarTema);
 }
 
 carregar();

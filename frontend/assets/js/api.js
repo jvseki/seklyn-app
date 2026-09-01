@@ -174,6 +174,8 @@ export const api = {
   desativarPersonalAdmin: (id) => apiFetch(`/admin/personais/${id}/desativar`, { method: "POST" }),
   definirLimitePersonalAdmin: (id, limite_alunos) =>
     apiFetch(`/admin/personais/${id}/limite`, { method: "PUT", body: JSON.stringify({ limite_alunos }) }),
+  definirTemaPersonalAdmin: (id, tema_personalizado) =>
+    apiFetch(`/admin/personais/${id}/tema`, { method: "PUT", body: JSON.stringify({ tema_personalizado }) }),
 
   // --- Área pública do Aluno (via hash_token, sem login) ---
   painelAluno: (token) => apiFetch(`/aluno/${token}`),

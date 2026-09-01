@@ -494,15 +494,6 @@
   }
 }
 
-.tema-ponto {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  vertical-align: -1px;
-  margin-right: 6px;
-}
-
 .limite-input {
   width: 64px;
   padding: 4px 8px;
