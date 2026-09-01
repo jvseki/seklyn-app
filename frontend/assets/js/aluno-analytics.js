@@ -87,14 +87,16 @@ function renderizarExecucoes(execucoes) {
 
   container.innerHTML = Array.from(porDiaMarcacao.entries())
     .map(([dataMarcacao, itens]) => {
-      const horarios = itens.map((i) => i.hora).sort();
-      const suspeito = itens.length >= 3 && horariosMuitoProximos(horarios);
+      // Sinal de atenção = tem série aqui marcada num dia diferente do dia do
+      // treino a que ela pertence (ex: treino de segunda, só marcado terça de
+      // noite) — mais direto de entender do que "várias marcações juntas".
+      const temAtraso = itens.some((i) => i.data_treino !== dataMarcacao);
       const grupos = agruparExecucoesRepetidas(itens);
       return `
-        <div class="execucao-dia-bloco ${suspeito ? "suspeito" : ""}">
+        <div class="execucao-dia-bloco ${temAtraso ? "suspeito" : ""}">
           <p class="execucao-dia-titulo">
             Marcado em ${formatarDataCompleta(dataMarcacao)}
-            ${suspeito ? `<span class="badge badge-aviso">${icone("aviso", 14)} marcações muito próximas</span>` : ""}
+            ${temAtraso ? `<span class="badge badge-aviso">${icone("aviso", 14)} marcado em um dia diferente do dia do treino</span>` : ""}
           </p>
           <div class="execucao-dia-itens">
             ${grupos
@@ -108,16 +110,6 @@ function renderizarExecucoes(execucoes) {
       `;
     })
     .join("");
-}
-
-function horariosMuitoProximos(horariosOrdenados) {
-  const [h1] = horariosOrdenados;
-  const [hUltimo] = horariosOrdenados.slice(-1);
-  const min = (h) => {
-    const [hh, mm] = h.split(":").map(Number);
-    return hh * 60 + mm;
-  };
-  return min(hUltimo) - min(h1) <= 5;
 }
 
 async function iniciar() {
