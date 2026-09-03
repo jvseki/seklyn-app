@@ -5,7 +5,7 @@ criação/edição/exclusão exige assinatura ativa.
 """
 import os
 import uuid
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import Response
@@ -30,9 +30,11 @@ from app.models.aluno import Aluno
 from app.models.anamnese import Anamnese
 from app.models.assinatura import Assinatura
 from app.models.avaliacao_fisica import AvaliacaoFisica
+from app.models.comentario_serie import ComentarioSerie
 from app.models.execucao import Execucao
 from app.models.exercicio import Exercicio
 from app.models.foto_progresso import FotoProgresso
+from app.models.meta import Meta
 from app.models.personal import Personal
 from app.models.serie import Serie
 from app.models.treino import Treino
@@ -41,13 +43,17 @@ from app.models.video_exercicio import VideoExercicio
 from app.schemas.aluno import AlunoAtualizar, AlunoCriar, AlunoOut
 from app.schemas.anamnese import AnamneseAtualizar, AnamneseOut
 from app.schemas.analytics import AderenciaOut, AnalyticsDetalhadoOut
-from app.schemas.avaliacao_fisica import AvaliacaoFisicaCriar, AvaliacaoFisicaOut
+from app.schemas.avaliacao_fisica import AvaliacaoCriadaOut, AvaliacaoFisicaCriar, AvaliacaoFisicaOut
+from app.schemas.comentario_serie import ComentarioSerieContextoOut
 from app.schemas.exercicio import ExercicioAtualizar, ExercicioCriar, ExercicioOut
 from app.schemas.foto_progresso import FotoProgressoOut
+from app.schemas.meta import MetaCriar, MetaProgressoOut
+from app.schemas.resumo_semanal import ResumoSemanalOut
 from app.schemas.serie import SerieAtualizar, SerieCriar, SerieOut
 from app.schemas.treino import ExercicioRapidoIn, MontarTreinoIn, TreinoAtualizar, TreinoCriar, TreinoOut
 from app.schemas.treino_template import AplicarTemplateIn, TreinoTemplateCriar, TreinoTemplateOut
 from app.services.aluno_export import build_aluno_xlsx
+from app.services.metas import montar_progresso, verificar_conclusao
 from app.services.progresso import DIAS_SEMANA_CHAVES, calcular_aderencia, calcular_analytics_detalhado
 
 router = APIRouter(prefix="/api/personal", tags=["Personal"])
@@ -213,7 +219,12 @@ def exportar_aluno_excel(
     avaliacoes = (
         db.query(AvaliacaoFisica).filter(AvaliacaoFisica.aluno_id == aluno.id).order_by(AvaliacaoFisica.data).all()
     )
-    payload = build_aluno_xlsx(aluno, avaliacoes)
+    meta_peso_ativa = (
+        db.query(Meta)
+        .filter(Meta.aluno_id == aluno.id, Meta.metrica == "peso_kg", Meta.concluida_em.is_(None))
+        .first()
+    )
+    payload = build_aluno_xlsx(aluno, avaliacoes, meta_peso_ativa.valor_alvo if meta_peso_ativa else None)
     nome_arquivo = f"seklyn-{aluno.nome.lower().replace(' ', '-')}.xlsx"
     return Response(
         content=payload,
@@ -640,14 +651,14 @@ def listar_avaliacoes(
 
 
 @router.post(
-    "/alunos/{aluno_id}/avaliacoes", response_model=AvaliacaoFisicaOut, status_code=status.HTTP_201_CREATED
+    "/alunos/{aluno_id}/avaliacoes", response_model=AvaliacaoCriadaOut, status_code=status.HTTP_201_CREATED
 )
 def criar_avaliacao(
     aluno_id: int,
     dados: AvaliacaoFisicaCriar,
     personal: Personal = Depends(exigir_assinatura_ativa),
     db: Session = Depends(get_db),
-) -> AvaliacaoFisica:
+) -> AvaliacaoCriadaOut:
     aluno = obter_aluno_do_personal(aluno_id, personal, db)
     avaliacao = AvaliacaoFisica(
         aluno_id=aluno.id,
@@ -663,7 +674,12 @@ def criar_avaliacao(
     db.add(avaliacao)
     db.commit()
     db.refresh(avaliacao)
-    return avaliacao
+
+    concluidas_agora = verificar_conclusao(db, aluno.id, avaliacao)
+    return AvaliacaoCriadaOut(
+        avaliacao=AvaliacaoFisicaOut.model_validate(avaliacao),
+        metas_concluidas_agora=[montar_progresso(db, m) for m in concluidas_agora],
+    )
 
 
 @router.delete("/avaliacoes/{avaliacao_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -675,6 +691,191 @@ def excluir_avaliacao(
     avaliacao = obter_avaliacao_do_personal(avaliacao_id, personal, db)
     db.delete(avaliacao)
     db.commit()
+
+
+# ---------- Metas (peso ou qualquer medida corporal) ----------
+
+
+def _obter_meta_do_personal(meta_id: int, personal: Personal, db: Session) -> Meta:
+    meta = db.get(Meta, meta_id)
+    if meta is None or meta.aluno.personal_id != personal.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Meta não encontrada.")
+    return meta
+
+
+@router.get("/alunos/{aluno_id}/metas", response_model=list[MetaProgressoOut])
+def listar_metas(
+    aluno_id: int,
+    personal: Personal = Depends(get_current_personal),
+    db: Session = Depends(get_db),
+) -> list[MetaProgressoOut]:
+    aluno = obter_aluno_do_personal(aluno_id, personal, db)
+    metas = db.query(Meta).filter(Meta.aluno_id == aluno.id).order_by(Meta.criado_em.desc()).all()
+    return [montar_progresso(db, m) for m in metas]
+
+
+@router.post("/alunos/{aluno_id}/metas", response_model=MetaProgressoOut, status_code=status.HTTP_201_CREATED)
+def criar_meta(
+    aluno_id: int,
+    dados: MetaCriar,
+    personal: Personal = Depends(exigir_assinatura_ativa),
+    db: Session = Depends(get_db),
+) -> MetaProgressoOut:
+    aluno = obter_aluno_do_personal(aluno_id, personal, db)
+
+    ja_ativa = (
+        db.query(Meta)
+        .filter(Meta.aluno_id == aluno.id, Meta.metrica == dados.metrica, Meta.concluida_em.is_(None))
+        .first()
+    )
+    if ja_ativa:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Já existe uma meta ativa pra essa métrica — exclua ou espere concluir antes de criar outra.",
+        )
+
+    ultima = (
+        db.query(AvaliacaoFisica)
+        .filter(AvaliacaoFisica.aluno_id == aluno.id, getattr(AvaliacaoFisica, dados.metrica).isnot(None))
+        .order_by(AvaliacaoFisica.data.desc())
+        .first()
+    )
+    if ultima is None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Registre uma avaliação com essa medida antes de criar a meta.",
+        )
+
+    meta = Meta(
+        aluno_id=aluno.id,
+        metrica=dados.metrica,
+        valor_inicial=getattr(ultima, dados.metrica),
+        valor_alvo=dados.valor_alvo,
+        data_alvo=dados.data_alvo,
+    )
+    db.add(meta)
+    db.commit()
+    db.refresh(meta)
+    return montar_progresso(db, meta)
+
+
+@router.delete("/metas/{meta_id}", status_code=status.HTTP_204_NO_CONTENT)
+def excluir_meta(
+    meta_id: int,
+    personal: Personal = Depends(exigir_assinatura_ativa),
+    db: Session = Depends(get_db),
+) -> None:
+    meta = _obter_meta_do_personal(meta_id, personal, db)
+    db.delete(meta)
+    db.commit()
+
+
+# ---------- Comentários do aluno numa série ("doeu o joelho aqui") ----------
+
+
+def _comentario_com_contexto(c: ComentarioSerie, aluno: Aluno) -> ComentarioSerieContextoOut:
+    return ComentarioSerieContextoOut(
+        id=c.id,
+        serie_id=c.serie_id,
+        data=c.data,
+        texto=c.texto,
+        criado_em=c.criado_em,
+        aluno_id=aluno.id,
+        aluno_nome=aluno.nome,
+        exercicio_nome=c.serie.exercicio.nome,
+        treino_nome=c.serie.exercicio.treino.nome,
+    )
+
+
+@router.get("/alunos/{aluno_id}/comentarios", response_model=list[ComentarioSerieContextoOut])
+def listar_comentarios_aluno(
+    aluno_id: int,
+    personal: Personal = Depends(get_current_personal),
+    db: Session = Depends(get_db),
+) -> list[ComentarioSerieContextoOut]:
+    aluno = obter_aluno_do_personal(aluno_id, personal, db)
+    comentarios = (
+        db.query(ComentarioSerie)
+        .filter(ComentarioSerie.aluno_id == aluno.id)
+        .order_by(ComentarioSerie.criado_em.desc())
+        .all()
+    )
+    return [_comentario_com_contexto(c, aluno) for c in comentarios]
+
+
+@router.get("/comentarios-recentes", response_model=list[ComentarioSerieContextoOut])
+def listar_comentarios_recentes(
+    personal: Personal = Depends(get_current_personal),
+    db: Session = Depends(get_db),
+) -> list[ComentarioSerieContextoOut]:
+    """Últimos 7 dias, de qualquer aluno — pro widget do dashboard, sem
+    precisar entrar aluno por aluno pra achar quem deixou recado."""
+    desde = datetime.now(timezone.utc) - timedelta(days=7)
+    comentarios = (
+        db.query(ComentarioSerie)
+        .join(Aluno, ComentarioSerie.aluno_id == Aluno.id)
+        .filter(Aluno.personal_id == personal.id, ComentarioSerie.criado_em >= desde)
+        .order_by(ComentarioSerie.criado_em.desc())
+        .limit(20)
+        .all()
+    )
+    return [_comentario_com_contexto(c, c.aluno) for c in comentarios]
+
+
+# ---------- Resumo semanal (digest do dashboard) ----------
+
+
+@router.get("/resumo-semanal", response_model=ResumoSemanalOut)
+def resumo_semanal(
+    personal: Personal = Depends(get_current_personal),
+    db: Session = Depends(get_db),
+) -> ResumoSemanalOut:
+    hoje = hoje_brasil()
+    inicio_semana = datetime.combine(hoje - timedelta(days=hoje.weekday()), datetime.min.time(), tzinfo=timezone.utc)
+
+    alunos = db.query(Aluno).filter(Aluno.personal_id == personal.id, Aluno.ativo.is_(True)).all()
+    ids_alunos = [a.id for a in alunos]
+
+    ultima_execucao_por_aluno: dict[int, date] = {}
+    if ids_alunos:
+        ultima_execucao_por_aluno = dict(
+            db.query(Execucao.aluno_id, func.max(Execucao.data_execucao))
+            .filter(Execucao.aluno_id.in_(ids_alunos), Execucao.concluida.is_(True))
+            .group_by(Execucao.aluno_id)
+            .all()
+        )
+    sumidos = 0
+    for a in alunos:
+        ultima = ultima_execucao_por_aluno.get(a.id)
+        dias_sem_treinar = (hoje - ultima).days if ultima else (hoje - a.criado_em.date()).days
+        if dias_sem_treinar >= 4:
+            sumidos += 1
+
+    metas_concluidas = (
+        db.query(func.count(Meta.id))
+        .join(Aluno, Meta.aluno_id == Aluno.id)
+        .filter(Aluno.personal_id == personal.id, Meta.concluida_em >= inicio_semana)
+        .scalar()
+        or 0
+    )
+
+    comentarios_novos = (
+        db.query(func.count(ComentarioSerie.id))
+        .join(Aluno, ComentarioSerie.aluno_id == Aluno.id)
+        .filter(Aluno.personal_id == personal.id, ComentarioSerie.criado_em >= inicio_semana)
+        .scalar()
+        or 0
+    )
+
+    aderencias = [calcular_aderencia(db, a, periodo_dias=7).percentual_geral_aderencia for a in alunos]
+    aderencia_media = round(sum(aderencias) / len(aderencias), 1) if aderencias else 0.0
+
+    return ResumoSemanalOut(
+        alunos_sumidos=sumidos,
+        metas_concluidas_na_semana=metas_concluidas,
+        aderencia_media_percentual=aderencia_media,
+        comentarios_novos_na_semana=comentarios_novos,
+    )
 
 
 # ---------- Fotos de progresso (antes/depois) ----------

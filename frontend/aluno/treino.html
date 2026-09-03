@@ -74,6 +74,16 @@
           <div id="execucao-exercicios"></div>
         </section>
 
+        <!-- Progresso: só leitura — quem registra peso/medidas/fotos é o Personal -->
+        <section id="secao-progresso" hidden>
+          <div id="progresso-carregando"><div class="spinner" style="margin:var(--espaco-6) auto;"></div></div>
+          <div id="progresso-conteudo" hidden>
+            <div id="progresso-metas"></div>
+            <div id="progresso-medidas" style="margin-top:var(--espaco-6);"></div>
+            <div id="progresso-fotos" style="margin-top:var(--espaco-6);"></div>
+          </div>
+        </section>
+
         <!-- Recomendações do Personal (aba não-invasiva de afiliados) -->
         <section id="secao-dicas" hidden>
           <div class="dicas-intro">
@@ -92,11 +102,35 @@
           <span class="emoji"><img src="../assets/img/halter-aluno.png" alt="" class="tab-bar-icone-img" /></span>
           <span>Treinos</span>
         </button>
+        <button class="tab-bar-item" id="tab-progresso" type="button">
+          <span class="emoji tab-bar-icone-roxo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-3px;flex-shrink:0;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
+          <span>Progresso</span>
+        </button>
         <button class="tab-bar-item" id="tab-dicas" type="button">
           <span class="emoji tab-bar-icone-roxo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-3px;flex-shrink:0;"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
           <span>Recomendações</span>
         </button>
       </nav>
+    </div>
+  </div>
+
+  <div class="modal-fundo" id="modal-recado" hidden>
+    <div class="modal" style="max-width:400px;">
+      <div class="modal-cabecalho">
+        <h3>Recado pro seu Personal</h3>
+        <button class="btn btn-ghost btn-icon" data-acao="fechar-modal-recado" type="button" aria-label="Fechar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <form id="form-recado">
+        <div class="form-group">
+          <label class="label" for="recado-texto">O que rolou nessa série?</label>
+          <textarea class="textarea" id="recado-texto" name="texto" rows="3" maxlength="500" placeholder="Ex: doeu o joelho, aumentei a carga, não consegui terminar..."></textarea>
+          <p class="hint-text">Seu Personal vê esse recado no painel dele. Deixe em branco pra apagar.</p>
+        </div>
+        <div class="modal-acoes">
+          <button type="button" class="btn btn-ghost" data-acao="fechar-modal-recado">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Enviar</button>
+        </div>
+      </form>
     </div>
   </div>
 

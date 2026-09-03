@@ -26,6 +26,11 @@ const secaoSumidosEl = $("#secao-alunos-sumidos");
 const listaSumidosEl = $("#lista-alunos-sumidos");
 const DIAS_PARA_CONSIDERAR_SUMIDO = 4;
 const statTotalEl = $("#stat-total-alunos");
+const statAderenciaEl = $("#stat-aderencia-semana");
+const statMetasEl = $("#stat-metas-semana");
+const statComentariosEl = $("#stat-comentarios-semana");
+const secaoComentariosEl = $("#secao-comentarios-recentes");
+const listaComentariosEl = $("#lista-comentarios-recentes");
 const modalAluno = $("#modal-aluno");
 const formAluno = $("#form-aluno");
 const bannerAssinatura = $("#banner-assinatura");
@@ -135,6 +140,49 @@ async function carregarAlunos() {
     renderizarAlunos(alunos);
   } catch (erro) {
     mostrarToast(mensagemDeErro(erro), "erro");
+  }
+}
+
+// --- Resumo semanal: o Personal abre o painel e já sabe onde olhar ---
+
+async function carregarResumoSemanal() {
+  try {
+    const resumo = await api.resumoSemanal();
+    statAderenciaEl.textContent = `${resumo.aderencia_media_percentual}%`;
+    statMetasEl.textContent = String(resumo.metas_concluidas_na_semana);
+    statComentariosEl.textContent = String(resumo.comentarios_novos_na_semana);
+  } catch {
+    // silencioso — os tiles ficam com "–", o resto do dashboard continua útil
+  }
+}
+
+function formatarDataBr(isoData) {
+  const [ano, mes, dia] = isoData.split("-");
+  return `${dia}/${mes}/${ano}`;
+}
+
+async function carregarComentariosRecentes() {
+  try {
+    const comentarios = await api.listarComentariosRecentes();
+    if (comentarios.length === 0) {
+      secaoComentariosEl.hidden = true;
+      return;
+    }
+    secaoComentariosEl.hidden = false;
+    listaComentariosEl.innerHTML = comentarios
+      .map(
+        (c) => `
+          <a class="comentario-item comentario-link" href="aluno-detalhe.html?id=${c.aluno_id}">
+            <p class="comentario-texto">"${escaparHtml(c.texto)}"</p>
+            <p class="hint-text">
+              <strong>${escaparHtml(c.aluno_nome)}</strong> · ${escaparHtml(c.exercicio_nome)} · ${formatarDataBr(c.data)}
+            </p>
+          </a>
+        `
+      )
+      .join("");
+  } catch {
+    secaoComentariosEl.hidden = true;
   }
 }
 
@@ -250,3 +298,5 @@ formAluno?.addEventListener("submit", async (evento) => {
 carregarAlunos();
 verificarAssinatura();
 verificarEmail();
+carregarResumoSemanal();
+carregarComentariosRecentes();

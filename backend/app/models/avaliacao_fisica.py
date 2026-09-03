@@ -8,9 +8,9 @@ from app.core.database import Base
 
 class AvaliacaoFisica(Base):
     """
-    Registro histórico do peso (e observações) de um Aluno numa data —
-    o Personal vai lançando aos poucos e o app mostra a evolução até a
-    meta (Aluno.peso_meta_kg). Serve também como destino de uma futura
+    Registro histórico do peso e medidas de um Aluno numa data — o Personal
+    vai lançando aos poucos e o app mostra a evolução até a meta (ver
+    app.models.meta.Meta). Serve também como destino de uma futura
     importação de planilha de avaliações antigas.
     """
 

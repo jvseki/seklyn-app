@@ -69,7 +69,7 @@ def _linha_cabecalho_tabela(ws, linha: int, colunas: list[str]) -> None:
     ws.row_dimensions[linha].height = 22
 
 
-def build_aluno_xlsx(aluno: Aluno, avaliacoes: list) -> bytes:
+def build_aluno_xlsx(aluno: Aluno, avaliacoes: list, meta_peso_alvo: float | None = None) -> bytes:
     wb = Workbook()
 
     # ---------- Aba 1: Treinos ----------
@@ -143,7 +143,7 @@ def build_aluno_xlsx(aluno: Aluno, avaliacoes: list) -> bytes:
     linha2 = _cabecalho(ws2, "Evolução de peso", f"Aluno: {aluno.nome}", ultima_col2)
 
     ws2.cell(linha2, 1, "Meta de peso").font = Font(name="Calibri", bold=True, color=ROXO_ESCURO)
-    ws2.cell(linha2, 2, f"{aluno.peso_meta_kg} kg" if aluno.peso_meta_kg else "Não definida")
+    ws2.cell(linha2, 2, f"{meta_peso_alvo} kg" if meta_peso_alvo else "Não definida")
     linha2 += 2
 
     tabela_linha = linha2

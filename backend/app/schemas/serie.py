@@ -32,3 +32,4 @@ class SerieComExecucaoOut(SerieOut):
     """Usado na visão do aluno: inclui se a série já foi concluída hoje."""
 
     concluida_hoje: bool = False
+    comentario_hoje: str | None = None

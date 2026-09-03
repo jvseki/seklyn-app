@@ -90,6 +90,19 @@ export const api = {
     apiFetch(`/personal/alunos/${alunoId}/avaliacoes`, { method: "POST", body: JSON.stringify(dados) }),
   excluirAvaliacao: (id) => apiFetch(`/personal/avaliacoes/${id}`, { method: "DELETE" }),
 
+  // --- Metas (peso ou qualquer medida corporal, com prazo opcional) ---
+  listarMetas: (alunoId) => apiFetch(`/personal/alunos/${alunoId}/metas`),
+  criarMeta: (alunoId, dados) =>
+    apiFetch(`/personal/alunos/${alunoId}/metas`, { method: "POST", body: JSON.stringify(dados) }),
+  excluirMeta: (id) => apiFetch(`/personal/metas/${id}`, { method: "DELETE" }),
+
+  // --- Comentários do aluno numa série ("doeu o joelho aqui") ---
+  listarComentariosAluno: (alunoId) => apiFetch(`/personal/alunos/${alunoId}/comentarios`),
+  listarComentariosRecentes: () => apiFetch("/personal/comentarios-recentes"),
+
+  // --- Resumo semanal (digest do dashboard) ---
+  resumoSemanal: () => apiFetch("/personal/resumo-semanal"),
+
   // --- Fotos de progresso (antes/depois) ---
   listarFotos: (alunoId) => apiFetch(`/personal/alunos/${alunoId}/fotos`),
   enviarFoto: (alunoId, { arquivo, data, observacoes }) => {
@@ -187,4 +200,10 @@ export const api = {
       body: JSON.stringify({ data: data || null }),
     }),
   recomendacoesAluno: (token) => apiFetch(`/aluno/${token}/recomendacoes`),
+  progressoAluno: (token) => apiFetch(`/aluno/${token}/progresso`),
+  comentarSerieAluno: (token, serieId, texto, data) =>
+    apiFetch(`/aluno/${token}/series/${serieId}/comentario`, {
+      method: "PUT",
+      body: JSON.stringify({ texto, data: data || null }),
+    }),
 };

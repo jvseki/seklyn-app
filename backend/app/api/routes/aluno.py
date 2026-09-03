@@ -11,14 +11,20 @@ from app.core.database import get_db
 from app.core.tempo import hoje as hoje_brasil
 from app.deps import get_aluno_por_hash_token
 from app.models.aluno import Aluno
+from app.models.avaliacao_fisica import AvaliacaoFisica
+from app.models.comentario_serie import ComentarioSerie
 from app.models.exercicio import Exercicio
+from app.models.foto_progresso import FotoProgresso
+from app.models.meta import Meta
 from app.models.recomendacao import RecomendacaoProduto
 from app.models.serie import Serie
 from app.models.treino import Treino
-from app.schemas.aluno import AlunoPainelOut, AlunoPublicoOut
+from app.schemas.aluno import AlunoPainelOut, AlunoProgressoOut, AlunoPublicoOut
+from app.schemas.comentario_serie import ComentarioSerieCriar, ComentarioSerieOut
 from app.schemas.execucao import ExecucaoToggleOut, ExecutarSerieIn
 from app.schemas.recomendacao import RecomendacaoOut
 from app.schemas.treino import DiaSemanaAlunoOut, TreinoDetalheOut
+from app.services.metas import montar_progresso
 from app.services.progresso import (
     DIAS_SEMANA_CHAVES,
     alternar_execucao_serie,
@@ -146,6 +152,76 @@ def executar_serie(
         treino_progresso_percentual=resumo.progresso_percentual,
         treino_concluido_hoje=resumo.concluido_hoje,
     )
+
+
+@router.get("/{hash_token}/progresso", response_model=AlunoProgressoOut)
+def progresso_aluno(
+    aluno: Aluno = Depends(get_aluno_por_hash_token),
+    db: Session = Depends(get_db),
+) -> AlunoProgressoOut:
+    """Peso/medidas, fotos e metas — só leitura, quem registra continua
+    sendo o Personal. Mesmo cálculo de progresso usado no painel dele."""
+    avaliacoes = (
+        db.query(AvaliacaoFisica).filter(AvaliacaoFisica.aluno_id == aluno.id).order_by(AvaliacaoFisica.data.desc()).all()
+    )
+    fotos = (
+        db.query(FotoProgresso).filter(FotoProgresso.aluno_id == aluno.id).order_by(FotoProgresso.data.desc()).all()
+    )
+    metas = db.query(Meta).filter(Meta.aluno_id == aluno.id).order_by(Meta.criado_em.desc()).all()
+
+    return AlunoProgressoOut(
+        avaliacoes=avaliacoes,
+        fotos=fotos,
+        metas=[montar_progresso(db, m) for m in metas],
+    )
+
+
+@router.put("/{hash_token}/series/{serie_id}/comentario", response_model=ComentarioSerieOut | None)
+def comentar_serie(
+    serie_id: int,
+    dados: ComentarioSerieCriar,
+    aluno: Aluno = Depends(get_aluno_por_hash_token),
+    db: Session = Depends(get_db),
+) -> ComentarioSerie | None:
+    """Nota do aluno numa série ('doeu o joelho aqui') — não precisa ter
+    marcado a série como feita. Texto vazio apaga o comentário existente."""
+    serie = (
+        db.query(Serie)
+        .join(Exercicio, Serie.exercicio_id == Exercicio.id)
+        .join(Treino, Exercicio.treino_id == Treino.id)
+        .filter(Serie.id == serie_id, Treino.aluno_id == aluno.id)
+        .first()
+    )
+    if serie is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Série não encontrada.")
+
+    dia = dados.data or hoje_brasil()
+    _validar_data_na_semana_atual(dia)
+
+    existente = (
+        db.query(ComentarioSerie)
+        .filter(ComentarioSerie.serie_id == serie_id, ComentarioSerie.data == dia)
+        .first()
+    )
+    texto = dados.texto.strip()
+
+    if not texto:
+        if existente:
+            db.delete(existente)
+            db.commit()
+        return None
+
+    if existente:
+        existente.texto = texto
+        db.commit()
+        db.refresh(existente)
+        return existente
+
+    novo = ComentarioSerie(serie_id=serie_id, aluno_id=aluno.id, data=dia, texto=texto)
+    db.add(novo)
+    db.commit()
+    db.refresh(novo)
+    return novo
 
 
 @router.get("/{hash_token}/recomendacoes", response_model=list[RecomendacaoOut])

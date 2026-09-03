@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, String, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -23,9 +23,6 @@ class Aluno(Base):
     cpf: Mapped[str | None] = mapped_column(String(14), nullable=True)
     endereco: Mapped[str | None] = mapped_column(String(200), nullable=True)
     numero: Mapped[str | None] = mapped_column(String(20), nullable=True)
-    # Meta de peso em kg (ex: aluno tem 100kg, quer chegar a 90kg) — usada
-    # pra calcular o progresso mostrado a partir do histórico de avaliações.
-    peso_meta_kg: Mapped[float | None] = mapped_column(Float, nullable=True)
     ativo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
@@ -42,4 +39,7 @@ class Aluno(Base):
     )
     anamnese: Mapped["Anamnese | None"] = relationship(
         back_populates="aluno", cascade="all, delete-orphan", uselist=False
+    )
+    metas: Mapped[list["Meta"]] = relationship(
+        back_populates="aluno", cascade="all, delete-orphan", order_by="Meta.criado_em.desc()"
     )

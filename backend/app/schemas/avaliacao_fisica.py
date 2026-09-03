@@ -3,6 +3,7 @@ from datetime import date, datetime
 from pydantic import BaseModel, Field
 
 from app.schemas.common import OrmModel
+from app.schemas.meta import MetaProgressoOut
 
 
 class AvaliacaoFisicaCriar(BaseModel):
@@ -27,3 +28,11 @@ class AvaliacaoFisicaOut(OrmModel):
     peito_cm: float | None
     observacoes: str | None
     criado_em: datetime
+
+
+class AvaliacaoCriadaOut(BaseModel):
+    """Resposta do POST /avaliacoes: a avaliação salva + quais metas
+    acabaram de ser batidas com ela (pra comemorar no frontend)."""
+
+    avaliacao: AvaliacaoFisicaOut
+    metas_concluidas_agora: list[MetaProgressoOut] = []

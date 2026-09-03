@@ -2,7 +2,10 @@ from datetime import datetime
 
 from pydantic import BaseModel, EmailStr, Field
 
+from app.schemas.avaliacao_fisica import AvaliacaoFisicaOut
 from app.schemas.common import OrmModel
+from app.schemas.foto_progresso import FotoProgressoOut
+from app.schemas.meta import MetaProgressoOut
 from app.schemas.treino import DiaSemanaAlunoOut
 
 
@@ -20,7 +23,6 @@ class AlunoAtualizar(BaseModel):
     cpf: str | None = Field(default=None, max_length=14)
     endereco: str | None = Field(default=None, max_length=200)
     numero: str | None = Field(default=None, max_length=20)
-    peso_meta_kg: float | None = None
     ativo: bool | None = None
 
 
@@ -32,7 +34,6 @@ class AlunoOut(OrmModel):
     cpf: str | None
     endereco: str | None
     numero: str | None
-    peso_meta_kg: float | None
     hash_token: str
     ativo: bool
     criado_em: datetime
@@ -55,3 +56,12 @@ class AlunoPainelOut(BaseModel):
     aluno: AlunoPublicoOut
     semana: list[DiaSemanaAlunoOut] = []
     streak_atual: int = 0  # dias seguidos com o treino do dia concluído
+
+
+class AlunoProgressoOut(BaseModel):
+    """Aba 'Progresso' do aluno — só leitura, quem registra continua sendo
+    o Personal; o aluno só acompanha peso/medidas, metas e fotos."""
+
+    avaliacoes: list[AvaliacaoFisicaOut] = []
+    fotos: list[FotoProgressoOut] = []
+    metas: list[MetaProgressoOut] = []

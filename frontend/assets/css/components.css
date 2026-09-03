@@ -1283,3 +1283,272 @@
 .aluno-sumido-nome:hover strong {
   text-decoration: underline;
 }
+
+/* ==========================================================================
+   Progresso / Metas — compartilhado entre o painel do Personal e o app do
+   Aluno. Fica em components.css (e não em desktop.css) justamente porque a
+   área do aluno não carrega o desktop.css.
+   ========================================================================== */
+
+/* Barra de progresso do peso até a meta cadastrada do aluno */
+.barra-progresso {
+  width: 100%;
+  height: 12px;
+  border-radius: var(--raio-total);
+  background: var(--cor-borda);
+  overflow: hidden;
+  margin-top: var(--espaco-2);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.barra-progresso-preenchida {
+  height: 100%;
+  background: linear-gradient(90deg, var(--cor-primaria-forte) 0%, var(--cor-primaria) 100%);
+  border-radius: var(--raio-total);
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Meta batida — a barra vira verde e brilha em vez de só parar de preencher */
+.barra-progresso-preenchida.meta-alcancada {
+  background: linear-gradient(90deg, var(--cor-sucesso), #22c55e);
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.55);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .barra-progresso-preenchida {
+    transition: none;
+  }
+}
+
+/* ---- Metas (peso ou qualquer medida, com marcos intermediários) ---- */
+
+.metas-lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+}
+
+.meta-cartao {
+  padding: var(--espaco-3);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-md);
+  background: var(--cor-superficie);
+}
+
+.meta-cartao.concluida {
+  border-color: color-mix(in srgb, var(--cor-sucesso) 45%, var(--cor-borda));
+  background: color-mix(in srgb, var(--cor-sucesso) 7%, var(--cor-superficie));
+}
+
+.meta-cabecalho {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--espaco-2);
+}
+
+/* min-width:0 pra meta longa quebrar em vez de esticar o cartão no mobile */
+.meta-cabecalho > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espaco-2);
+  min-width: 0;
+}
+
+/* A barra da meta precisa deixar os marcos aparecerem por cima, então não
+   herda o overflow:hidden da .barra-progresso comum. */
+.meta-barra {
+  position: relative;
+  overflow: visible;
+  margin-top: var(--espaco-3);
+}
+
+.meta-barra .barra-progresso-preenchida {
+  position: relative;
+  z-index: 1;
+}
+
+/* Marco = ponto intermediário da jornada (1/3 e 2/3 do caminho) */
+.meta-marco {
+  position: absolute;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  border-radius: 50%;
+  background: var(--cor-superficie);
+  border: 2px solid var(--cor-borda);
+  transform: translateY(-50%);
+  z-index: 2;
+}
+
+.meta-marco.batido {
+  background: var(--cor-sucesso);
+  border-color: var(--cor-sucesso);
+}
+
+.meta-rodape {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-2);
+  margin-top: var(--espaco-3);
+  font-size: 0.9rem;
+}
+
+.meta-sucesso {
+  color: var(--cor-sucesso);
+  font-weight: 700;
+}
+
+.meta-atrasada {
+  color: var(--cor-perigo);
+  font-weight: 700;
+}
+
+/* ---- Recados que o aluno deixa numa série ---- */
+
+.comentario-item {
+  padding: var(--espaco-3);
+  border-left: 3px solid var(--cor-primaria);
+  border-radius: var(--raio-sm);
+  background: var(--cor-superficie);
+}
+
+.comentario-texto {
+  margin: 0 0 var(--espaco-1) 0;
+  font-style: italic;
+  overflow-wrap: anywhere;
+}
+
+/* ---- Recado do aluno numa série (dentro do checklist) ---- */
+
+.botao-recado {
+  flex-shrink: 0;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* 40px = alvo de toque confortável no celular sem competir com o checkbox */
+  width: 40px;
+  height: 40px;
+  border-radius: var(--raio-total);
+  border: 1px solid var(--cor-borda);
+  background: transparent;
+  color: var(--cor-texto-muted);
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.botao-recado:hover,
+.botao-recado:focus-visible {
+  color: var(--cor-primaria);
+  border-color: var(--cor-primaria);
+}
+
+.botao-recado.tem-recado {
+  color: var(--cor-primaria);
+  border-color: var(--cor-primaria);
+  background: var(--cor-primaria-clara, transparent);
+}
+
+.serie-comentario {
+  margin-top: var(--espaco-1);
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--cor-texto-muted);
+  overflow-wrap: anywhere;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .botao-recado {
+    transition: none;
+  }
+}
+
+/* ---- Aba "Progresso" do aluno (só leitura) ---- */
+
+/* auto-fit + minmax faz caber 2 colunas no celular e mais no desktop, sem
+   media query — e o minmax(0,...) evita o valor estourar a coluna. */
+.medidas-grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr));
+  gap: var(--espaco-3);
+}
+
+.medida-item {
+  min-width: 0;
+  padding: var(--espaco-3);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-md);
+  background: var(--cor-superficie);
+}
+
+.medida-rotulo {
+  font-size: 0.85rem;
+  color: var(--cor-texto-muted);
+}
+
+.medida-valor {
+  font-size: 1.4rem;
+  font-weight: 800;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.historico-linha {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--espaco-3);
+  padding: var(--espaco-2) var(--espaco-3);
+  border-radius: var(--raio-sm);
+  background: var(--cor-superficie);
+}
+
+.fotos-grade-aluno {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr));
+  gap: var(--espaco-3);
+}
+
+.foto-progresso-item {
+  margin: 0;
+  min-width: 0;
+}
+
+.foto-progresso-item img {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: var(--raio-md);
+  border: 1px solid var(--cor-borda);
+}
+
+.foto-progresso-item figcaption {
+  margin-top: var(--espaco-1);
+  text-align: center;
+}
+
+/* No dashboard o recado é clicável e leva direto pro aluno que escreveu */
+a.comentario-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+a.comentario-link:hover {
+  border-left-color: var(--cor-primaria-forte);
+  transform: translateX(2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  a.comentario-link {
+    transition: none;
+  }
+  a.comentario-link:hover {
+    transform: none;
+  }
+}

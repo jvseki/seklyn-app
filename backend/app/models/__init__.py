@@ -15,6 +15,8 @@ from app.models.video_exercicio import VideoExercicio
 from app.models.foto_progresso import FotoProgresso
 from app.models.treino_template import TreinoTemplate
 from app.models.anamnese import Anamnese
+from app.models.meta import Meta
+from app.models.comentario_serie import ComentarioSerie
 
 __all__ = [
     "Personal",
@@ -30,4 +32,6 @@ __all__ = [
     "FotoProgresso",
     "TreinoTemplate",
     "Anamnese",
+    "Meta",
+    "ComentarioSerie",
 ]

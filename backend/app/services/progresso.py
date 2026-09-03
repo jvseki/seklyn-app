@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 from app.core.tempo import FUSO_BRASIL
 from app.core.tempo import hoje as hoje_brasil
 from app.models.aluno import Aluno
+from app.models.comentario_serie import ComentarioSerie
 from app.models.execucao import Execucao
 from app.models.serie import Serie
 from app.models.treino import Treino
@@ -80,11 +81,23 @@ def montar_treino_resumo(db: Session, treino: Treino, dia: date | None = None) -
     )
 
 
+def _comentarios_do_dia(db: Session, serie_ids: list[int], dia: date) -> dict[int, str]:
+    if not serie_ids:
+        return {}
+    linhas = (
+        db.query(ComentarioSerie.serie_id, ComentarioSerie.texto)
+        .filter(ComentarioSerie.serie_id.in_(serie_ids), ComentarioSerie.data == dia)
+        .all()
+    )
+    return dict(linhas)
+
+
 def montar_treino_detalhe(db: Session, treino: Treino, dia: date | None = None) -> TreinoDetalheOut:
     """Detalhe completo do treino, com cada exercício/série marcados com o status do dia."""
     dia = dia or hoje_brasil()
     serie_ids = [s.id for ex in treino.exercicios for s in ex.series]
     concluidas_ids = _series_concluidas_ids(db, serie_ids, dia)
+    comentarios_ids = _comentarios_do_dia(db, serie_ids, dia)
 
     exercicios_out = []
     for ex in treino.exercicios:
@@ -97,6 +110,7 @@ def montar_treino_detalhe(db: Session, treino: Treino, dia: date | None = None) 
                 carga_alvo=s.carga_alvo,
                 intervalo_descanso=s.intervalo_descanso,
                 concluida_hoje=s.id in concluidas_ids,
+                comentario_hoje=comentarios_ids.get(s.id),
             )
             for s in ex.series
         ]

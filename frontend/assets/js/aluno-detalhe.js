@@ -53,9 +53,13 @@ const gradeSemanaEl = $("#grade-semana");
 const analyticsEl = $("#analytics-resumo");
 const avaliacaoProgressoEl = $("#avaliacao-progresso");
 const avaliacaoHistoricoEl = $("#avaliacao-historico");
+const metasConteudoEl = $("#metas-conteudo");
+const comentariosConteudoEl = $("#comentarios-conteudo");
 const fichaImpressaoEl = $("#ficha-impressao");
 const modalNovaAvaliacao = $("#modal-nova-avaliacao");
 const formNovaAvaliacao = $("#form-nova-avaliacao");
+const modalNovaMeta = $("#modal-nova-meta");
+const formNovaMeta = $("#form-nova-meta");
 const anamneseEl = $("#anamnese-conteudo");
 const modalAnamnese = $("#modal-anamnese");
 const formAnamnese = $("#form-anamnese");
@@ -68,7 +72,6 @@ const modalUsarTemplate = $("#modal-usar-template");
 const listaTemplatesUsarEl = $("#lista-templates-usar");
 const modalEditarAluno = $("#modal-editar-aluno");
 const formEditarAluno = $("#form-editar-aluno");
-const avisoMetaSemPesoEl = $("#aviso-meta-sem-peso");
 const modalEditarItem = $("#modal-editar-item");
 const formEditarItem = $("#form-editar-item");
 const editarItemTitulo = $("#editar-item-titulo");
@@ -93,7 +96,8 @@ const listaVideosEl = $("#lista-videos-exercicios");
 
 let alunoAtual = null;
 let treinosCache = []; // guarda os dados carregados pra preencher os modais de edição sem outra chamada à API
-let avaliacoesCache = []; // histórico de peso do aluno, mais recente primeiro (vem assim da API)
+let avaliacoesCache = []; // histórico de avaliações, mais recente primeiro (vem assim da API)
+let metasCache = [];
 let fotosCache = []; // fotos de progresso, mais recente primeiro (vem assim da API)
 let anamneseCache = null; // null = ainda não preenchida (ou não carregada)
 let montarTreinoDia = null; // dia da semana sendo montado no modal assistido
@@ -487,54 +491,23 @@ async function carregarAnalytics() {
   }
 }
 
-// --- Peso e meta: histórico de avaliações + progresso até a meta cadastrada no aluno ---
+// --- Avaliações físicas (peso e medidas) ---
 
 function formatarData(isoData) {
   const [ano, mes, dia] = isoData.split("-");
   return `${dia}/${mes}/${ano}`;
 }
 
-/** A partir do histórico (mais antigo → mais recente), calcula quanto já foi andado até a meta. */
-function calcularProgressoPeso(avaliacoes, metaKg) {
-  if (avaliacoes.length === 0) return null;
-  const ordenadas = [...avaliacoes].sort((a, b) => a.data.localeCompare(b.data));
-  const inicial = ordenadas[0].peso_kg;
-  const atual = ordenadas[ordenadas.length - 1].peso_kg;
-  if (!metaKg) return { atual, inicial, meta: null, percentual: null };
-
-  const totalNecessario = inicial - metaKg; // positivo = meta é emagrecer, negativo = meta é ganhar peso
-  const jaAndado = inicial - atual;
-  const percentual = totalNecessario !== 0 ? (jaAndado / totalNecessario) * 100 : atual === metaKg ? 100 : 0;
-  return { atual, inicial, meta: metaKg, percentual: Math.max(0, Math.min(100, percentual)) };
-}
-
 function renderizarAvaliacaoProgresso() {
-  const meta = alunoAtual?.peso_meta_kg ?? null;
-  const progresso = calcularProgressoPeso(avaliacoesCache, meta);
-
-  if (!progresso) {
-    avaliacaoProgressoEl.innerHTML = `<p class="hint-text">Nenhum peso registrado ainda.${meta ? ` Meta cadastrada: ${meta}kg.` : " Registre o peso atual e, se quiser, uma meta em \"Editar aluno\"."}</p>`;
+  if (avaliacoesCache.length === 0) {
+    avaliacaoProgressoEl.innerHTML = `<p class="hint-text">Nenhuma avaliação registrada ainda. Use "+ Registrar avaliação" para começar.</p>`;
     return;
   }
-
-  if (progresso.meta === null) {
-    avaliacaoProgressoEl.innerHTML = `
-      <p><strong>${progresso.atual}kg</strong> registrado por último.</p>
-      <p class="hint-text">Defina uma meta de peso em "Editar aluno" pra acompanhar o progresso aqui.</p>
-    `;
-    return;
-  }
-
-  const diferenca = Math.round(Math.abs(progresso.atual - progresso.meta) * 10) / 10;
-  const metaAlcancada = diferenca === 0;
-  const faltaTexto = metaAlcancada
-    ? `${icone("troféu", 15)} Meta alcançada!`
-    : `Faltam ${diferenca}kg para a meta de ${progresso.meta}kg.`;
-
+  const ultima = [...avaliacoesCache].sort((a, b) => b.data.localeCompare(a.data))[0];
+  const medidas = formatarMedidas(ultima);
   avaliacaoProgressoEl.innerHTML = `
-    <p><strong>${progresso.atual}kg</strong> atualmente <span class="hint-text">(começou com ${progresso.inicial}kg)</span></p>
-    <div class="barra-progresso"><div class="barra-progresso-preenchida${metaAlcancada ? " meta-alcancada" : ""}" style="width:${progresso.percentual}%;"></div></div>
-    <p class="${metaAlcancada ? "" : "hint-text"}" style="margin-top:var(--espaco-2);${metaAlcancada ? "color:var(--cor-sucesso);font-weight:700;" : ""}">${faltaTexto}</p>
+    <p><strong>${ultima.peso_kg}kg</strong> <span class="hint-text">(último registro: ${formatarData(ultima.data)})</span></p>
+    ${medidas ? `<p class="hint-text" style="margin-top:var(--espaco-2);">${medidas}</p>` : ""}
   `;
 }
 
@@ -608,7 +581,7 @@ formNovaAvaliacao?.addEventListener("submit", async (evento) => {
   botao.disabled = true;
   try {
     const medida = (campo) => (formNovaAvaliacao[campo].value.trim() ? Number(formNovaAvaliacao[campo].value) : null);
-    await api.criarAvaliacao(alunoId, {
+    const resposta = await api.criarAvaliacao(alunoId, {
       data: formNovaAvaliacao.data.value || null,
       peso_kg: Number(formNovaAvaliacao.peso_kg.value),
       cintura_cm: medida("cintura_cm"),
@@ -618,9 +591,17 @@ formNovaAvaliacao?.addEventListener("submit", async (evento) => {
       peito_cm: medida("peito_cm"),
       observacoes: formNovaAvaliacao.observacoes.value.trim() || null,
     });
-    mostrarToast("Peso registrado!", "sucesso");
+    if (resposta.metas_concluidas_agora?.length) {
+      for (const m of resposta.metas_concluidas_agora) {
+        const rotulo = ROTULO_METRICA[m.metrica] || m.metrica;
+        mostrarToast(`Meta de ${rotulo} alcançada! ${icone("troféu", 15)}`, "sucesso");
+      }
+    } else {
+      mostrarToast("Avaliação registrada!", "sucesso");
+    }
     fecharModal(modalNovaAvaliacao);
     carregarAvaliacoes();
+    carregarMetas();
   } catch (erro) {
     mostrarToast(mensagemDeErro(erro), "erro");
   } finally {
@@ -640,10 +621,214 @@ avaliacaoHistoricoEl?.addEventListener("click", async (evento) => {
     await api.excluirAvaliacao(Number(botao.dataset.id));
     mostrarToast("Registro removido.", "sucesso");
     carregarAvaliacoes();
+    carregarMetas(); // o valor atual da meta vem da última avaliação
   } catch (erro) {
     mostrarToast(mensagemDeErro(erro), "erro");
   }
 });
+
+// --- Metas (peso ou qualquer medida corporal, com prazo e marcos) ---
+
+const ROTULO_METRICA = {
+  peso_kg: "Peso",
+  cintura_cm: "Cintura",
+  quadril_cm: "Quadril",
+  braco_cm: "Braço",
+  coxa_cm: "Coxa",
+  peito_cm: "Peito",
+};
+const UNIDADE_METRICA = { peso_kg: "kg" };
+const unidade = (metrica) => UNIDADE_METRICA[metrica] || "cm";
+
+/** "faltam 3 semanas" / "atrasada há 5 dias" — só quando a meta tem data alvo. */
+function textoPrazo(meta) {
+  if (!meta.data_alvo) return "";
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  const alvo = new Date(`${meta.data_alvo}T00:00:00`);
+  const dias = Math.round((alvo - hoje) / 86400000);
+  if (meta.concluida) return `prazo era ${formatarData(meta.data_alvo)}`;
+  if (dias < 0) return `atrasada há ${Math.abs(dias)} ${Math.abs(dias) === 1 ? "dia" : "dias"}`;
+  if (dias === 0) return "o prazo é hoje";
+  if (dias === 1) return "falta 1 dia";
+  if (dias <= 21) return `faltam ${dias} dias`;
+  const semanas = Math.round(dias / 7);
+  return `faltam ${semanas} semanas`;
+}
+
+function cartaoMeta(meta) {
+  const rotulo = ROTULO_METRICA[meta.metrica] || meta.metrica;
+  const un = unidade(meta.metrica);
+  const emagrecer = meta.valor_alvo <= meta.valor_inicial;
+  const prazo = textoPrazo(meta);
+  const atrasada = !meta.concluida && prazo.startsWith("atrasada");
+
+  // Marcos: pontos intermediários da jornada — já batidos ficam preenchidos.
+  const marcos = meta.marcos
+    .map((valor) => {
+      const batido =
+        meta.valor_atual != null && (emagrecer ? meta.valor_atual <= valor : meta.valor_atual >= valor);
+      const posicao = Math.abs(((valor - meta.valor_inicial) / (meta.valor_alvo - meta.valor_inicial)) * 100);
+      return `<span class="meta-marco${batido ? " batido" : ""}" style="left:${posicao}%;" title="${valor}${un}"></span>`;
+    })
+    .join("");
+
+  const falta =
+    meta.valor_atual == null
+      ? "Sem medida registrada ainda."
+      : meta.concluida
+        ? `Alcançada em ${formatarData(meta.concluida_em.slice(0, 10))}`
+        : `Faltam ${Math.round(Math.abs(meta.valor_atual - meta.valor_alvo) * 10) / 10}${un}`;
+
+  return `
+    <div class="meta-cartao${meta.concluida ? " concluida" : ""}">
+      <div class="meta-cabecalho">
+        <div style="min-width:0;">
+          <strong>${rotulo}: ${meta.valor_inicial}${un} → ${meta.valor_alvo}${un}</strong>
+          <span class="badge ${meta.concluida ? "badge-sucesso" : emagrecer ? "badge-neutro" : "badge-neutro"}">
+            ${meta.concluida ? "concluída" : emagrecer ? "reduzir" : "aumentar"}
+          </span>
+        </div>
+        <button class="btn btn-ghost btn-sm" data-acao="excluir-meta" data-id="${meta.id}" type="button" aria-label="Excluir meta">${ICONE_LIXEIRA}</button>
+      </div>
+      <div class="barra-progresso meta-barra">
+        <div class="barra-progresso-preenchida${meta.concluida ? " meta-alcancada" : ""}" style="width:${meta.percentual}%;"></div>
+        ${marcos}
+      </div>
+      <div class="meta-rodape">
+        <span class="${meta.concluida ? "meta-sucesso" : ""}">
+          ${meta.concluida ? icone("troféu", 14) + " " : ""}${falta}
+          ${meta.valor_atual != null && !meta.concluida ? `<span class="hint-text">· está em ${meta.valor_atual}${un}</span>` : ""}
+        </span>
+        ${prazo ? `<span class="hint-text${atrasada ? " meta-atrasada" : ""}">${prazo}</span>` : ""}
+      </div>
+    </div>
+  `;
+}
+
+function renderizarMetas() {
+  if (metasCache.length === 0) {
+    metasConteudoEl.innerHTML = `<p class="hint-text">Nenhuma meta ainda. Registre uma avaliação e crie a primeira em "+ Nova meta".</p>`;
+    return;
+  }
+  // Ativas primeiro (é o que o Personal precisa acompanhar), concluídas embaixo.
+  const ativas = metasCache.filter((m) => !m.concluida);
+  const concluidas = metasCache.filter((m) => m.concluida);
+  metasConteudoEl.innerHTML = `
+    <div class="metas-lista">${ativas.map(cartaoMeta).join("")}</div>
+    ${
+      concluidas.length
+        ? `<details style="margin-top:var(--espaco-3);">
+             <summary class="hint-text" style="cursor:pointer;font-weight:700;">Metas concluídas (${concluidas.length})</summary>
+             <div class="metas-lista" style="margin-top:var(--espaco-2);">${concluidas.map(cartaoMeta).join("")}</div>
+           </details>`
+        : ""
+    }
+  `;
+}
+
+async function carregarMetas() {
+  try {
+    metasCache = await api.listarMetas(alunoId);
+    renderizarMetas();
+  } catch (erro) {
+    metasConteudoEl.innerHTML = `<p class="hint-text">Não foi possível carregar as metas agora.</p>`;
+  }
+}
+
+$("[data-acao='abrir-nova-meta']")?.addEventListener("click", () => {
+  formNovaMeta.reset();
+  // Só oferece métricas que já têm alguma medida registrada — é de lá que sai
+  // o ponto de partida da meta (o backend recusa as outras com 422).
+  const jaMedidas = Object.keys(ROTULO_METRICA).filter((m) => avaliacoesCache.some((a) => a[m] != null));
+  const semMetaAtiva = jaMedidas.filter((m) => !metasCache.some((meta) => meta.metrica === m && !meta.concluida));
+
+  if (semMetaAtiva.length === 0) {
+    mostrarToast(
+      jaMedidas.length === 0
+        ? "Registre uma avaliação antes de criar uma meta."
+        : "Já existe uma meta ativa pra cada medida registrada.",
+      "erro"
+    );
+    return;
+  }
+  formNovaMeta.metrica.innerHTML = semMetaAtiva
+    .map((m) => `<option value="${m}">${ROTULO_METRICA[m]}</option>`)
+    .join("");
+  abrirModal(modalNovaMeta);
+});
+
+document
+  .querySelectorAll("[data-acao='fechar-modal-meta']")
+  .forEach((el) => el.addEventListener("click", () => fecharModal(modalNovaMeta)));
+
+formNovaMeta?.addEventListener("submit", async (evento) => {
+  evento.preventDefault();
+  const botao = $("button[type='submit']", formNovaMeta);
+  botao.disabled = true;
+  try {
+    await api.criarMeta(alunoId, {
+      metrica: formNovaMeta.metrica.value,
+      valor_alvo: Number(formNovaMeta.valor_alvo.value),
+      data_alvo: formNovaMeta.data_alvo.value || null,
+    });
+    mostrarToast("Meta criada!", "sucesso");
+    fecharModal(modalNovaMeta);
+    carregarMetas();
+  } catch (erro) {
+    mostrarToast(mensagemDeErro(erro), "erro");
+  } finally {
+    botao.disabled = false;
+  }
+});
+
+metasConteudoEl?.addEventListener("click", async (evento) => {
+  const botao = evento.target.closest("[data-acao='excluir-meta']");
+  if (!botao) return;
+  const confirmou = await confirmarAcao("Excluir essa meta? O histórico de avaliações não é afetado.", {
+    titulo: "Excluir meta",
+    textoConfirmar: "Excluir",
+  });
+  if (!confirmou) return;
+  try {
+    await api.excluirMeta(Number(botao.dataset.id));
+    mostrarToast("Meta excluída.", "sucesso");
+    carregarMetas();
+  } catch (erro) {
+    mostrarToast(mensagemDeErro(erro), "erro");
+  }
+});
+
+// --- Comentários que o aluno deixou nas séries ("doeu o joelho aqui") ---
+
+function renderizarComentarios(comentarios) {
+  if (comentarios.length === 0) {
+    comentariosConteudoEl.innerHTML = `<p class="hint-text">Nenhum recado do aluno ainda. Ele pode comentar em qualquer série pelo link de acesso dele.</p>`;
+    return;
+  }
+  comentariosConteudoEl.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:var(--espaco-2);">
+      ${comentarios
+        .map(
+          (c) => `
+            <div class="comentario-item">
+              <p class="comentario-texto">"${escaparHtml(c.texto)}"</p>
+              <p class="hint-text">${escaparHtml(c.exercicio_nome)} · ${escaparHtml(c.treino_nome)} · ${formatarData(c.data)}</p>
+            </div>
+          `
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+async function carregarComentarios() {
+  try {
+    renderizarComentarios(await api.listarComentariosAluno(alunoId));
+  } catch (erro) {
+    comentariosConteudoEl.innerHTML = `<p class="hint-text">Não foi possível carregar os recados agora.</p>`;
+  }
+}
 
 // --- Anamnese (ficha de avaliação inicial — um registro por aluno) ---
 
@@ -907,9 +1092,10 @@ function montarFichaImpressao() {
       .join("") || "<p>Nenhum treino cadastrado ainda.</p>";
 
   const ultimoPeso = [...avaliacoesCache].sort((a, b) => b.data.localeCompare(a.data))[0];
+  const metaPesoAtiva = metasCache.find((m) => m.metrica === "peso_kg" && !m.concluida);
   const infoPeso = ultimoPeso
     ? `<p class="ficha-peso"><strong>Peso atual:</strong> ${ultimoPeso.peso_kg}kg (registrado em ${formatarData(ultimoPeso.data)})${
-        alunoAtual.peso_meta_kg ? ` &nbsp;·&nbsp; <strong>Meta:</strong> ${alunoAtual.peso_meta_kg}kg` : ""
+        metaPesoAtiva ? ` &nbsp;·&nbsp; <strong>Meta:</strong> ${metaPesoAtiva.valor_alvo}kg` : ""
       }</p>`
     : "";
 
@@ -2272,7 +2458,7 @@ gradeSemanaEl?.addEventListener("keydown", (evento) => {
   }
 });
 
-// --- Editar aluno (nome/e-mail/WhatsApp/CPF/meta de peso) ---
+// --- Editar aluno (nome/e-mail/WhatsApp/CPF/endereço) ---
 $("[data-acao='editar-aluno']")?.addEventListener("click", () => {
   if (!alunoAtual) return;
   formEditarAluno.nome.value = alunoAtual.nome;
@@ -2280,7 +2466,6 @@ $("[data-acao='editar-aluno']")?.addEventListener("click", () => {
   formEditarAluno.telefone.value = alunoAtual.telefone || "";
   formEditarAluno.endereco.value = alunoAtual.endereco || "";
   formEditarAluno.numero.value = alunoAtual.numero || "";
-  formEditarAluno.peso_meta_kg.value = alunoAtual.peso_meta_kg ?? "";
 
   // CPF vem travado (texto fixo) depois de cadastrado — protege de trocar
   // sem querer enquanto edita outra coisa. Dá pra destravar com confirmação.
@@ -2295,12 +2480,6 @@ $("[data-acao='editar-aluno']")?.addEventListener("click", () => {
     cpfInputEl.value = "";
     blocoFixoEl.hidden = true;
   }
-
-  // Só faz sentido definir uma meta depois de ter pelo menos um peso registrado
-  // (é a partir dele que a barra de progresso calcula o ponto de partida).
-  const temPeso = avaliacoesCache.length > 0;
-  formEditarAluno.peso_meta_kg.disabled = !temPeso;
-  avisoMetaSemPesoEl.hidden = temPeso;
 
   abrirModal(modalEditarAluno);
 });
@@ -2334,7 +2513,6 @@ formEditarAluno?.addEventListener("submit", async (evento) => {
       telefone: formEditarAluno.telefone.value.trim() || null,
       endereco: formEditarAluno.endereco.value.trim() || null,
       numero: formEditarAluno.numero.value.trim() || null,
-      peso_meta_kg: formEditarAluno.peso_meta_kg.value ? Number(formEditarAluno.peso_meta_kg.value) : null,
     };
     // Só manda o CPF se o campo estava editável (ainda não tinha sido definido) —
     // uma vez travado, não entra no payload, então o backend nem encosta nele.
@@ -2344,7 +2522,6 @@ formEditarAluno?.addEventListener("submit", async (evento) => {
     alunoAtual = await api.atualizarAluno(alunoId, dados);
     cabecalhoNomeEl.textContent = alunoAtual.nome;
     atualizarBotoesWhatsapp();
-    renderizarAvaliacaoProgresso(); // a meta pode ter mudado
 
     mostrarToast("Dados do aluno atualizados!", "sucesso");
     fecharModal(modalEditarAluno);
@@ -2382,5 +2559,7 @@ carregarAluno();
 recarregarTreinos();
 carregarAnalytics();
 carregarAvaliacoes();
+carregarMetas();
+carregarComentarios();
 carregarFotos();
 carregarAnamnese();
