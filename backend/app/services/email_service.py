@@ -49,6 +49,41 @@ def enviar_email(destinatario: str, assunto: str, html: str) -> None:
         logger.exception("Falha ao enviar e-mail via Resend para %s", destinatario)
 
 
+def gerar_mensagem_treino_ia(aluno_nome: str, treino_nome: str) -> str | None:
+    """
+    Ponto de extensão pra gerar a frase de aviso do e-mail de treino via IA
+    (ex: Gemini) em vez do texto fixo — recebe o essencial (nome do aluno e
+    do treino) pra montar algo mais pessoal ("Bora, João! Hoje é dia de
+    Costas e Bíceps..."). Por enquanto retorna None (usa o texto padrão em
+    enviar_email_notificacao_treino) — plugar a chamada de verdade aqui é o
+    suficiente pra ligar a personalização, sem mexer em mais nada do fluxo.
+    """
+    return None
+
+
+def enviar_email_notificacao_treino(destinatario: str, aluno_nome: str, treino_nome: str, link_treino: str) -> None:
+    """E-mail automático avisando que o treino do aluno foi criado/atualizado
+    pelo Personal — ver _notificar_aluno_treino_atualizado() em
+    api/routes/personal.py pra quando isso é disparado."""
+    texto_intro = gerar_mensagem_treino_ia(aluno_nome, treino_nome) or (
+        f"Seu treino <strong>{treino_nome}</strong> foi atualizado pelo seu Personal."
+    )
+    html = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">
+      <h2 style="color:#4c1d95;">Treino atualizado — Seklyn</h2>
+      <p>Olá, {aluno_nome}!</p>
+      <p>{texto_intro}</p>
+      <p style="margin: 24px 0;">
+        <a href="{link_treino}" style="background:#7c3aed;color:#fff;padding:12px 20px;border-radius:12px;text-decoration:none;font-weight:600;">
+          Ver treino
+        </a>
+      </p>
+      <p style="color:#64748b;font-size:0.85rem;">Esse e-mail é enviado automaticamente sempre que seu Personal mexe no seu treino.</p>
+    </div>
+    """
+    enviar_email(destinatario, f'Seu treino "{treino_nome}" foi atualizado — Seklyn', html)
+
+
 def enviar_email_confirmacao(destinatario: str, nome: str, link_confirmacao: str) -> None:
     html = f"""
     <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">

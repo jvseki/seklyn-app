@@ -20,6 +20,16 @@ export function formatarDataHora(isoString) {
   return data.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
+/** Igual formatarDataHora, mas com o horário junto (ex: "12/09/2026 às 14:32") —
+ * usado onde a hora exata importa, como "quando o aluno visualizou o treino". */
+export function formatarDataHoraCompleta(isoString) {
+  if (!isoString) return "";
+  const data = new Date(isoString);
+  const dataFormatada = data.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const horaFormatada = data.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  return `${dataFormatada} às ${horaFormatada}`;
+}
+
 /** Mostra uma notificação temporária no topo da tela. Um toast por vez —
  * o novo substitui o anterior em vez de empilhar (ex: "Vídeo reusado." não
  * fica preso em cima do botão "Salvar" por vários segundos). */
@@ -168,3 +178,21 @@ document.addEventListener(
   },
   true
 );
+
+/**
+ * Rola suavemente até o elemento e aplica um destaque visual temporário
+ * (anel que aparece e some sozinho, via classe .destaque-recente no CSS) —
+ * feedback de "foi essa a linha que você acabou de salvar", usado depois de
+ * criar/editar treino, exercício ou série (o item pode ter ido parar longe
+ * da posição atual de scroll, ou no fim de uma lista, sem isso).
+ */
+export function destacarElemento(elemento, opcoes = {}) {
+  if (!elemento) return;
+  elemento.scrollIntoView({ behavior: "smooth", block: opcoes.block || "center" });
+  // Se o mesmo elemento já tava destacado (editou de novo rapidinho), tira e
+  // força reflow antes de reaplicar — senão a animação não reinicia sozinha.
+  elemento.classList.remove("destaque-recente");
+  void elemento.offsetWidth;
+  elemento.classList.add("destaque-recente");
+  setTimeout(() => elemento.classList.remove("destaque-recente"), 1600);
+}

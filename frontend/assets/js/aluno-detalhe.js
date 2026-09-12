@@ -11,6 +11,8 @@ import {
   linkWhatsApp,
   abrirModal,
   fecharModal,
+  destacarElemento,
+  formatarDataHoraCompleta,
 } from "./utils.js";
 import { listaCompletaExercicios, CATEGORIAS_TREINO, obterCategoria } from "./catalogo-exercicios.js";
 import { confirmarAcao } from "./confirmar.js";
@@ -113,6 +115,7 @@ let modoConfigIndividual = false; // false = config por grupo/categoria (padrão
 // --- Acordeão da "Organização da semana" (edição direta na grade) ---
 let diaExpandidoChave = null; // chave do dia com o corpo aberto (ex: "segunda") — só um por vez
 let exercicioExpandidoId = null; // id do exercício aberto dentro do dia expandido — só um por vez
+let sortableExercicios = null; // instância do SortableJS da lista de exercícios do dia expandido (recriada a cada render)
 
 const OPCOES_SERIES = [2, 3, 4, 5, 6];
 const OPCOES_REPETICOES = ["6-8", "8-10", "10-12", "12-15", "15-20"];
@@ -174,17 +177,20 @@ function itemExercicio(exercicio) {
   const aberto = exercicioExpandidoId === exercicio.id;
   return `
     <div class="exercicio-item ${aberto ? "aberto" : ""}" data-exercicio-id="${exercicio.id}">
-      <div class="exercicio-cabecalho" data-acao="toggle-exercicio" data-id="${exercicio.id}">
-        <div class="exercicio-cabecalho-linha1">
-          ${icone("chevron", 16)}
-          <span class="exercicio-nome">${escaparHtml(exercicio.nome)}</span>
-          ${exercicio.video ? `<span class="exercicio-video-marca" title="Tem vídeo anexado">${icone("video", 15)}</span>` : ""}
-        </div>
-        <div class="exercicio-cabecalho-linha2">
-          ${exercicio.categoria ? `<span class="badge badge-neutro">${escaparHtml(obterCategoria(exercicio.categoria)?.rotulo || exercicio.categoria)}</span>` : ""}
-          <div class="exercicio-cabecalho-acoes">
-            <button class="btn btn-ghost btn-sm" data-acao="editar-exercicio" data-id="${exercicio.id}" type="button">Editar</button>
-            <button class="btn btn-ghost btn-sm" data-acao="excluir-exercicio" data-id="${exercicio.id}" type="button">Remover</button>
+      <div class="exercicio-item-linha">
+        <span class="exercicio-drag-handle" title="Arrastar para reordenar" aria-hidden="true">${icone("arrastar", 16)}</span>
+        <div class="exercicio-cabecalho" data-acao="toggle-exercicio" data-id="${exercicio.id}">
+          <div class="exercicio-cabecalho-linha1">
+            ${icone("chevron", 16)}
+            <span class="exercicio-nome">${escaparHtml(exercicio.nome)}</span>
+            ${exercicio.video ? `<span class="exercicio-video-marca" title="Tem vídeo anexado">${icone("video", 15)}</span>` : ""}
+          </div>
+          <div class="exercicio-cabecalho-linha2">
+            ${exercicio.categoria ? `<span class="badge badge-neutro">${escaparHtml(obterCategoria(exercicio.categoria)?.rotulo || exercicio.categoria)}</span>` : ""}
+            <div class="exercicio-cabecalho-acoes">
+              <button class="btn btn-ghost btn-sm" data-acao="editar-exercicio" data-id="${exercicio.id}" type="button">Editar</button>
+              <button class="btn btn-ghost btn-sm" data-acao="excluir-exercicio" data-id="${exercicio.id}" type="button">Remover</button>
+            </div>
           </div>
         </div>
       </div>
@@ -206,6 +212,15 @@ function corpoDiaExpandido(treino) {
   `;
 }
 
+/** Selo de "o aluno já abriu esse treino?" — verde com data/hora se sim,
+ * neutro se ainda não (ver Treino.visualizado_em no backend). */
+function badgeVisualizacaoTreino(treino) {
+  if (!treino.visualizado_em) {
+    return `<span class="badge badge-neutro" title="O aluno ainda não abriu este treino pelo link dele">Ainda não visto</span>`;
+  }
+  return `<span class="badge badge-sucesso" title="Quando o aluno abriu este treino pela primeira vez">Visualizado em ${formatarDataHoraCompleta(treino.visualizado_em)}</span>`;
+}
+
 function linhaDiaSemana(dia, treinoDoDia) {
   const temTreino = Boolean(treinoDoDia);
   const expandido = temTreino && diaExpandidoChave === dia.chave;
@@ -213,9 +228,12 @@ function linhaDiaSemana(dia, treinoDoDia) {
     <div class="dia-item ${temTreino ? "tem-treino" : ""}" data-dia-item="${dia.chave}">
       <div class="dia-linha" data-dia="${dia.chave}">
         <span class="dia-nome">${dia.rotulo}</span>
-        <span class="dia-treino-nome ${temTreino ? "" : "dia-treino-vazio"}">${
-          temTreino ? escaparHtml(treinoDoDia.nome) : "Dia de descanso"
-        }</span>
+        <div class="dia-linha-treino-info">
+          <span class="dia-treino-nome ${temTreino ? "" : "dia-treino-vazio"}">${
+            temTreino ? escaparHtml(treinoDoDia.nome) : "Dia de descanso"
+          }</span>
+          ${temTreino ? badgeVisualizacaoTreino(treinoDoDia) : ""}
+        </div>
         <div class="dia-acoes">
           ${
             temTreino
@@ -244,6 +262,37 @@ function renderizarGradeSemana() {
     const treinoDoDia = treinosCache.find((t) => t.dia_semana === dia.chave);
     return linhaDiaSemana(dia, treinoDoDia);
   }).join("");
+  iniciarDragExercicios();
+}
+
+/** (Re)liga o drag-and-drop dos exercícios do dia expandido — precisa ser
+ * refeito a cada render porque o innerHTML inteiro é recriado do zero, o
+ * que invalida a instância anterior do SortableJS (referências a nós que
+ * não existem mais no DOM). Sem dia expandido, não tem lista pra arrastar. */
+function iniciarDragExercicios() {
+  sortableExercicios?.destroy();
+  sortableExercicios = null;
+  const container = gradeSemanaEl.querySelector(".exercicios-acordeao");
+  if (!container || typeof Sortable === "undefined") return;
+
+  sortableExercicios = new Sortable(container, {
+    handle: ".exercicio-drag-handle",
+    animation: 150,
+    onEnd: async () => {
+      const treino = treinosCache.find((t) => t.dia_semana === diaExpandidoChave);
+      if (!treino) return;
+      const idsNaNovaOrdem = $all(".exercicio-item", container).map((el) => Number(el.dataset.exercicioId));
+      try {
+        await api.reordenarExercicios(treino.id, idsNaNovaOrdem);
+        // Reflete a nova ordem no cache local sem precisar recarregar tudo —
+        // o DOM já está na ordem certa (foi o próprio arraste que fez isso).
+        treino.exercicios.sort((a, b) => idsNaNovaOrdem.indexOf(a.id) - idsNaNovaOrdem.indexOf(b.id));
+      } catch (erro) {
+        mostrarToast(mensagemDeErro(erro), "erro");
+        recarregarTreinos(); // desfaz visualmente a ordem se o backend rejeitar
+      }
+    },
+  });
 }
 
 async function recarregarTreinos() {
@@ -259,6 +308,13 @@ async function recarregarTreinos() {
   } catch (erro) {
     mostrarToast(mensagemDeErro(erro), "erro");
   }
+}
+
+/** Rola até o elemento (já renderizado dentro da grade da semana) e aplica
+ * o destaque temporário — usado depois de criar/editar treino, exercício
+ * ou série, pra deixar claro qual foi o item afetado pela ação. */
+function destacarAposSalvar(seletor) {
+  destacarElemento(gradeSemanaEl.querySelector(seletor));
 }
 
 /** Acha um treino/exercício/série no cache local pelo id, pra pré-preencher o modal de edição. */
@@ -1874,7 +1930,10 @@ listaTemplatesUsarEl?.addEventListener("click", async (evento) => {
       await api.aplicarTemplate(alunoId, id, { dia_semana: templateDiaAlvo });
       mostrarToast(`Modelo aplicado em ${ROTULO_DIA[templateDiaAlvo]}!`, "sucesso");
       fecharModal(modalUsarTemplate);
-      recarregarTreinos();
+      diaExpandidoChave = templateDiaAlvo;
+      exercicioExpandidoId = null;
+      await recarregarTreinos();
+      destacarAposSalvar(`[data-dia-item="${templateDiaAlvo}"]`);
     } catch (erro) {
       mostrarToast(mensagemDeErro(erro), "erro");
       aplicarBtn.disabled = false;
@@ -1983,7 +2042,12 @@ async function confirmarMontagemTreino() {
 
     mostrarToast(`Treino de ${ROTULO_DIA[montarTreinoDia]} criado com ${selecionados.length} exercício(s)!`, "sucesso");
     fecharModal(modalMontarTreino);
-    recarregarTreinos();
+    // Expande o dia direto — sem isso o personal só via o nome do treino
+    // atualizado na linha, sem nenhum sinal claro de que os exercícios entraram.
+    diaExpandidoChave = montarTreinoDia;
+    exercicioExpandidoId = null;
+    await recarregarTreinos();
+    destacarAposSalvar(`[data-dia-item="${montarTreinoDia}"]`);
   } catch (erro) {
     mostrarToast(mensagemDeErro(erro), "erro");
   } finally {
@@ -2410,14 +2474,15 @@ gradeSemanaEl?.addEventListener("submit", async (evento) => {
   const intervaloDescanso = alvo.intervalo_descanso.value.trim() || null;
   if (!repeticoesAlvo) return;
   try {
-    await api.criarSerie(exercicioId, {
+    const novaSerie = await api.criarSerie(exercicioId, {
       ordem: 0,
       repeticoes_alvo: repeticoesAlvo,
       carga_alvo: cargaAlvo,
       intervalo_descanso: intervaloDescanso,
     });
     mostrarToast("Série adicionada!", "sucesso");
-    recarregarTreinos();
+    await recarregarTreinos();
+    destacarAposSalvar(`[data-serie-id="${novaSerie.id}"]`);
   } catch (erro) {
     mostrarToast(mensagemDeErro(erro), "erro");
   }
@@ -2547,7 +2612,8 @@ formEditarItem?.addEventListener("submit", async (evento) => {
     await config.salvar(Number(id), config.montarPayload(formEditarItem));
     mostrarToast("Alterações salvas!", "sucesso");
     fecharModal(modalEditarItem);
-    recarregarTreinos();
+    await recarregarTreinos();
+    destacarAposSalvar(`[data-${tipo}-id="${id}"]`);
   } catch (erro) {
     mostrarToast(mensagemDeErro(erro), "erro");
   } finally {
