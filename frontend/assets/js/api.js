@@ -144,6 +144,11 @@ export const api = {
   atualizarExercicio: (id, dados) =>
     apiFetch(`/personal/exercicios/${id}`, { method: "PUT", body: JSON.stringify(dados) }),
   excluirExercicio: (id) => apiFetch(`/personal/exercicios/${id}`, { method: "DELETE" }),
+  reordenarExercicios: (treinoId, exercicioIds) =>
+    apiFetch(`/personal/treinos/${treinoId}/exercicios/reordenar`, {
+      method: "PATCH",
+      body: JSON.stringify({ exercicio_ids: exercicioIds }),
+    }),
 
   // --- Séries ---
   criarSerie: (exercicioId, dados) =>

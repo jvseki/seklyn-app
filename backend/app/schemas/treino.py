@@ -59,6 +59,7 @@ class TreinoOut(OrmModel):
     dia_semana: str | None
     ativo: bool
     criado_em: datetime
+    visualizado_em: datetime | None = None
     exercicios: list[ExercicioOut] = []
 
 

@@ -738,6 +738,32 @@
   }
 }
 
+/* Destaque temporário de "essa foi a linha que você acabou de salvar" —
+   aplicado via destacarElemento() (utils.js) depois de criar/editar treino,
+   exercício ou série, junto com um scrollIntoView até o item. Anel em vez de
+   mexer no background porque o fundo de repouso varia de elemento pra
+   elemento (card do dia, linha de série, item de exercício...). */
+.destaque-recente {
+  animation: destaque-recente-fade 1.6s ease-out;
+}
+
+@keyframes destaque-recente-fade {
+  0%,
+  40% {
+    box-shadow: 0 0 0 3px var(--cor-primaria);
+  }
+  100% {
+    box-shadow: 0 0 0 3px transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .destaque-recente {
+    animation: none;
+    box-shadow: 0 0 0 3px var(--cor-primaria);
+  }
+}
+
 .alerta {
   display: flex;
   align-items: flex-start;

@@ -208,12 +208,25 @@
   font-size: 0.9rem;
 }
 
+/* Envolve o nome do treino + o selo de visualização do aluno (ver
+   badgeVisualizacaoTreino() em aluno-detalhe.js), empilhados na mesma
+   célula do grid — align-items:flex-start pra o selo (badge) não esticar
+   e virar uma pílula gigante ocupando a largura toda da coluna. */
+.dia-linha-treino-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+
 .dia-linha .dia-treino-nome {
   font-size: 0.9rem;
   color: var(--cor-texto);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  max-width: 100%;
 }
 
 .dia-linha .dia-treino-vazio {
@@ -315,6 +328,44 @@
 
 .exercicio-item:first-child {
   border-top: none;
+}
+
+/* Linha que envolve a alça de arrastar + o cabeçalho clicável do exercício —
+   a alça fica FORA do .exercicio-cabecalho (que tem data-acao="toggle-exercicio")
+   de propósito, pra arrastar não também abrir/fechar o accordion. */
+.exercicio-item-linha {
+  display: flex;
+  align-items: stretch;
+}
+
+.exercicio-item-linha .exercicio-cabecalho {
+  flex: 1;
+  min-width: 0;
+}
+
+.exercicio-drag-handle {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--espaco-1) 0 var(--espaco-3);
+  color: var(--cor-texto-muted);
+  cursor: grab;
+  flex-shrink: 0;
+  /* Sem isso, no touch o navegador tenta rolar a página assim que encosta
+     na alça, em vez de deixar o SortableJS iniciar o arraste. */
+  touch-action: none;
+}
+
+.exercicio-drag-handle:active {
+  cursor: grabbing;
+}
+
+/* Placeholder do SortableJS no lugar onde o exercício vai cair. */
+.sortable-ghost {
+  opacity: 0.4;
+}
+
+.sortable-chosen .exercicio-cabecalho {
+  background: var(--cor-fundo-alt);
 }
 
 /* Duas linhas sempre (desktop e mobile): linha 1 = chevron + nome (pode

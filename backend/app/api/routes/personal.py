@@ -45,7 +45,7 @@ from app.schemas.anamnese import AnamneseAtualizar, AnamneseOut
 from app.schemas.analytics import AderenciaOut, AnalyticsDetalhadoOut
 from app.schemas.avaliacao_fisica import AvaliacaoCriadaOut, AvaliacaoFisicaCriar, AvaliacaoFisicaOut
 from app.schemas.comentario_serie import ComentarioSerieContextoOut
-from app.schemas.exercicio import ExercicioAtualizar, ExercicioCriar, ExercicioOut
+from app.schemas.exercicio import ExercicioAtualizar, ExercicioCriar, ExercicioOut, ReordenarExerciciosIn
 from app.schemas.foto_progresso import FotoProgressoOut
 from app.schemas.meta import MetaCriar, MetaProgressoOut
 from app.schemas.resumo_semanal import ResumoSemanalOut
@@ -53,6 +53,7 @@ from app.schemas.serie import SerieAtualizar, SerieCriar, SerieOut
 from app.schemas.treino import ExercicioRapidoIn, MontarTreinoIn, TreinoAtualizar, TreinoCriar, TreinoOut
 from app.schemas.treino_template import AplicarTemplateIn, TreinoTemplateCriar, TreinoTemplateOut
 from app.services.aluno_export import build_aluno_xlsx
+from app.services.email_service import enviar_email_notificacao_treino
 from app.services.metas import montar_progresso, verificar_conclusao
 from app.services.progresso import DIAS_SEMANA_CHAVES, calcular_aderencia, calcular_analytics_detalhado
 
@@ -270,6 +271,32 @@ def criar_treino(
     return treino
 
 
+# Intervalo mínimo entre e-mails automáticos do mesmo treino — o Personal
+# costuma editar vários exercícios/séries em sequência numa mesma sessão;
+# sem isso, cada salvamento isolado virava um e-mail novo pro aluno.
+NOTIFICACAO_TREINO_INTERVALO_MINUTOS = 5
+
+
+def _notificar_aluno_treino_atualizado(db: Session, treino: Treino) -> None:
+    """
+    Avisa o aluno por e-mail que o treino dele foi criado/editado — só se
+    ele tiver e-mail cadastrado, e no máximo 1 e-mail a cada
+    NOTIFICACAO_TREINO_INTERVALO_MINUTOS por treino (ver constante acima).
+    Falha de envio nunca sobe daqui: enviar_email() já loga e engole erro,
+    pra nunca derrubar o salvamento do treino por causa do Resend.
+    """
+    aluno = treino.aluno
+    if not aluno.email:
+        return
+    agora = datetime.now(timezone.utc)
+    if treino.notificado_em and agora - treino.notificado_em < timedelta(minutes=NOTIFICACAO_TREINO_INTERVALO_MINUTOS):
+        return
+    link_treino = f"{settings.frontend_url}/aluno/treino.html?t={aluno.hash_token}"
+    enviar_email_notificacao_treino(aluno.email, aluno.nome, treino.nome, link_treino)
+    treino.notificado_em = agora
+    db.commit()
+
+
 def _criar_ou_substituir_treino(
     db: Session,
     personal: Personal,
@@ -337,6 +364,7 @@ def _criar_ou_substituir_treino(
 
     db.commit()
     db.refresh(treino)
+    _notificar_aluno_treino_atualizado(db, treino)
     return treino
 
 
@@ -500,6 +528,7 @@ def atualizar_treino(
         setattr(treino, campo, valor)
     db.commit()
     db.refresh(treino)
+    _notificar_aluno_treino_atualizado(db, treino)
     return treino
 
 
@@ -550,6 +579,7 @@ def criar_exercicio(
     db.add(exercicio)
     db.commit()
     db.refresh(exercicio)
+    _notificar_aluno_treino_atualizado(db, treino)
     return exercicio
 
 
@@ -568,6 +598,7 @@ def atualizar_exercicio(
         setattr(exercicio, campo, valor)
     db.commit()
     db.refresh(exercicio)
+    _notificar_aluno_treino_atualizado(db, exercicio.treino)
     return exercicio
 
 
@@ -580,6 +611,31 @@ def excluir_exercicio(
     exercicio = obter_exercicio_do_personal(exercicio_id, personal, db)
     db.delete(exercicio)
     db.commit()
+
+
+@router.patch("/treinos/{treino_id}/exercicios/reordenar", response_model=TreinoOut)
+def reordenar_exercicios(
+    treino_id: int,
+    dados: ReordenarExerciciosIn,
+    personal: Personal = Depends(exigir_assinatura_ativa),
+    db: Session = Depends(get_db),
+) -> Treino:
+    """Persiste a nova ordem dos exercícios do treino, arrastados no front
+    (SortableJS) — `exercicio_ids` precisa ser a lista completa do treino,
+    só que na nova ordem (exige o conjunto exato, pra não deixar nenhum
+    exercício com `ordem` desatualizada por engano)."""
+    treino = obter_treino_do_personal(treino_id, personal, db)
+    exercicios_do_treino = {e.id: e for e in db.query(Exercicio).filter(Exercicio.treino_id == treino.id).all()}
+    if set(dados.exercicio_ids) != set(exercicios_do_treino):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A lista precisa conter todos os exercícios do treino, sem repetir nem faltar nenhum.",
+        )
+    for ordem, exercicio_id in enumerate(dados.exercicio_ids):
+        exercicios_do_treino[exercicio_id].ordem = ordem
+    db.commit()
+    db.refresh(treino)
+    return treino
 
 
 # ---------- Séries ----------
@@ -603,6 +659,7 @@ def criar_serie(
     db.add(serie)
     db.commit()
     db.refresh(serie)
+    _notificar_aluno_treino_atualizado(db, exercicio.treino)
     return serie
 
 
@@ -618,6 +675,7 @@ def atualizar_serie(
         setattr(serie, campo, valor)
     db.commit()
     db.refresh(serie)
+    _notificar_aluno_treino_atualizado(db, serie.exercicio.treino)
     return serie
 
 

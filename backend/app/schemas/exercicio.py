@@ -21,6 +21,14 @@ class ExercicioAtualizar(BaseModel):
     video_exercicio_id: int | None = None
 
 
+class ReordenarExerciciosIn(BaseModel):
+    """IDs de todos os exercícios do treino, na nova ordem (arrastados no
+    front com SortableJS) — precisa conter exatamente os mesmos IDs que o
+    treino já tem, só que reordenados."""
+
+    exercicio_ids: list[int] = Field(min_length=1)
+
+
 class ExercicioOut(OrmModel):
     id: int
     treino_id: int

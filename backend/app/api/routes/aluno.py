@@ -2,7 +2,7 @@
 Rotas públicas do Aluno: protegidas apenas pelo `hash_token` na URL,
 sem exigir login/senha (acesso via link único, sem fricção).
 """
-from datetime import date
+from datetime import date, datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session, joinedload
@@ -115,6 +115,13 @@ def detalhe_treino_aluno(
     )
     if treino is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Treino não encontrado.")
+
+    # Marca a primeira visualização do aluno nesse treino (pro Personal saber
+    # que a informação chegou) — só na primeira vez, nunca sobrescreve depois.
+    if treino.visualizado_em is None:
+        treino.visualizado_em = datetime.now(timezone.utc)
+        db.commit()
+
     dia = data or hoje_brasil()
     _validar_data_na_semana_atual(dia)
     return montar_treino_detalhe(db, treino, dia=dia)
