@@ -103,50 +103,70 @@ els.botaoVoltar?.addEventListener("click", async () => {
 });
 
 // --- Tela: semana atual (7 dias com data real, dia por dia) ---
+
+/** Anel de progresso (SVG) — pathLength=100 deixa o dasharray igual ao %. */
+function anelProgresso(percentual, concluido) {
+  const p = Math.max(0, Math.min(100, Number(percentual) || 0));
+  return `
+    <div class="anel-progresso ${concluido ? "completo" : ""} ${p === 0 ? "vazio" : ""}" aria-hidden="true">
+      <svg viewBox="0 0 44 44">
+        <circle class="anel-fundo" cx="22" cy="22" r="18" pathLength="100" />
+        <circle class="anel-valor" cx="22" cy="22" r="18" pathLength="100" style="stroke-dasharray:${p} 100;" />
+      </svg>
+      <span>${concluido ? icone("check", 16) : `${Math.round(p)}<small>%</small>`}</span>
+    </div>
+  `;
+}
+
 function cardDia(dia) {
   const rotulo = ROTULO_DIA[dia.dia_semana] || dia.dia_semana;
   const dataCurta = formatarDataCurta(dia.data);
-  const badgeHoje = dia.hoje ? `<span class="badge badge-primaria">Hoje</span>` : "";
 
+  // Descanso vira uma linha compacta: antes cada dia de folga ocupava um
+  // card do tamanho de um treino, e o aluno tinha que rolar à toa.
   if (!dia.treino_id) {
     return `
-      <div class="treino-resumo-card treino-resumo-card-descanso reveal" style="border:1.5px solid var(--cor-borda);">
-        <div class="treino-resumo-topo">
-          <h3>${rotulo} <span class="hint-text" style="font-weight:400;">· ${dataCurta}</span></h3>
-          ${badgeHoje}
-        </div>
-        <p class="hint-text">Dia de descanso</p>
+      <div class="dia-card dia-card-descanso reveal ${dia.hoje ? "hoje" : ""}">
+        <span class="dia-card-dia">${rotulo} <small>${dataCurta}</small></span>
+        <span class="dia-card-descanso-rotulo">${dia.hoje ? "Hoje · " : ""}Descanso</span>
       </div>
     `;
   }
 
-  const rotuloBadge = dia.concluido
-    ? `<span class="badge badge-sucesso">Concluído</span>`
-    : dia.series_concluidas > 0
-      ? `<span class="badge badge-neutro">Em andamento</span>`
-      : "";
-
+  const acao = dia.concluido ? "Concluído" : dia.series_concluidas > 0 ? "Continuar" : dia.hoje ? "Começar treino" : "Ver treino";
   return `
-    <button class="treino-resumo-card reveal" data-treino-id="${dia.treino_id}" data-data="${dia.data}" style="text-align:left;width:100%;border:1.5px solid var(--cor-borda);cursor:pointer;">
-      <div class="treino-resumo-topo">
-        <h3>${escaparHtml(dia.treino_nome)}</h3>
-        ${badgeHoje}${rotuloBadge}
-      </div>
-      <p class="hint-text" style="margin-top:-8px;margin-bottom:8px;">${rotulo} · ${dataCurta}</p>
-      <div class="progresso">
-        <div class="progresso-preenchimento ${dia.concluido ? "completo" : ""}" style="width:${dia.progresso_percentual}%;"></div>
-      </div>
-      <div class="treino-resumo-rodape">
-        <span>${dia.series_concluidas} de ${dia.total_series} séries</span>
-        <span>${dia.progresso_percentual}%</span>
-      </div>
+    <button class="dia-card dia-card-treino reveal ${dia.hoje ? "hoje" : ""} ${dia.concluido ? "concluido" : ""}" type="button"
+      data-treino-id="${dia.treino_id}" data-data="${dia.data}">
+      ${anelProgresso(dia.progresso_percentual, dia.concluido)}
+      <span class="dia-card-info">
+        <span class="dia-card-dia">${dia.hoje ? `<span class="dia-card-hoje">Hoje</span>` : ""}${rotulo} <small>${dataCurta}</small></span>
+        <strong class="dia-card-nome">${escaparHtml(dia.treino_nome)}</strong>
+        <span class="dia-card-meta">${dia.series_concluidas} de ${dia.total_series} séries</span>
+      </span>
+      <span class="dia-card-acao">${acao}<span aria-hidden="true">›</span></span>
     </button>
   `;
 }
 
+let jaRolouAteHoje = false;
+
 function renderizarSemana(semana) {
   els.listaTreinos.innerHTML = semana.map(cardDia).join("");
   observarRevelacoes(els.listaTreinos);
+
+  // Na primeira abertura, se o treino de hoje ficou abaixo da dobra (ex:
+  // sábado num celular pequeno), rola suave até ele — é o que o aluno veio
+  // fazer. Só uma vez: voltar de um treino não pode ficar pulando a tela.
+  if (jaRolouAteHoje) return;
+  jaRolouAteHoje = true;
+  const cardHoje = els.listaTreinos.querySelector(".dia-card-treino.hoje");
+  if (!cardHoje) return;
+  const { bottom } = cardHoje.getBoundingClientRect();
+  const alturaTabBar = els.tabBar?.offsetHeight || 0;
+  if (bottom > window.innerHeight - alturaTabBar) {
+    const suave = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setTimeout(() => cardHoje.scrollIntoView({ behavior: suave ? "smooth" : "auto", block: "center" }), 350);
+  }
 }
 
 els.listaTreinos?.addEventListener("click", (evento) => {
@@ -159,7 +179,7 @@ els.listaTreinos?.addEventListener("click", (evento) => {
 function linhaSerie(serie) {
   return `
     <div class="checklist-item ${serie.concluida_hoje ? "concluida" : ""}" data-serie-id="${serie.id}">
-      <button class="checklist-checkbox" data-acao="alternar-serie" data-serie-id="${serie.id}" aria-label="Marcar série como concluída">
+      <button class="checklist-checkbox" type="button" data-acao="alternar-serie" data-serie-id="${serie.id}" aria-pressed="${serie.concluida_hoje ? "true" : "false"}" aria-label="Marcar série como concluída">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 12.5L10 17L19 8" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
       <div class="checklist-info">
@@ -176,7 +196,7 @@ function linhaSerie(serie) {
 
 function blocoExercicio(exercicio) {
   return `
-    <div class="bloco-exercicio" data-exercicio-id="${exercicio.id}">
+    <div class="bloco-exercicio ${exercicio.concluido_hoje ? "completo" : ""}" data-exercicio-id="${exercicio.id}">
       <div class="bloco-exercicio-titulo">
         <span class="${exercicio.concluido_hoje ? "icone-concluido" : ""}">${exercicio.concluido_hoje ? icone("check", 18) : iconeHalter(18)}</span>
         <strong>${escaparHtml(exercicio.nome)}</strong>
@@ -209,6 +229,7 @@ async function abrirExecucaoTreino(treinoId, data) {
     }
     els.execucaoExercicios.innerHTML = detalhe.exercicios.map(blocoExercicio).join("");
     atualizarCabecalhoProgresso(detalhe);
+    if (!detalhe.concluido_hoje) preCarregarCelebracao();
     els.execucaoExercicios.dataset.treinoId = treinoId;
     els.execucaoExercicios.dataset.data = data || "";
   } catch (erro) {
@@ -275,19 +296,95 @@ els.formRecado?.addEventListener("submit", async (evento) => {
   }
 });
 
+/** Ícone do exercício (halter → check) calculado pelo próprio DOM: antes
+ * cada toque baixava o treino inteiro de novo só pra atualizar isso. */
+function atualizarIconeExercicio(blocoEl) {
+  if (!blocoEl) return;
+  const itens = [...blocoEl.querySelectorAll(".checklist-item")];
+  const completo = itens.length > 0 && itens.every((el) => el.classList.contains("concluida"));
+  blocoEl.classList.toggle("completo", completo);
+  const iconeEl = blocoEl.querySelector(".bloco-exercicio-titulo span");
+  if (!iconeEl) return;
+  iconeEl.className = completo ? "icone-concluido" : "";
+  iconeEl.innerHTML = completo ? icone("check", 18) : iconeHalter(18);
+}
+
+/** "Pop" do check + faíscas na cor da marca + vibraçãozinha (Android). */
+function comemorarSerie(botao) {
+  navigator.vibrate?.(14);
+  botao.classList.remove("pop");
+  void botao.offsetWidth; // reinicia a animação se tocar de novo rápido
+  botao.classList.add("pop");
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  const faiscas = document.createElement("span");
+  faiscas.className = "faiscas";
+  faiscas.setAttribute("aria-hidden", "true");
+  for (let i = 0; i < 10; i++) {
+    const faisca = document.createElement("i");
+    faisca.style.setProperty("--a", `${i * 36 + Math.random() * 18}deg`);
+    faisca.style.setProperty("--d", `${26 + Math.random() * 16}px`);
+    faiscas.appendChild(faisca);
+  }
+  botao.appendChild(faiscas);
+  setTimeout(() => faiscas.remove(), 700);
+}
+
+async function celebrarConclusao() {
+  try {
+    const { celebrarTreinoConcluido } = await import("./3d/celebracao.js");
+    celebrarTreinoConcluido({
+      titulo: "Treino concluído!",
+      subtitulo: `${els.execucaoTitulo.textContent} — mandou bem demais.`,
+    });
+  } catch {
+    mostrarToast("Treino concluído! Parabéns.", "sucesso"); // sem rede pro módulo: o recado chega mesmo assim
+  }
+}
+
+/** Ao abrir um treino ainda não concluído, baixa o Three.js em segundo
+ * plano (quando o navegador estiver ocioso) — assim a celebração 3D abre
+ * na hora ao terminar, mesmo no 4G da academia. ~330KB compactado, uma vez
+ * por aparelho: depois fica no cache do navegador (URL com versão fixa). */
+let threePreCarregado = false;
+function preCarregarCelebracao() {
+  if (threePreCarregado) return;
+  threePreCarregado = true;
+  const carregar = () =>
+    import("./3d/motor.js")
+      .then((motor) => motor.pode3D() && Promise.all([motor.carregarThree(), import("./3d/celebracao.js")]))
+      .catch(() => {});
+  (window.requestIdleCallback || ((fn) => setTimeout(fn, 400)))(carregar);
+}
+
+// Séries com requisição em andamento — um toque duplo não dispara duas
+// alternâncias (o endpoint é um toggle, a segunda desfaria a primeira).
+const seriesEmAndamento = new Set();
+
 els.execucaoExercicios?.addEventListener("click", async (evento) => {
   const botao = evento.target.closest("[data-acao='alternar-serie']");
   if (!botao) return;
   const serieId = Number(botao.dataset.serieId);
-  const item = botao.closest(".checklist-item");
-  botao.disabled = true;
+  if (seriesEmAndamento.has(serieId)) return;
+  seriesEmAndamento.add(serieId);
 
-  const treinoId = Number(els.execucaoExercicios.dataset.treinoId);
+  const item = botao.closest(".checklist-item");
+  const bloco = botao.closest(".bloco-exercicio");
   const data = els.execucaoExercicios.dataset.data || undefined;
+
+  // Otimista: marca na hora (no 4G da academia esperar o servidor dava um
+  // atraso perceptível); a resposta confirma, e se der erro desfaz.
+  const vaiConcluir = !item.classList.contains("concluida");
+  item.classList.toggle("concluida", vaiConcluir);
+  botao.setAttribute("aria-pressed", String(vaiConcluir));
+  if (vaiConcluir) comemorarSerie(botao);
+  atualizarIconeExercicio(bloco);
 
   try {
     const resultado = await api.executarSerie(token, serieId, data);
     item.classList.toggle("concluida", resultado.concluida_hoje);
+    botao.setAttribute("aria-pressed", String(resultado.concluida_hoje));
+    atualizarIconeExercicio(bloco);
 
     els.execucaoProgressoBarra.style.width = `${resultado.treino_progresso_percentual}%`;
     els.execucaoProgressoBarra.classList.toggle("completo", resultado.treino_concluido_hoje);
@@ -296,20 +393,15 @@ els.execucaoExercicios?.addEventListener("click", async (evento) => {
     const jaMostrandoFaixa = !els.execucaoFaixaConcluido.hidden;
     els.execucaoFaixaConcluido.hidden = !resultado.treino_concluido_hoje;
     if (resultado.treino_concluido_hoje && !jaMostrandoFaixa) {
-      mostrarToast("Treino concluído! Parabéns.", "sucesso");
-    }
-
-    // Recalcula se o exercício desta série ficou 100% concluído (para o ícone de check).
-    const detalheAtualizado = await api.detalheTreinoAluno(token, treinoId, data);
-    const exercicioAtual = detalheAtualizado.exercicios.find((ex) => ex.series.some((s) => s.id === serieId));
-    if (exercicioAtual) {
-      const blocoEl = els.execucaoExercicios.querySelector(`[data-exercicio-id="${exercicioAtual.id}"] .bloco-exercicio-titulo span`);
-      if (blocoEl) blocoEl.innerHTML = exercicioAtual.concluido_hoje ? icone("check", 18) : iconeHalter(18);
+      celebrarConclusao();
     }
   } catch (erro) {
+    item.classList.toggle("concluida", !vaiConcluir);
+    botao.setAttribute("aria-pressed", String(!vaiConcluir));
+    atualizarIconeExercicio(bloco);
     mostrarToast(mensagemDeErro(erro), "erro");
   } finally {
-    botao.disabled = false;
+    seriesEmAndamento.delete(serieId);
   }
 });
 

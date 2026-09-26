@@ -11,6 +11,7 @@ import {
   abrirModal,
   fecharModal,
   linkWhatsApp,
+  contarAte,
 } from "./utils.js";
 import { confirmarAcao } from "./confirmar.js";
 import { observarRevelacoes } from "./revelar-ao-rolar.js";
@@ -117,7 +118,7 @@ let totalAlunosAtual = 0;
 let limiteAlunosAtual = null; // null = sem limite no plano
 
 function renderizarStatAlunos() {
-  statTotalEl.textContent = limiteAlunosAtual != null ? `${totalAlunosAtual} / ${limiteAlunosAtual}` : String(totalAlunosAtual);
+  contarAte(statTotalEl, limiteAlunosAtual != null ? `${totalAlunosAtual} / ${limiteAlunosAtual}` : String(totalAlunosAtual));
 }
 
 function renderizarAlunos(alunos) {
@@ -148,9 +149,9 @@ async function carregarAlunos() {
 async function carregarResumoSemanal() {
   try {
     const resumo = await api.resumoSemanal();
-    statAderenciaEl.textContent = `${resumo.aderencia_media_percentual}%`;
-    statMetasEl.textContent = String(resumo.metas_concluidas_na_semana);
-    statComentariosEl.textContent = String(resumo.comentarios_novos_na_semana);
+    contarAte(statAderenciaEl, `${resumo.aderencia_media_percentual}%`);
+    contarAte(statMetasEl, String(resumo.metas_concluidas_na_semana));
+    contarAte(statComentariosEl, String(resumo.comentarios_novos_na_semana));
   } catch {
     // silencioso — os tiles ficam com "–", o resto do dashboard continua útil
   }

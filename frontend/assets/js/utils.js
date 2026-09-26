@@ -196,3 +196,28 @@ export function destacarElemento(elemento, opcoes = {}) {
   elemento.classList.add("destaque-recente");
   setTimeout(() => elemento.classList.remove("destaque-recente"), 1600);
 }
+
+/**
+ * Anima o primeiro número de um texto contando a partir do zero — ex:
+ * "12", "87.5%", "3 / 10" (só o 3 conta, o resto fica fixo). Com "reduzir
+ * movimento" ligado, escreve o valor final direto.
+ */
+export function contarAte(elemento, texto, duracaoMs = 1100) {
+  if (!elemento) return;
+  const final = String(texto);
+  const partes = final.match(/^(\d+(?:[.,]\d+)?)(.*)$/s);
+  if (!partes || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    elemento.textContent = final;
+    return;
+  }
+  const alvo = parseFloat(partes[1].replace(",", "."));
+  const casas = (partes[1].split(/[.,]/)[1] || "").length;
+  const inicio = performance.now();
+  function passo(agora) {
+    const x = Math.min((agora - inicio) / duracaoMs, 1);
+    const progresso = x === 1 ? 1 : 1 - Math.pow(2, -10 * x);
+    elemento.textContent = x === 1 ? final : (alvo * progresso).toFixed(casas) + partes[2];
+    if (x < 1) requestAnimationFrame(passo);
+  }
+  requestAnimationFrame(passo);
+}
