@@ -15,6 +15,12 @@ export function ativarSpotlight(seletor = ".spotlight-card", raiz = document) {
       const y = ((evento.clientY - rect.top) / rect.height) * 100;
       el.style.setProperty("--spot-x", `${x}%`);
       el.style.setProperty("--spot-y", `${y}%`);
+      // Inclinação 3D só no mouse — no toque o card ficar girando embaixo
+      // do dedo atrapalha mais do que ajuda.
+      if (evento.pointerType === "mouse") {
+        el.style.setProperty("--card-rx", `${((50 - y) / 50) * 4}deg`);
+        el.style.setProperty("--card-ry", `${((x - 50) / 50) * 5}deg`);
+      }
     }
 
     el.addEventListener("pointerenter", (evento) => {
@@ -26,6 +32,8 @@ export function ativarSpotlight(seletor = ".spotlight-card", raiz = document) {
     el.addEventListener("pointerleave", () => {
       el.classList.remove("spot-ativo");
       el.style.setProperty("--spot-opacidade", "0");
+      el.style.setProperty("--card-rx", "0deg");
+      el.style.setProperty("--card-ry", "0deg");
     });
     // No touch, o dedo solta antes do "pointerleave" disparar em alguns
     // navegadores — garante que o brilho não fica "grudado" depois.

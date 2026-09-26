@@ -34,8 +34,6 @@
 </head>
 <body>
   <div class="hero-fundo">
-    <video id="hero-video-fundo" class="hero-video-fundo" autoplay muted loop playsinline preload="auto" poster="assets/img/logo-s.png" aria-hidden="true"></video>
-
     <header class="landing-header">
     <nav class="landing-nav container">
       <div class="landing-marca marca-logo">
@@ -56,13 +54,37 @@
     </nav>
     </header>
 
-    <section class="container hero">
-      <span class="hero-selo"><span class="hero-selo-ponto"></span> Feito para Personal Trainers</span>
-      <h1>Saiba exatamente <span class="destaque">quais séries</span> seus alunos treinaram e quais eles pularam</h1>
-      <p>O Seklyn acompanha a execução dos treinos série por série, gera um link único para cada aluno acessar sem senha, e ainda te deixa recomendar seus produtos favoritos.</p>
-      <div class="hero-acoes">
-        <a href="personal/cadastro.html" class="btn btn-primary">Criar minha conta</a>
-        <a href="#como-funciona" class="btn btn-secondary">Ver como funciona</a>
+    <section class="container hero hero-3d">
+      <div class="hero-texto">
+        <span class="hero-selo"><span class="hero-selo-ponto"></span> Feito para Personal Trainers</span>
+        <h1>Saiba exatamente <span class="destaque">quais séries</span> seus alunos treinaram e quais eles pularam</h1>
+        <p>O Seklyn acompanha a execução dos treinos série por série, gera um link único para cada aluno acessar sem senha, e ainda te deixa recomendar seus produtos favoritos.</p>
+        <div class="hero-acoes">
+          <a href="personal/cadastro.html" class="btn btn-primary">Criar minha conta</a>
+          <a href="#como-funciona" class="btn btn-secondary">Ver como funciona</a>
+        </div>
+        <ul class="hero-provas">
+          <li>Link sem senha</li>
+          <li>Série por série</li>
+          <li>Na cor da sua marca</li>
+        </ul>
+      </div>
+
+      <!-- Palco 3D (assets/js/3d/cena-halter.js). Sem WebGL ou com "reduzir
+           movimento" ligado, fica a imagem estática no lugar do canvas. -->
+      <div class="hero-palco" id="hero-palco" aria-hidden="true">
+        <div class="hero-palco-chao"></div>
+        <canvas id="hero-canvas"></canvas>
+        <!-- data-src: só baixa quando o 3D não roda (ver landing.js) — quem vê o 3D não paga esses bytes -->
+        <img class="hero-palco-fallback" data-src="assets/img/hero-halter.png" alt="" width="720" height="720" />
+        <div class="hero-chip hero-chip-1">
+          <span class="hero-chip-check"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+          <span><strong>Série 3 · Supino reto</strong><small>concluída agora</small></span>
+        </div>
+        <div class="hero-chip hero-chip-2">
+          <strong class="hero-chip-numero">92%</strong>
+          <small>aderência na semana</small>
+        </div>
       </div>
     </section>
   </div>

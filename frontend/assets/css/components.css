@@ -589,6 +589,135 @@
   background: linear-gradient(90deg, var(--cor-sucesso) 0%, #15803d 100%);
 }
 
+/* Reflexo de luz passando pela barra — "metal polido" de novo. */
+.progresso-preenchimento {
+  position: relative;
+  overflow: hidden;
+}
+
+.progresso-preenchimento::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 20%, rgba(255, 255, 255, 0.55) 50%, transparent 80%);
+  transform: translateX(-100%);
+  animation: barra-reflexo 2.6s ease-in-out infinite;
+}
+
+@keyframes barra-reflexo {
+  60%,
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progresso-preenchimento::after {
+    display: none;
+  }
+}
+
+/* ---------- Celebração de treino concluído (ver 3d/celebracao.js) ---------- */
+.celebracao {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 36%, color-mix(in srgb, var(--cor-primaria) 50%, transparent), transparent 58%),
+    rgba(6, 4, 14, 0.84);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.celebracao.visivel {
+  opacity: 1;
+}
+
+.celebracao-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.celebracao-trofeu-estatico {
+  position: absolute;
+  top: 24%;
+  left: 50%;
+  translate: -50% 0;
+  color: #ffc94d;
+  filter: drop-shadow(0 0 28px rgba(255, 201, 77, 0.55));
+  animation: trofeu-entrar 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  transition: opacity 0.4s ease;
+}
+
+.celebracao-trofeu-estatico svg {
+  width: 96px;
+  height: 96px;
+}
+
+.celebracao.com-3d .celebracao-trofeu-estatico {
+  opacity: 0;
+}
+
+.celebracao-conteudo {
+  position: absolute;
+  left: var(--espaco-4);
+  right: var(--espaco-4);
+  bottom: calc(10% + env(safe-area-inset-bottom, 0px));
+  text-align: center;
+  color: #fff;
+  animation: celebracao-texto 0.7s 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.celebracao-conteudo h2 {
+  font-size: clamp(2rem, 9vw, 3.2rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  background: linear-gradient(180deg, #fff 30%, color-mix(in srgb, var(--cor-primaria) 35%, #fff));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 4px 24px color-mix(in srgb, var(--cor-primaria) 70%, transparent));
+}
+
+.celebracao-conteudo p {
+  margin-top: var(--espaco-2);
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 1rem;
+}
+
+.celebracao-conteudo .btn {
+  margin-top: var(--espaco-5);
+  min-width: 190px;
+  min-height: 50px;
+  font-size: 1.05rem;
+}
+
+@keyframes trofeu-entrar {
+  from {
+    opacity: 0;
+    transform: scale(0.4) rotate(-12deg);
+  }
+}
+
+@keyframes celebracao-texto {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .celebracao-trofeu-estatico,
+  .celebracao-conteudo {
+    animation: none;
+  }
+}
+
 /* Checklist de séries (área do aluno) */
 .checklist-item {
   display: flex;
@@ -633,6 +762,109 @@
   opacity: 1;
   transform: scale(1);
   color: #fff;
+}
+
+/* Marcar série: o check "estoura" (escala com overshoot + onda de choque)
+   e solta faíscas — ver comemorarSerie() em treino.js. */
+.checklist-item {
+  transition: background-color 0.25s ease, border-color 0.25s ease;
+}
+
+.checklist-checkbox {
+  position: relative;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.checklist-checkbox.pop {
+  animation: check-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.checklist-checkbox.pop::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  border: 2px solid var(--cor-sucesso);
+  animation: check-onda 0.55s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes check-pop {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.22);
+  }
+  65% {
+    transform: scale(0.93);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes check-onda {
+  from {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+
+.faiscas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.faiscas i {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 50%;
+  background: var(--cor-primaria);
+  box-shadow: 0 0 6px var(--cor-primaria);
+  animation: faisca 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.faiscas i:nth-child(3n) {
+  background: var(--cor-sucesso);
+  box-shadow: 0 0 6px var(--cor-sucesso);
+}
+
+.faiscas i:nth-child(4n) {
+  background: #ffc94d;
+  box-shadow: 0 0 6px #ffc94d;
+}
+
+@keyframes faisca {
+  from {
+    transform: rotate(var(--a)) translateX(0) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: rotate(var(--a)) translateX(var(--d)) scale(0);
+    opacity: 0;
+  }
+}
+
+.bloco-exercicio.completo .bloco-exercicio-titulo {
+  color: var(--cor-sucesso);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .checklist-checkbox.pop,
+  .checklist-checkbox.pop::after {
+    animation: none;
+  }
 }
 
 .checklist-info {
@@ -1055,9 +1287,14 @@
 }
 
 .stat-tile .valor {
-  font-size: 2rem;
+  font-size: 2.2rem;
   font-weight: 800;
-  color: var(--cor-primaria);
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums; /* contagem animada sem o número "tremer" */
+  background: linear-gradient(120deg, var(--cor-primaria), color-mix(in srgb, var(--cor-primaria) 45%, #ff4fa3));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .stat-tile .rotulo {
@@ -1130,7 +1367,7 @@
 }
 
 .spotlight-card.spot-ativo {
-  transform: translateY(-4px);
+  transform: perspective(900px) rotateX(var(--card-rx, 0deg)) rotateY(var(--card-ry, 0deg)) translateY(-4px);
   box-shadow: var(--sombra-lg);
 }
 
