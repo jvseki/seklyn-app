@@ -20,9 +20,6 @@ class Settings(BaseSettings):
     # Frontend (CORS + geração de links do aluno)
     frontend_url: str = "http://localhost:5500"
 
-    # URL pública da API (usada no retorno/notificação de pagamentos).
-    api_url: str = "http://localhost:8000"
-
     # Mercado Pago — assinatura mensal do Personal (Assinaturas / preapproval).
     # O valor cobrado é por Personal (Assinatura.valor_mensal, definido no admin),
     # porque o preço é negociado individualmente. Sem token configurado, o botão
