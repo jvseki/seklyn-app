@@ -20,12 +20,18 @@ class Settings(BaseSettings):
     # Frontend (CORS + geração de links do aluno)
     frontend_url: str = "http://localhost:5500"
 
-    # Stripe (o valor cobrado é definido no Price configurado no painel do Stripe,
-    # não fica hardcoded aqui — o preço passou a ser negociado por Personal)
-    stripe_secret_key: str = ""
-    stripe_publishable_key: str = ""
-    stripe_webhook_secret: str = ""
-    stripe_price_id: str = ""
+    # URL pública da API (usada no retorno/notificação de pagamentos).
+    api_url: str = "http://localhost:8000"
+
+    # Mercado Pago — assinatura mensal do Personal (Assinaturas / preapproval).
+    # O valor cobrado é por Personal (Assinatura.valor_mensal, definido no admin),
+    # porque o preço é negociado individualmente. Sem token configurado, o botão
+    # de assinar responde "indisponível" em vez de quebrar.
+    # Use as credenciais de TESTE (TEST-...) em desenvolvimento.
+    mercadopago_access_token: str = ""
+    # Chave secreta dos webhooks (Suas integrações > Webhooks), pra validar o
+    # header x-signature das notificações.
+    mercadopago_webhook_secret: str = ""
 
     # E-mail transacional (confirmação de cadastro) via Resend.
     # Sem chave configurada, o e-mail só é logado no console (modo dev).

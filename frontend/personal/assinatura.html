@@ -60,10 +60,15 @@
         <h3 style="margin-bottom:var(--espaco-3);">Status atual</h3>
         <div id="status-assinatura"><div class="spinner"></div></div>
 
-        <button id="botao-assinar" class="btn btn-primary btn-block" style="margin-top:var(--espaco-5);">
-          Assinar agora
+        <button id="botao-assinar" class="btn btn-primary btn-block" style="margin-top:var(--espaco-5);" hidden>
+          Assinar com cartão
         </button>
-        <p class="hint-text" style="margin-top:var(--espaco-3);">Pagamento processado com segurança pelo Stripe.</p>
+        <button id="botao-cancelar-assinatura" class="btn btn-ghost btn-block" style="margin-top:var(--espaco-3);" hidden>
+          Cancelar assinatura
+        </button>
+        <p class="hint-text" id="nota-pagamento" style="margin-top:var(--espaco-3);">
+          Pagamento mensal no cartão, processado pelo Mercado Pago — os dados do cartão ficam com eles, nunca passam pelo Seklyn.
+        </p>
       </div>
     </main>
   </div>

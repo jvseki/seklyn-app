@@ -494,6 +494,33 @@
   }
 }
 
+/* Seletor de cor da conta no admin — sem largura mínima ele encolhia até
+   sobrar só a setinha dentro da tabela. */
+.tema-select {
+  min-width: 128px;
+  padding-block: 6px;
+  font-size: 0.85rem;
+}
+
+.admin-email-linha {
+  font-size: 0.85rem;
+  color: var(--cor-texto);
+  margin-top: 2px;
+}
+
+/* Mensalidade no admin: "R$ [ 150,00 ]" */
+.valor-mensal-campo {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: var(--cor-texto-muted);
+}
+
+.valor-mensal-campo .limite-input {
+  width: 84px;
+}
+
 .limite-input {
   width: 64px;
   padding: 4px 8px;

@@ -9,7 +9,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api.routes import admin, aluno, auth, personal, recomendacoes, stripe_webhook, videos
+from app.api.routes import admin, aluno, assinatura, auth, personal, recomendacoes, videos
 from app.core.config import get_settings
 from app.core.erros import tratar_erro_validacao
 
@@ -37,7 +37,7 @@ app.include_router(auth.router)
 app.include_router(personal.router)
 app.include_router(aluno.router)
 app.include_router(recomendacoes.router)
-app.include_router(stripe_webhook.router)
+app.include_router(assinatura.router)
 app.include_router(admin.router)
 app.include_router(videos.router)
 

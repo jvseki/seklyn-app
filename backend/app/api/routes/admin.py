@@ -23,6 +23,7 @@ from app.schemas.admin import (
     AdminLimiteIn,
     AdminPersonalListaOut,
     AdminTemaIn,
+    AdminValorIn,
 )
 
 router = APIRouter(prefix="/api/admin", tags=["Admin"])
@@ -90,6 +91,8 @@ def _linha_admin(db: Session, personal: Personal) -> AdminPersonalListaOut:
         criado_em=personal.criado_em,
         assinatura_status=assinatura.status,
         limite_alunos=assinatura.limite_alunos,
+        valor_mensal=assinatura.valor_mensal,
+        cobranca_automatica=bool(assinatura.mp_preapproval_id),
         total_alunos=total_alunos,
     )
 
@@ -138,6 +141,21 @@ def definir_limite_personal(
     personal = _obter_personal_por_id(db, personal_id)
     assinatura = _obter_ou_criar_assinatura(db, personal)
     assinatura.limite_alunos = dados.limite_alunos
+    db.commit()
+    return _linha_admin(db, personal)
+
+
+@router.put(
+    "/personais/{personal_id}/valor", response_model=AdminPersonalListaOut, dependencies=[Depends(exigir_admin)]
+)
+def definir_valor_personal(
+    personal_id: int, dados: AdminValorIn, db: Session = Depends(get_db)
+) -> AdminPersonalListaOut:
+    """Mensalidade combinada com o Personal. Vale pra próxima assinatura que
+    ele fizer — uma assinatura já ativa no cartão mantém o valor dela."""
+    personal = _obter_personal_por_id(db, personal_id)
+    assinatura = _obter_ou_criar_assinatura(db, personal)
+    assinatura.valor_mensal = dados.valor_mensal
     db.commit()
     return _linha_admin(db, personal)
 

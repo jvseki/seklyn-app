@@ -24,7 +24,22 @@ const ROTULO_STATUS = {
   inativa: "Inativa",
   past_due: "Atrasada",
   canceled: "Cancelada",
+  pendente: "Aguardando pagamento",
 };
+
+const formatoReais = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+/** Campo da mensalidade combinada (cobrada no cartão pelo Mercado Pago). */
+function campoValor(p) {
+  const valor = p.valor_mensal != null ? Number(p.valor_mensal).toFixed(2) : "";
+  return `
+    <div class="valor-mensal-campo">
+      <span>R$</span>
+      <input class="limite-input" type="number" min="1" step="0.01" placeholder="—" value="${valor}" data-valor-input data-id="${p.id}" aria-label="Mensalidade de ${escaparHtml(p.nome)}" />
+    </div>
+    ${p.cobranca_automatica ? '<div class="hint-text">no cartão</div>' : ""}
+  `;
+}
 
 // As mesmas 7 chaves com bloco de CSS pronto em variables.css. Uma cor nova
 // sempre exige desenhar o CSS antes (não dá pra digitar livre aqui) — é
@@ -50,7 +65,8 @@ function seletorTema(p) {
 
 function badgeAssinatura(status) {
   const rotulo = ROTULO_STATUS[status] || status;
-  const classe = status === "active" || status === "trialing" ? "badge-sucesso" : "badge-perigo";
+  const classe =
+    status === "active" || status === "trialing" ? "badge-sucesso" : status === "pendente" || status === "past_due" ? "badge-aviso" : "badge-perigo";
   return `<span class="badge ${classe}">${escaparHtml(rotulo)}</span>`;
 }
 
@@ -64,16 +80,16 @@ function linhaPersonal(p) {
     <tr data-linha="${p.id}">
       <td>
         <strong>${escaparHtml(p.nome)}</strong>${p.is_admin ? ' <span class="badge badge-primaria" style="margin-left:6px;">Admin</span>' : ""}
-        <div class="hint-text">${p.email_verificado ? "E-mail confirmado" : "E-mail pendente"}</div>
+        <div class="admin-email-linha">${escaparHtml(p.email)}</div>
+        <div class="hint-text">${p.email_verificado ? "E-mail confirmado" : "E-mail pendente"} · desde ${formatarDataHora(p.criado_em)}</div>
       </td>
-      <td>${escaparHtml(p.email)}</td>
       <td>${seletorTema(p)}</td>
       <td>${p.total_alunos}</td>
       <td>${badgeAssinatura(p.assinatura_status)}</td>
       <td>
         <input class="limite-input" type="number" min="0" placeholder="—" value="${p.limite_alunos ?? ""}" data-limite-input data-id="${p.id}" />
       </td>
-      <td>${formatarDataHora(p.criado_em)}</td>
+      <td>${campoValor(p)}</td>
       <td>${botaoAlternar}</td>
     </tr>
   `;
@@ -104,6 +120,7 @@ function cartaoPersonal(p) {
           <span class="admin-card-rotulo">Limite</span>
           <input class="limite-input" type="number" min="0" placeholder="—" value="${p.limite_alunos ?? ""}" data-limite-input data-id="${p.id}" />
         </div>
+        <div><span class="admin-card-rotulo">Mensalidade</span>${campoValor(p)}</div>
         <div><span class="admin-card-rotulo">Criado em</span>${formatarDataHora(p.criado_em)}</div>
       </div>
       <div class="admin-card-acoes">${botaoAlternar}</div>
@@ -203,6 +220,25 @@ async function aoTrocarLimite(evento) {
   }
 }
 
+async function aoTrocarValor(evento) {
+  const input = evento.target.closest("[data-valor-input]");
+  if (!input) return;
+  const id = Number(input.dataset.id);
+  const texto = input.value.trim();
+  const valor = texto === "" ? null : Number(texto);
+  if (valor !== null && !(valor > 0)) {
+    mostrarToast("Informe um valor maior que zero (ou deixe vazio).", "erro");
+    return;
+  }
+  try {
+    const atualizado = await api.definirValorPersonalAdmin(id, valor);
+    atualizarLinha(atualizado);
+    mostrarToast(valor === null ? "Mensalidade removida." : `Mensalidade definida: R$ ${formatoReais.format(valor)}.`, "sucesso");
+  } catch (erro) {
+    mostrarToast(mensagemDeErro(erro), "erro");
+  }
+}
+
 async function aoTrocarTema(evento) {
   const select = evento.target.closest("[data-tema-select]");
   if (!select) return;
@@ -219,6 +255,7 @@ async function aoTrocarTema(evento) {
 for (const el of [corpoTabelaEl, cartoesMobileEl]) {
   el.addEventListener("click", aoClicarAcao);
   el.addEventListener("change", aoTrocarLimite);
+  el.addEventListener("change", aoTrocarValor);
   el.addEventListener("change", aoTrocarTema);
 }
 

@@ -1,7 +1,8 @@
 from datetime import datetime
+from decimal import Decimal
 from typing import Literal
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 # Mesmas 7 chaves com bloco de CSS em variables.css ([data-tema-personalizado="X"]).
 # Uma cor nova sempre exige desenhar o bloco de CSS antes — por isso o admin só
@@ -30,6 +31,12 @@ class AdminLimiteIn(BaseModel):
     limite_alunos: int | None = None
 
 
+class AdminValorIn(BaseModel):
+    # Mensalidade combinada com o Personal (cobrada no cartão via Mercado
+    # Pago). None = ainda não combinado — ele não consegue assinar sozinho.
+    valor_mensal: Decimal | None = Field(default=None, gt=0, max_digits=10, decimal_places=2)
+
+
 class AdminTemaIn(BaseModel):
     tema_personalizado: TemaPersonalizado | None = None  # None = tema padrão (roxo)
 
@@ -47,4 +54,6 @@ class AdminPersonalListaOut(BaseModel):
     criado_em: datetime
     assinatura_status: str
     limite_alunos: int | None
+    valor_mensal: Decimal | None = None
+    cobranca_automatica: bool = False
     total_alunos: int

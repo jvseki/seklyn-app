@@ -163,9 +163,10 @@ export const api = {
     apiFetch(`/personal/recomendacoes/${id}`, { method: "PUT", body: JSON.stringify(dados) }),
   excluirRecomendacao: (id) => apiFetch(`/personal/recomendacoes/${id}`, { method: "DELETE" }),
 
-  // --- Assinatura / Stripe ---
+  // --- Assinatura (Mercado Pago) ---
   statusAssinatura: () => apiFetch("/personal/assinatura"),
-  criarCheckoutSession: () => apiFetch("/stripe/criar-checkout-session", { method: "POST" }),
+  iniciarCheckoutAssinatura: () => apiFetch("/personal/assinatura/checkout", { method: "POST" }),
+  cancelarAssinatura: () => apiFetch("/personal/assinatura/cancelar", { method: "POST" }),
 
   // --- Vídeos demonstrativos de exercício (reusados por nome, entre alunos) ---
   buscarVideoExercicio: (nomeExercicio) =>
@@ -192,6 +193,8 @@ export const api = {
   desativarPersonalAdmin: (id) => apiFetch(`/admin/personais/${id}/desativar`, { method: "POST" }),
   definirLimitePersonalAdmin: (id, limite_alunos) =>
     apiFetch(`/admin/personais/${id}/limite`, { method: "PUT", body: JSON.stringify({ limite_alunos }) }),
+  definirValorPersonalAdmin: (id, valor_mensal) =>
+    apiFetch(`/admin/personais/${id}/valor`, { method: "PUT", body: JSON.stringify({ valor_mensal }) }),
   definirTemaPersonalAdmin: (id, tema_personalizado) =>
     apiFetch(`/admin/personais/${id}/tema`, { method: "PUT", body: JSON.stringify({ tema_personalizado }) }),
 

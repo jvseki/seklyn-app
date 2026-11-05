@@ -1,6 +1,7 @@
 from datetime import datetime
+from decimal import Decimal
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, func
+from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -8,8 +9,13 @@ from app.core.database import Base
 
 class Assinatura(Base):
     """
-    Assinatura Stripe do Personal (1:1). `status` espelha o status da
-    subscription no Stripe (trialing, active, past_due, canceled, etc).
+    Assinatura do Personal (1:1), cobrada todo mês no cartão via Mercado Pago
+    (preapproval) — ou ativada manualmente pelo admin, pra exceções.
+
+    `status`: "active" / "trialing" liberam o uso; "pendente" = checkout
+    iniciado e ainda sem cartão aprovado; "past_due" = cobrança recusada ou
+    pausada; "canceled" / "inativa" bloqueiam. Ver
+    services/mercadopago_service.py pro mapeamento a partir do Mercado Pago.
     """
 
     __tablename__ = "assinaturas"
@@ -18,8 +24,10 @@ class Assinatura(Base):
     personal_id: Mapped[int] = mapped_column(
         ForeignKey("personais.id", ondelete="CASCADE"), unique=True, nullable=False
     )
-    stripe_customer_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    stripe_subscription_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Valor da mensalidade negociado com esse Personal (definido no admin).
+    # None = ainda não combinado — o Personal não consegue assinar sozinho.
+    valor_mensal: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
+    mp_preapproval_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     status: Mapped[str] = mapped_column(String(30), default="inativa", nullable=False)
     current_period_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     # Quantos alunos esse Personal pode cadastrar no plano dele. None = sem limite
