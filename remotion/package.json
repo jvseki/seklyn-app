@@ -4,7 +4,10 @@
   "private": true,
   "scripts": {
     "render-desktop": "remotion render src/index.ts LogoHeroDesktop out/logo-hero-desktop.mp4",
-    "render-mobile": "remotion render src/index.ts LogoHeroMobile out/logo-hero-mobile.mp4"
+    "render-mobile": "remotion render src/index.ts LogoHeroMobile out/logo-hero-mobile.mp4",
+    "render-apresentacao": "python scripts/gerar_trilha_apresentacao.py && remotion render src/index.ts ApresentacaoSeklyn out/seklyn-apresentacao-reels.mp4",
+    "render-wallpaper": "remotion still src/index.ts WallpaperIphone out/seklyn-wallpaper-iphone16pro.png",
+    "render-simulacao-loja": "remotion render src/index.ts SimulacaoLoja out/simulacao-loja-seklyn.mp4"
   },
   "dependencies": {
     "react": "^18.3.1",
