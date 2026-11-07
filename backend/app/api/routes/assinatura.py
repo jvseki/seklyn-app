@@ -39,6 +39,15 @@ def status_assinatura(
     personal: Personal = Depends(get_current_personal),
     db: Session = Depends(get_db),
 ) -> AssinaturaOut:
+    # Aguardando pagamento: além de esperar o webhook, pergunta direto pro
+    # Mercado Pago — se o webhook não estiver configurado (ou atrasar), a
+    # assinatura ativa do mesmo jeito quando o Personal volta pra tela.
+    assinatura = mp.obter_ou_criar_assinatura(db, personal)
+    if assinatura.status == "pendente" and assinatura.mp_preapproval_id and mp.configurado():
+        try:
+            mp.sincronizar_preapproval(db, assinatura.mp_preapproval_id)
+        except mp.ErroMercadoPago:
+            logger.warning("Não deu pra consultar o preapproval %s agora", assinatura.mp_preapproval_id)
     return _saida(db, personal)
 
 
