@@ -28,6 +28,9 @@ from app.schemas.admin import (
     AdminTesteCartaoIn,
     AdminTesteCartaoOut,
     AdminTesteReembolsoOut,
+    AdminTesteAvulsoOut,
+    AdminTestePixIn,
+    AdminTesteDebitoIn,
     AdminValorIn,
 )
 
@@ -235,5 +238,57 @@ def consultar_teste_cartao(preapproval_id: str = Path(pattern=ID_MP)) -> AdminTe
 def reembolsar_teste_cartao(preapproval_id: str = Path(pattern=ID_MP)) -> AdminTesteReembolsoOut:
     try:
         return AdminTesteReembolsoOut(**mp.cancelar_e_reembolsar_teste(preapproval_id))
+    except (ValueError, mp.ErroMercadoPago) as erro:
+        raise _erro_mp_amigavel(erro) from erro
+
+
+# ---------- Teste avulso: débito ou Pix de R$ 1,00 (com reembolso) ----------
+
+
+@router.post("/teste-pagamento/debito", response_model=AdminTesteAvulsoOut, dependencies=[Depends(exigir_admin)])
+def criar_teste_debito(dados: AdminTesteDebitoIn) -> AdminTesteAvulsoOut:
+    if not mp.configurado():
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Mercado Pago não configurado no servidor.")
+    try:
+        return AdminTesteAvulsoOut(
+            **mp.criar_pagamento_teste_debito(
+                dados.card_token,
+                dados.payment_method_id,
+                dados.payer_email,
+                dados.issuer_id,
+                dados.documento_tipo,
+                dados.documento_numero,
+            )
+        )
+    except mp.CartaoRecusado as recusa:
+        raise HTTPException(status_code=status.HTTP_402_PAYMENT_REQUIRED, detail=recusa.mensagem) from recusa
+    except mp.ErroMercadoPago as erro:
+        raise _erro_mp_amigavel(erro) from erro
+
+
+@router.post("/teste-pagamento/pix", response_model=AdminTesteAvulsoOut, dependencies=[Depends(exigir_admin)])
+def criar_teste_pix(dados: AdminTestePixIn) -> AdminTesteAvulsoOut:
+    if not mp.configurado():
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Mercado Pago não configurado no servidor.")
+    try:
+        return AdminTesteAvulsoOut(**mp.criar_pix_teste(dados.payer_email))
+    except mp.ErroMercadoPago as erro:
+        raise _erro_mp_amigavel(erro) from erro
+
+
+@router.get("/teste-pagamento/{pagamento_id}", response_model=AdminTesteAvulsoOut, dependencies=[Depends(exigir_admin)])
+def consultar_teste_pagamento(pagamento_id: str = Path(pattern=ID_MP)) -> AdminTesteAvulsoOut:
+    try:
+        return AdminTesteAvulsoOut(**mp.consultar_pagamento_teste(pagamento_id))
+    except (ValueError, mp.ErroMercadoPago) as erro:
+        raise _erro_mp_amigavel(erro) from erro
+
+
+@router.post(
+    "/teste-pagamento/{pagamento_id}/reembolsar", response_model=AdminTesteAvulsoOut, dependencies=[Depends(exigir_admin)]
+)
+def reembolsar_teste_pagamento(pagamento_id: str = Path(pattern=ID_MP)) -> AdminTesteAvulsoOut:
+    try:
+        return AdminTesteAvulsoOut(**mp.reembolsar_pagamento_teste(pagamento_id))
     except (ValueError, mp.ErroMercadoPago) as erro:
         raise _erro_mp_amigavel(erro) from erro

@@ -608,6 +608,97 @@ def cancelar_e_reembolsar_teste(preapproval_id: str) -> dict:
     return {"preapproval_id": preapproval_id, "cancelada": True, "reembolsados": reembolsados, "aguardando": aguardando}
 
 
+# Teste avulso (débito ou Pix de R$ 1,00), também marcado com PREFIXO_TESTE.
+
+
+def _resumo_teste(pagamento: dict) -> dict:
+    tipo = {"debit_card": "debito", "credit_card": "credito", "bank_transfer": "pix"}.get(pagamento.get("payment_type_id"))
+    if pagamento.get("payment_method_id") == "pix":
+        tipo = "pix"
+    dados = (pagamento.get("point_of_interaction") or {}).get("transaction_data") or {}
+    return {
+        "pagamento_id": str(pagamento["id"]),
+        "tipo": tipo or "debito",
+        "status": pagamento.get("status"),
+        "status_detail": pagamento.get("status_detail"),
+        "valor": pagamento.get("transaction_amount"),
+        "pix_qr_code": dados.get("qr_code"),
+        "pix_qr_code_base64": dados.get("qr_code_base64"),
+    }
+
+
+def criar_pagamento_teste_debito(
+    card_token: str,
+    payment_method_id: str,
+    payer_email: str,
+    issuer_id: str | None = None,
+    documento_tipo: str | None = None,
+    documento_numero: str | None = None,
+) -> dict:
+    pagador: dict = {"email": payer_email}
+    if documento_tipo and documento_numero:
+        pagador["identification"] = {"type": documento_tipo, "number": documento_numero}
+    corpo: dict = {
+        "transaction_amount": VALOR_TESTE,
+        "token": card_token,
+        "description": "Seklyn — teste de cobrança no débito (será reembolsado)",
+        "installments": 1,
+        "payment_method_id": payment_method_id,
+        "external_reference": f"{PREFIXO_TESTE}{uuid.uuid4().hex[:12]}",
+        "payer": pagador,
+    }
+    if issuer_id:
+        corpo["issuer_id"] = int(issuer_id) if str(issuer_id).isdigit() else issuer_id
+    try:
+        pagamento = _requisitar("POST", "/v1/payments", corpo)
+    except ErroMercadoPago as erro:
+        if erro.status_http and 400 <= erro.status_http < 500:
+            raise CartaoRecusado(_mensagem_recusa(str(erro))) from erro
+        raise
+    if pagamento.get("status") in ("rejected", "cancelled"):
+        raise CartaoRecusado(_mensagem_recusa(pagamento.get("status_detail") or ""))
+    return _resumo_teste(pagamento)
+
+
+def criar_pix_teste(payer_email: str) -> dict:
+    expira = _agora() + timedelta(hours=1)
+    pagamento = _requisitar(
+        "POST",
+        "/v1/payments",
+        {
+            "transaction_amount": VALOR_TESTE,
+            "payment_method_id": "pix",
+            "description": "Seklyn — teste de cobrança no Pix (será reembolsado)",
+            "external_reference": f"{PREFIXO_TESTE}{uuid.uuid4().hex[:12]}",
+            "payer": {"email": payer_email},
+            "date_of_expiration": expira.isoformat(timespec="milliseconds"),
+        },
+    )
+    return _resumo_teste(pagamento)
+
+
+def _pagamento_de_teste(pagamento_id: str) -> dict:
+    pagamento = _requisitar("GET", f"/v1/payments/{pagamento_id}")
+    if not (pagamento.get("external_reference") or "").startswith(PREFIXO_TESTE):
+        raise ValueError("Esse pagamento não é de teste.")
+    return pagamento
+
+
+def consultar_pagamento_teste(pagamento_id: str) -> dict:
+    return _resumo_teste(_pagamento_de_teste(pagamento_id))
+
+
+def reembolsar_pagamento_teste(pagamento_id: str) -> dict:
+    """Aprovado → reembolsa. Pix ainda não pago → cancela o QR."""
+    pagamento = _pagamento_de_teste(pagamento_id)
+    situacao = pagamento.get("status")
+    if situacao == "approved":
+        _requisitar("POST", f"/v1/payments/{pagamento_id}/refunds", {})
+    elif situacao in ("pending", "in_process"):
+        _requisitar("PUT", f"/v1/payments/{pagamento_id}", {"status": "cancelled"})
+    return _resumo_teste(_requisitar("GET", f"/v1/payments/{pagamento_id}"))
+
+
 def assinatura_webhook_valida(x_signature: str | None, x_request_id: str | None, data_id: str | None) -> bool:
     """
     Valida o header x-signature ("ts=...,v1=...") do Mercado Pago: v1 é o

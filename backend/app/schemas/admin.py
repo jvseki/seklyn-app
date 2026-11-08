@@ -63,6 +63,27 @@ class AdminTesteCartaoOut(BaseModel):
     pagamentos: list[AdminTestePagamentoOut] = []
 
 
+class AdminTesteDebitoIn(AdminTesteCartaoIn):
+    payment_method_id: str = Field(min_length=2, max_length=40)
+    issuer_id: str | None = Field(default=None, max_length=20)
+    documento_tipo: str | None = Field(default=None, max_length=10)
+    documento_numero: str | None = Field(default=None, max_length=20)
+
+
+class AdminTestePixIn(BaseModel):
+    payer_email: EmailStr
+
+
+class AdminTesteAvulsoOut(BaseModel):
+    pagamento_id: str
+    tipo: str  # "debito" ou "pix"
+    status: str | None = None
+    status_detail: str | None = None
+    valor: float | None = None
+    pix_qr_code: str | None = None
+    pix_qr_code_base64: str | None = None
+
+
 class AdminTesteReembolsoOut(BaseModel):
     preapproval_id: str
     cancelada: bool

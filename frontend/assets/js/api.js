@@ -216,6 +216,11 @@ export const api = {
   marcarRepassadoLojaAdmin: (id) => apiFetch(`/admin/loja/vendas/${id}/repassado`, { method: "POST" }),
   reembolsarVendaLojaAdmin: (id) => apiFetch(`/admin/loja/vendas/${id}/reembolsar`, { method: "POST" }),
   configTesteCartaoAdmin: () => apiFetch("/admin/teste-cartao/config"),
+  criarTesteDebitoAdmin: (dados) => apiFetch("/admin/teste-pagamento/debito", { method: "POST", body: JSON.stringify(dados) }),
+  criarTestePixAdmin: (payerEmail) =>
+    apiFetch("/admin/teste-pagamento/pix", { method: "POST", body: JSON.stringify({ payer_email: payerEmail }) }),
+  consultarTestePagamentoAdmin: (id) => apiFetch(`/admin/teste-pagamento/${encodeURIComponent(id)}`),
+  reembolsarTestePagamentoAdmin: (id) => apiFetch(`/admin/teste-pagamento/${encodeURIComponent(id)}/reembolsar`, { method: "POST" }),
   criarTesteCartaoAdmin: (cardToken, payerEmail) =>
     apiFetch("/admin/teste-cartao", { method: "POST", body: JSON.stringify({ card_token: cardToken, payer_email: payerEmail }) }),
   consultarTesteCartaoAdmin: (id) => apiFetch(`/admin/teste-cartao/${encodeURIComponent(id)}`),
