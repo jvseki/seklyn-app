@@ -63,11 +63,15 @@
         <button id="botao-assinar" class="btn btn-primary btn-block" style="margin-top:var(--espaco-5);" hidden>
           Assinar com cartão
         </button>
+        <!-- Formulário de cartão do Mercado Pago (Card Brick): o número do
+             cartão é digitado num campo do próprio Mercado Pago e vira um
+             token — nunca passa pelo Seklyn. Ver assets/js/assinatura.js. -->
+        <div id="cartao-brick" style="margin-top:var(--espaco-4);" hidden></div>
         <button id="botao-cancelar-assinatura" class="btn btn-ghost btn-block" style="margin-top:var(--espaco-3);" hidden>
           Cancelar assinatura
         </button>
         <p class="hint-text" id="nota-pagamento" style="margin-top:var(--espaco-3);">
-          Pagamento mensal no cartão, processado pelo Mercado Pago — os dados do cartão ficam com eles, nunca passam pelo Seklyn.
+          Cobrança mensal automática no cartão, processada pelo Mercado Pago — os dados do cartão ficam com eles e nunca passam pelo Seklyn. Não precisa ter conta no Mercado Pago.
         </p>
       </div>
     </main>
@@ -75,6 +79,7 @@
 
   <script type="module" src="../assets/js/tema.js"></script>
   <script type="module" src="../assets/js/menu.js"></script>
+  <script src="https://sdk.mercadopago.com/js/v2"></script>
   <script type="module" src="../assets/js/assinatura.js"></script>
   <script type="module" src="../assets/js/spotlight.js"></script>
 </body>

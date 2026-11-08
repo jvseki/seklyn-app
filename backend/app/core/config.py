@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     # de assinar responde "indisponível" em vez de quebrar.
     # Use as credenciais de TESTE (TEST-...) em desenvolvimento.
     mercadopago_access_token: str = ""
+    # Chave PÚBLICA (vai pro navegador, é feita pra isso): carrega o formulário
+    # de cartão do Mercado Pago (Card Brick) dentro da página de assinatura.
+    mercadopago_public_key: str = ""
     # Chave secreta dos webhooks (Suas integrações > Webhooks), pra validar o
     # header x-signature das notificações.
     mercadopago_webhook_secret: str = ""

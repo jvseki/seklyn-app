@@ -3,10 +3,11 @@ Integração com o Mercado Pago — assinatura mensal do Personal (produto
 "Assinaturas", recurso /preapproval).
 
 Fluxo:
-1. O Personal clica em "Assinar": criamos um preapproval "pending" com o
-   valor combinado com ele e redirecionamos pro `init_point` — o cartão é
-   digitado na página do próprio Mercado Pago (o Seklyn nunca toca em dado
-   de cartão).
+1. O Personal digita o cartão no formulário do Mercado Pago embutido na
+   página de assinatura (Card Brick). O Brick troca o cartão por um
+   `card_token` de uso único — o número nunca chega no Seklyn — e com ele
+   criamos o preapproval já "authorized", com o valor combinado com esse
+   Personal. Não exige conta Mercado Pago.
 2. O Mercado Pago avisa por webhook quando a assinatura muda ou uma
    cobrança mensal acontece. A notificação só diz QUAL recurso mudou: o
    status real é sempre buscado na API com o nosso token
@@ -47,6 +48,35 @@ class ErroMercadoPago(Exception):
     def __init__(self, mensagem: str, status_http: int | None = None):
         super().__init__(mensagem)
         self.status_http = status_http
+
+
+class CartaoRecusado(Exception):
+    """O Mercado Pago recusou o cartão — `mensagem` já é pra mostrar ao Personal."""
+
+    def __init__(self, mensagem: str):
+        super().__init__(mensagem)
+        self.mensagem = mensagem
+
+
+# Motivos de recusa mais comuns do Mercado Pago -> texto pro Personal.
+MOTIVOS_RECUSA = {
+    "cc_rejected_insufficient_amount": "Saldo ou limite insuficiente nesse cartão.",
+    "cc_rejected_bad_filled_security_code": "O código de segurança (CVV) não confere.",
+    "cc_rejected_bad_filled_date": "A data de validade não confere.",
+    "cc_rejected_bad_filled_card_number": "O número do cartão não confere.",
+    "cc_rejected_call_for_authorize": "Seu banco pediu pra você autorizar essa cobrança. Fale com ele e tente de novo.",
+    "cc_rejected_card_disabled": "Esse cartão está desativado. Fale com seu banco ou use outro.",
+    "cc_rejected_high_risk": "O pagamento foi recusado pela análise de segurança. Tente outro cartão.",
+    "cc_rejected_max_attempts": "Muitas tentativas com esse cartão. Espere um pouco ou use outro.",
+    "cc_rejected_duplicated_payment": "Esse pagamento já foi feito.",
+}
+
+
+def _mensagem_recusa(detalhe: str) -> str:
+    for codigo, texto in MOTIVOS_RECUSA.items():
+        if codigo in detalhe:
+            return texto
+    return "O cartão foi recusado. Confira os dados ou tente outro cartão."
 
 
 def configurado() -> bool:
@@ -95,9 +125,13 @@ def obter_ou_criar_assinatura(db: Session, personal: Personal) -> Assinatura:
     return assinatura
 
 
-def iniciar_assinatura(db: Session, personal: Personal, assinatura: Assinatura) -> str:
-    """Cria o preapproval com o valor desse Personal e devolve a URL do
-    checkout do Mercado Pago (init_point)."""
+def assinar_com_cartao(db: Session, personal: Personal, assinatura: Assinatura, card_token: str) -> Assinatura:
+    """
+    Cria a assinatura mensal direto com o cartão digitado no formulário do
+    Mercado Pago dentro do Seklyn (Card Brick). O número do cartão nunca
+    chega aqui: o Brick troca ele por um `card_token` de uso único, e é só
+    isso que o backend recebe. Não exige conta Mercado Pago do Personal.
+    """
     valor: Decimal = assinatura.valor_mensal
     # Um checkout anterior que ficou pela metade (ou uma assinatura com
     # cobrança recusada) é cancelado antes — senão o Personal poderia acabar
@@ -108,27 +142,39 @@ def iniciar_assinatura(db: Session, personal: Personal, assinatura: Assinatura) 
         except ErroMercadoPago:
             logger.warning("Não deu pra cancelar o preapproval pendente %s", assinatura.mp_preapproval_id)
 
-    resposta = _requisitar(
-        "POST",
-        "/preapproval",
-        {
-            "reason": "Seklyn — assinatura mensal",
-            "external_reference": f"seklyn-personal-{personal.id}",
-            "payer_email": personal.email,
-            "auto_recurring": {
-                "frequency": 1,
-                "frequency_type": "months",
-                "transaction_amount": float(valor),
-                "currency_id": "BRL",
+    try:
+        resposta = _requisitar(
+            "POST",
+            "/preapproval",
+            {
+                "reason": "Seklyn — assinatura mensal",
+                "external_reference": f"seklyn-personal-{personal.id}",
+                "payer_email": personal.email,
+                "card_token_id": card_token,
+                "auto_recurring": {
+                    "frequency": 1,
+                    "frequency_type": "months",
+                    "transaction_amount": float(valor),
+                    "currency_id": "BRL",
+                },
+                "back_url": f"{settings.frontend_url}/personal/assinatura.html",
+                "status": "authorized",
             },
-            "back_url": f"{settings.frontend_url}/personal/assinatura.html?status=retorno",
-            "status": "pending",
-        },
-    )
+        )
+    except ErroMercadoPago as erro:
+        # 4xx = o Mercado Pago recusou (cartão, dados) — mensagem pro Personal.
+        # Sem status HTTP / 5xx = instabilidade, sobe como erro genérico.
+        if erro.status_http and 400 <= erro.status_http < 500:
+            raise CartaoRecusado(_mensagem_recusa(str(erro))) from erro
+        raise
+
     assinatura.mp_preapproval_id = resposta["id"]
-    assinatura.status = "pendente"
+    assinatura.status = STATUS_PREAPPROVAL.get(resposta.get("status"), "pendente")
+    proxima = _data_iso(resposta.get("next_payment_date"))
+    if proxima:
+        assinatura.current_period_end = proxima
     db.commit()
-    return resposta["init_point"]
+    return assinatura
 
 
 def cancelar_assinatura(db: Session, assinatura: Assinatura) -> None:

@@ -13,7 +13,7 @@ from app.core.database import get_db
 from app.deps import get_current_personal
 from app.models.aluno import Aluno
 from app.models.personal import Personal
-from app.schemas.assinatura import AssinaturaOut, CheckoutSessionOut
+from app.schemas.assinatura import AssinarCartaoIn, AssinaturaOut
 from app.services import mercadopago_service as mp
 
 router = APIRouter(tags=["Assinatura"])
@@ -30,7 +30,8 @@ def _saida(db: Session, personal: Personal) -> AssinaturaOut:
         alunos_cadastrados=db.query(Aluno).filter(Aluno.personal_id == personal.id).count(),
         valor_mensal=assinatura.valor_mensal,
         automatica=bool(assinatura.mp_preapproval_id),
-        pagamento_disponivel=mp.configurado(),
+        pagamento_disponivel=mp.configurado() and bool(mp.settings.mercadopago_public_key),
+        mp_public_key=mp.settings.mercadopago_public_key or None,
     )
 
 
@@ -51,11 +52,14 @@ def status_assinatura(
     return _saida(db, personal)
 
 
-@router.post("/api/personal/assinatura/checkout", response_model=CheckoutSessionOut)
-def iniciar_checkout(
+@router.post("/api/personal/assinatura/cartao", response_model=AssinaturaOut)
+def assinar_com_cartao(
+    dados: AssinarCartaoIn,
     personal: Personal = Depends(get_current_personal),
     db: Session = Depends(get_db),
-) -> CheckoutSessionOut:
+) -> AssinaturaOut:
+    """Recebe só o card_token gerado pelo formulário do Mercado Pago (o
+    número do cartão nunca passa por aqui) e cria a assinatura mensal."""
     if not mp.configurado():
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -70,13 +74,15 @@ def iniciar_checkout(
     if assinatura.ativa and assinatura.mp_preapproval_id:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Sua assinatura já está ativa.")
     try:
-        url = mp.iniciar_assinatura(db, personal, assinatura)
+        mp.assinar_com_cartao(db, personal, assinatura, dados.card_token)
+    except mp.CartaoRecusado as recusa:
+        raise HTTPException(status_code=status.HTTP_402_PAYMENT_REQUIRED, detail=recusa.mensagem) from recusa
     except mp.ErroMercadoPago as erro:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="Não foi possível abrir o pagamento agora. Tente novamente em instantes.",
+            detail="Não foi possível falar com o Mercado Pago agora. Nenhuma cobrança foi feita — tente de novo em instantes.",
         ) from erro
-    return CheckoutSessionOut(checkout_url=url)
+    return _saida(db, personal)
 
 
 @router.post("/api/personal/assinatura/cancelar", response_model=AssinaturaOut)

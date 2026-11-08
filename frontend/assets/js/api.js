@@ -165,7 +165,8 @@ export const api = {
 
   // --- Assinatura (Mercado Pago) ---
   statusAssinatura: () => apiFetch("/personal/assinatura"),
-  iniciarCheckoutAssinatura: () => apiFetch("/personal/assinatura/checkout", { method: "POST" }),
+  assinarComCartao: (cardToken) =>
+    apiFetch("/personal/assinatura/cartao", { method: "POST", body: JSON.stringify({ card_token: cardToken }) }),
   cancelarAssinatura: () => apiFetch("/personal/assinatura/cancelar", { method: "POST" }),
 
   // --- Vídeos demonstrativos de exercício (reusados por nome, entre alunos) ---
