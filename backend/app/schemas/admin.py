@@ -37,6 +37,39 @@ class AdminValorIn(BaseModel):
     valor_mensal: Decimal | None = Field(default=None, gt=0, max_digits=10, decimal_places=2)
 
 
+class AdminTesteCartaoConfigOut(BaseModel):
+    disponivel: bool
+    public_key: str | None = None
+    email_sugerido: str
+    valor: float
+
+
+class AdminTesteCartaoIn(BaseModel):
+    card_token: str = Field(min_length=8, max_length=200)
+    # Precisa ser diferente do e-mail da conta Mercado Pago que recebe
+    # (o MP não deixa pagar a si mesmo).
+    payer_email: EmailStr
+
+
+class AdminTestePagamentoOut(BaseModel):
+    id: str
+    status: str | None = None
+    valor: float | None = None
+
+
+class AdminTesteCartaoOut(BaseModel):
+    preapproval_id: str
+    status: str | None = None
+    pagamentos: list[AdminTestePagamentoOut] = []
+
+
+class AdminTesteReembolsoOut(BaseModel):
+    preapproval_id: str
+    cancelada: bool
+    reembolsados: list[str]
+    aguardando: int
+
+
 class AdminTemaIn(BaseModel):
     tema_personalizado: TemaPersonalizado | None = None  # None = tema padrão (roxo)
 

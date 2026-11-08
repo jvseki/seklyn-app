@@ -231,6 +231,102 @@ def tratar_pagamento_autorizado(db: Session, pagamento_id: str) -> None:
         db.commit()
 
 
+# ---------- Teste de cobrança real (painel admin) ----------
+#
+# Assinatura de R$ 1,00 SEPARADA da conta de qualquer Personal, só pra o dono
+# do produto confirmar que a cobrança no cartão funciona de ponta a ponta.
+# Marcada pelo external_reference — o reembolso só aceita assinaturas com
+# essa marca, então o botão nunca consegue estornar cliente de verdade.
+
+PREFIXO_TESTE = "seklyn-teste-"
+VALOR_TESTE = 1.00
+
+
+def criar_assinatura_teste(card_token: str, payer_email: str) -> dict:
+    referencia = f"{PREFIXO_TESTE}{uuid.uuid4().hex[:12]}"
+    try:
+        resposta = _requisitar(
+            "POST",
+            "/preapproval",
+            {
+                "reason": "Seklyn — teste de cobrança (será reembolsado)",
+                "external_reference": referencia,
+                "payer_email": payer_email,
+                "card_token_id": card_token,
+                "auto_recurring": {
+                    "frequency": 1,
+                    "frequency_type": "months",
+                    "transaction_amount": VALOR_TESTE,
+                    "currency_id": "BRL",
+                },
+                "back_url": f"{settings.frontend_url}/personal/admin.html",
+                "status": "authorized",
+            },
+        )
+    except ErroMercadoPago as erro:
+        if erro.status_http and 400 <= erro.status_http < 500:
+            raise CartaoRecusado(_mensagem_recusa(str(erro))) from erro
+        raise
+    return {"preapproval_id": resposta["id"], "status": resposta.get("status")}
+
+
+def _preapproval_de_teste(preapproval_id: str) -> dict:
+    preapproval = _requisitar("GET", f"/preapproval/{preapproval_id}")
+    if not (preapproval.get("external_reference") or "").startswith(PREFIXO_TESTE):
+        raise ValueError("Essa assinatura não é de teste.")
+    return preapproval
+
+
+def _pagamentos_da_assinatura(preapproval: dict) -> list[dict]:
+    """Cobranças já geradas por uma assinatura: [{"id", "status", "valor"}].
+    Tenta a busca de cobranças da assinatura e, de reserva, a busca de
+    pagamentos pela referência — o primeiro débito pode levar alguns
+    minutos pra aparecer depois da autorização."""
+    encontrados: dict[str, dict] = {}
+    consultas = [
+        (f"/authorized_payments/search?preapproval_id={preapproval['id']}", lambda item: {"transaction_amount": item.get("transaction_amount"), **(item.get("payment") or {})}),
+        (f"/v1/payments/search?external_reference={preapproval.get('external_reference', '')}", lambda item: item),
+    ]
+    for caminho, extrair in consultas:
+        try:
+            resultado = _requisitar("GET", caminho)
+        except ErroMercadoPago:
+            logger.warning("Busca de pagamentos falhou: %s", caminho)
+            continue
+        for item in resultado.get("results", []):
+            pagamento = extrair(item)
+            if pagamento.get("id"):
+                encontrados[str(pagamento["id"])] = {
+                    "id": str(pagamento["id"]),
+                    "status": pagamento.get("status"),
+                    "valor": pagamento.get("transaction_amount"),
+                }
+    return list(encontrados.values())
+
+
+def consultar_teste(preapproval_id: str) -> dict:
+    preapproval = _preapproval_de_teste(preapproval_id)
+    return {
+        "preapproval_id": preapproval_id,
+        "status": preapproval.get("status"),
+        "pagamentos": _pagamentos_da_assinatura(preapproval),
+    }
+
+
+def cancelar_e_reembolsar_teste(preapproval_id: str) -> dict:
+    preapproval = _preapproval_de_teste(preapproval_id)
+    if preapproval.get("status") != "cancelled":
+        _requisitar("PUT", f"/preapproval/{preapproval_id}", {"status": "cancelled"})
+    reembolsados, aguardando = [], 0
+    for pagamento in _pagamentos_da_assinatura(preapproval):
+        if pagamento["status"] == "approved":
+            _requisitar("POST", f"/v1/payments/{pagamento['id']}/refunds", {})
+            reembolsados.append(pagamento["id"])
+        elif pagamento["status"] in ("pending", "in_process", "authorized"):
+            aguardando += 1
+    return {"preapproval_id": preapproval_id, "cancelada": True, "reembolsados": reembolsados, "aguardando": aguardando}
+
+
 def assinatura_webhook_valida(x_signature: str | None, x_request_id: str | None, data_id: str | None) -> bool:
     """
     Valida o header x-signature ("ts=...,v1=...") do Mercado Pago: v1 é o

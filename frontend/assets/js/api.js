@@ -196,6 +196,11 @@ export const api = {
     apiFetch(`/admin/personais/${id}/limite`, { method: "PUT", body: JSON.stringify({ limite_alunos }) }),
   definirValorPersonalAdmin: (id, valor_mensal) =>
     apiFetch(`/admin/personais/${id}/valor`, { method: "PUT", body: JSON.stringify({ valor_mensal }) }),
+  configTesteCartaoAdmin: () => apiFetch("/admin/teste-cartao/config"),
+  criarTesteCartaoAdmin: (cardToken, payerEmail) =>
+    apiFetch("/admin/teste-cartao", { method: "POST", body: JSON.stringify({ card_token: cardToken, payer_email: payerEmail }) }),
+  consultarTesteCartaoAdmin: (id) => apiFetch(`/admin/teste-cartao/${encodeURIComponent(id)}`),
+  reembolsarTesteCartaoAdmin: (id) => apiFetch(`/admin/teste-cartao/${encodeURIComponent(id)}/reembolsar`, { method: "POST" }),
   definirTemaPersonalAdmin: (id, tema_personalizado) =>
     apiFetch(`/admin/personais/${id}/tema`, { method: "PUT", body: JSON.stringify({ tema_personalizado }) }),
 

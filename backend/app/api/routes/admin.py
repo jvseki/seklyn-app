@@ -6,7 +6,7 @@ de um Personal é ativada/desativada por e-mail, sem precisar entrar na VPS.
 Protegido por uma chave simples (header X-Admin-Key), não por login de
 Personal — é uma rota de uso do dono do produto, não de cliente.
 """
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Path, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -16,6 +16,7 @@ from app.deps import exigir_admin
 from app.models.aluno import Aluno
 from app.models.assinatura import Assinatura
 from app.models.personal import Personal
+from app.services import mercadopago_service as mp
 from app.schemas.admin import (
     AdminAssinaturaOut,
     AdminAtivarIn,
@@ -23,6 +24,10 @@ from app.schemas.admin import (
     AdminLimiteIn,
     AdminPersonalListaOut,
     AdminTemaIn,
+    AdminTesteCartaoConfigOut,
+    AdminTesteCartaoIn,
+    AdminTesteCartaoOut,
+    AdminTesteReembolsoOut,
     AdminValorIn,
 )
 
@@ -170,3 +175,61 @@ def definir_tema_personal(personal_id: int, dados: AdminTemaIn, db: Session = De
     personal.tema_personalizado = dados.tema_personalizado
     db.commit()
     return _linha_admin(db, personal)
+
+
+# --- Teste de cobrança real no cartão (R$ 1,00, depois cancela e reembolsa) ---
+# Pra o dono do produto validar a integração com o Mercado Pago com o
+# próprio cartão, sem mexer na assinatura de nenhum Personal (nem na dele).
+
+
+def _erro_mp_amigavel(erro: Exception) -> HTTPException:
+    if isinstance(erro, mp.CartaoRecusado):
+        return HTTPException(status_code=status.HTTP_402_PAYMENT_REQUIRED, detail=erro.mensagem)
+    if isinstance(erro, ValueError):
+        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(erro))
+    return HTTPException(
+        status_code=status.HTTP_502_BAD_GATEWAY,
+        detail="Não foi possível falar com o Mercado Pago agora. Tente de novo em instantes.",
+    )
+
+
+ID_MP = r"^[A-Za-z0-9_-]{1,64}$"  # IDs do Mercado Pago: nada de / ? # na URL
+
+
+@router.get("/teste-cartao/config", response_model=AdminTesteCartaoConfigOut)
+def config_teste_cartao(admin: Personal = Depends(exigir_admin)) -> AdminTesteCartaoConfigOut:
+    return AdminTesteCartaoConfigOut(
+        disponivel=mp.configurado() and bool(settings.mercadopago_public_key),
+        public_key=settings.mercadopago_public_key or None,
+        email_sugerido=admin.email,
+        valor=mp.VALOR_TESTE,
+    )
+
+
+@router.post("/teste-cartao", response_model=AdminTesteCartaoOut, dependencies=[Depends(exigir_admin)])
+def criar_teste_cartao(dados: AdminTesteCartaoIn) -> AdminTesteCartaoOut:
+    if not mp.configurado():
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Mercado Pago não configurado no servidor.")
+    try:
+        criado = mp.criar_assinatura_teste(dados.card_token, dados.payer_email)
+    except (mp.CartaoRecusado, mp.ErroMercadoPago) as erro:
+        raise _erro_mp_amigavel(erro) from erro
+    return AdminTesteCartaoOut(preapproval_id=criado["preapproval_id"], status=criado["status"])
+
+
+@router.get("/teste-cartao/{preapproval_id}", response_model=AdminTesteCartaoOut, dependencies=[Depends(exigir_admin)])
+def consultar_teste_cartao(preapproval_id: str = Path(pattern=ID_MP)) -> AdminTesteCartaoOut:
+    try:
+        return AdminTesteCartaoOut(**mp.consultar_teste(preapproval_id))
+    except (ValueError, mp.ErroMercadoPago) as erro:
+        raise _erro_mp_amigavel(erro) from erro
+
+
+@router.post(
+    "/teste-cartao/{preapproval_id}/reembolsar", response_model=AdminTesteReembolsoOut, dependencies=[Depends(exigir_admin)]
+)
+def reembolsar_teste_cartao(preapproval_id: str = Path(pattern=ID_MP)) -> AdminTesteReembolsoOut:
+    try:
+        return AdminTesteReembolsoOut(**mp.cancelar_e_reembolsar_teste(preapproval_id))
+    except (ValueError, mp.ErroMercadoPago) as erro:
+        raise _erro_mp_amigavel(erro) from erro

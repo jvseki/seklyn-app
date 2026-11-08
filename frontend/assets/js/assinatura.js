@@ -5,6 +5,7 @@
 // Personal não precisa ter conta no Mercado Pago.
 import { api } from "./api.js";
 import { protegerPagina } from "./auth.js";
+import { montarFormularioCartao } from "./cartao-mp.js";
 import { confirmarAcao } from "./confirmar.js";
 import { $, escaparHtml, formatarDataHora, mensagemDeErro, mostrarToast } from "./utils.js";
 
@@ -71,67 +72,48 @@ async function carregarStatus() {
 }
 
 function fecharFormularioCartao() {
-  formularioCartao?.unmount();
+  formularioCartao?.desmontar();
   formularioCartao = null;
   containerCartao.hidden = true;
   containerCartao.innerHTML = "";
 }
 
-/** Monta o formulário de cartão do Mercado Pago (Card Brick) na página. */
+/** Abre o formulário de cartão do Mercado Pago (ver cartao-mp.js). */
 async function abrirFormularioCartao() {
   const a = assinaturaAtual;
-  if (typeof window.MercadoPago === "undefined") {
-    mostrarToast("Não deu pra carregar o formulário do Mercado Pago. Verifique sua internet e recarregue a página.", "erro");
-    return;
-  }
   botaoAssinar.hidden = true;
   containerCartao.hidden = false;
   containerCartao.innerHTML = '<div class="spinner" style="margin:var(--espaco-4) auto;"></div>';
-
   const personal = await api.me().catch(() => null);
-  const corMarca = getComputedStyle(document.documentElement).getPropertyValue("--cor-primaria").trim() || "#7c3aed";
-  const mp = new window.MercadoPago(a.mp_public_key, { locale: "pt-BR" });
-
   try {
     containerCartao.innerHTML = "";
-    formularioCartao = await mp.bricks().create("cardPayment", "cartao-brick", {
-      initialization: {
-        amount: Number(a.valor_mensal),
-        payer: personal?.email ? { email: personal.email } : undefined,
-      },
-      customization: {
-        paymentMethods: { maxInstallments: 1 }, // mensalidade: sempre à vista
-        visual: {
-          style: { theme: "default", customVariables: { baseColor: corMarca } },
-          texts: { formSubmit: `Assinar por ${reais(a.valor_mensal)}/mês` },
-        },
-      },
-      callbacks: {
-        onReady: () => {},
-        // O Brick já validou e tokenizou o cartão; só o token vem pra cá.
-        onSubmit: (dadosCartao) =>
-          api
-            .assinarComCartao(dadosCartao.token)
-            .then((assinatura) => {
-              fecharFormularioCartao();
-              renderizar(assinatura);
-              mostrarToast(
-                assinatura.ativa ? "Assinatura ativa! Bem-vindo ao Seklyn." : "Pagamento enviado — aguardando confirmação do Mercado Pago.",
-                "sucesso"
-              );
-            })
-            .catch((erro) => {
-              mostrarToast(mensagemDeErro(erro), "erro");
-              throw erro; // devolve o Brick pro estado de edição, pra tentar de novo
-            }),
-        onError: (erro) => console.warn("Card Brick:", erro),
-      },
+    formularioCartao = await montarFormularioCartao({
+      containerId: "cartao-brick",
+      publicKey: a.mp_public_key,
+      valor: a.valor_mensal,
+      email: personal?.email,
+      textoBotao: `Assinar por ${reais(a.valor_mensal)}/mês`,
+      aoEnviar: (token) =>
+        api
+          .assinarComCartao(token)
+          .then((assinatura) => {
+            fecharFormularioCartao();
+            renderizar(assinatura);
+            mostrarToast(
+              assinatura.ativa ? "Assinatura ativa! Bem-vindo ao Seklyn." : "Pagamento enviado — aguardando confirmação do Mercado Pago.",
+              "sucesso"
+            );
+          })
+          .catch((erro) => {
+            mostrarToast(mensagemDeErro(erro), "erro");
+            throw erro; // devolve o formulário pro estado de edição
+          }),
     });
   } catch (erro) {
-    console.warn("Não deu pra montar o Card Brick:", erro);
+    console.warn("Não deu pra montar o formulário de cartão:", erro);
     fecharFormularioCartao();
     renderizar(assinaturaAtual);
-    mostrarToast("Não deu pra abrir o formulário de cartão agora. Tente de novo em instantes.", "erro");
+    mostrarToast(mensagemDeErro(erro), "erro");
   }
 }
 
