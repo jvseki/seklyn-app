@@ -165,8 +165,13 @@ export const api = {
 
   // --- Assinatura (Mercado Pago) ---
   statusAssinatura: () => apiFetch("/personal/assinatura"),
-  assinarComCartao: (cardToken) =>
-    apiFetch("/personal/assinatura/cartao", { method: "POST", body: JSON.stringify({ card_token: cardToken }) }),
+  // tipo: "credito" (automático) ou "debito" (1 mês); extras do débito vêm do formulário do MP.
+  assinarComCartao: (cardToken, tipo = "credito", extras = {}) =>
+    apiFetch("/personal/assinatura/cartao", {
+      method: "POST",
+      body: JSON.stringify({ card_token: cardToken, tipo, ...extras }),
+    }),
+  gerarPixAssinatura: () => apiFetch("/personal/assinatura/pix", { method: "POST" }),
   cancelarAssinatura: () => apiFetch("/personal/assinatura/cancelar", { method: "POST" }),
 
   // --- Vídeos demonstrativos de exercício (reusados por nome, entre alunos) ---

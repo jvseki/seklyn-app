@@ -32,6 +32,13 @@ class Settings(BaseSettings):
     # Chave secreta dos webhooks (Suas integrações > Webhooks), pra validar o
     # header x-signature das notificações.
     mercadopago_webhook_secret: str = ""
+    # Quantas horas depois de um pagamento o Personal ainda pode cancelar com
+    # reembolso total. Passou disso, cancelar só para a renovação e o acesso
+    # continua até o fim do mês já pago. 0 = sem reembolso.
+    reembolso_horas: int = 10
+    # Pix e débito não renovam sozinhos: a partir de quantos dias antes do
+    # vencimento o aviso grande de "pague o próximo mês" aparece.
+    dias_alerta_vencimento: int = 5
 
     # E-mail transacional (confirmação de cadastro) via Resend.
     # Sem chave configurada, o e-mail só é logado no console (modo dev).

@@ -62,6 +62,8 @@ def ativar_assinatura(dados: AdminAtivarIn, db: Session = Depends(get_db)) -> Ad
     personal = _obter_personal_por_email(db, dados.email)
     assinatura = _obter_ou_criar_assinatura(db, personal)
     assinatura.status = "active"
+    assinatura.forma_pagamento = None  # liberada pelo admin: não vence sozinha
+    assinatura.cancelamento_agendado = False
     if dados.limite_alunos is not None:
         assinatura.limite_alunos = dados.limite_alunos
     db.commit()
@@ -122,6 +124,8 @@ def ativar_personal(personal_id: int, db: Session = Depends(get_db)) -> AdminPer
     personal = _obter_personal_por_id(db, personal_id)
     assinatura = _obter_ou_criar_assinatura(db, personal)
     assinatura.status = "active"
+    assinatura.forma_pagamento = None  # liberada pelo admin: não vence sozinha
+    assinatura.cancelamento_agendado = False
     db.commit()
     return _linha_admin(db, personal)
 

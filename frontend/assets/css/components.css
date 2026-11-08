@@ -1885,3 +1885,242 @@ a.comentario-link:hover {
   border: 1px solid var(--cor-borda);
   font-size: 0.88rem;
 }
+
+
+/* ---------- Assinatura: formas de pagamento, resumo, Pix ---------- */
+.assinatura-card {
+  max-width: 560px;
+}
+
+.pagamento-titulo {
+  font-size: 1.05rem;
+  margin: var(--espaco-5) 0 var(--espaco-3);
+}
+
+.formas-pagamento {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--espaco-2);
+}
+
+.forma-opcao {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border: 2px solid var(--cor-borda);
+  border-radius: var(--raio-md);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.forma-opcao[hidden] {
+  display: none;
+}
+
+.forma-opcao input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.forma-opcao:hover {
+  border-color: var(--cor-primaria-clara, var(--cor-primaria));
+}
+
+.forma-opcao.selecionada {
+  border-color: var(--cor-primaria);
+  background: color-mix(in srgb, var(--cor-primaria) 7%, transparent);
+}
+
+.forma-opcao:focus-within {
+  outline: 2px solid var(--cor-primaria);
+  outline-offset: 2px;
+}
+
+.forma-nome {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.forma-detalhe {
+  font-size: 0.8rem;
+  color: var(--cor-texto-muted);
+}
+
+.resumo-compra {
+  margin-top: var(--espaco-4);
+  padding: var(--espaco-4);
+  border-radius: var(--raio-md);
+  background: color-mix(in srgb, var(--cor-primaria) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cor-primaria) 20%, transparent);
+}
+
+.resumo-linha {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--espaco-3);
+  padding: 6px 0;
+  font-size: 0.92rem;
+  border-bottom: 1px dashed color-mix(in srgb, var(--cor-primaria) 18%, transparent);
+}
+
+.resumo-linha strong {
+  text-align: right;
+}
+
+.resumo-nota {
+  margin-top: var(--espaco-3);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.resumo-cancelamento {
+  padding-top: var(--espaco-3);
+  border-top: 1px solid color-mix(in srgb, var(--cor-primaria) 15%, transparent);
+}
+
+.pix-area {
+  margin-top: var(--espaco-4);
+  text-align: center;
+}
+
+.pix-area img {
+  display: block;
+  width: 220px;
+  height: 220px;
+  margin: var(--espaco-3) auto;
+  border-radius: var(--raio-md);
+  background: #fff;
+  padding: 8px;
+  border: 1px solid var(--cor-borda);
+}
+
+.pix-area .label {
+  text-align: left;
+}
+
+.pix-copia {
+  display: flex;
+  gap: var(--espaco-2);
+}
+
+.pix-copia .input {
+  flex: 1;
+  min-width: 0;
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+}
+
+.pix-aguardando {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: var(--espaco-4);
+  font-weight: 600;
+}
+
+.pix-aguardando .spinner {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+/* ---------- Aviso grande de vencimento (Pix/débito) ---------- */
+.aviso-vencimento {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-4);
+  margin-bottom: var(--espaco-5);
+  padding: 18px 22px;
+  border-radius: var(--raio-lg, 16px);
+  border: 2px solid #f59e0b;
+  background: #fffbeb;
+  color: #78350f;
+  box-shadow: 0 10px 30px -12px rgba(245, 158, 11, 0.55);
+}
+
+.aviso-vencimento.urgente {
+  border-color: #dc2626;
+  background: #fef2f2;
+  color: #7f1d1d;
+  box-shadow: 0 10px 30px -12px rgba(220, 38, 38, 0.55);
+  animation: aviso-pulsar 2.4s ease-in-out infinite;
+}
+
+.aviso-vencimento-icone {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #f59e0b;
+  color: #fff;
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+.aviso-vencimento.urgente .aviso-vencimento-icone {
+  background: #dc2626;
+}
+
+.aviso-vencimento-texto {
+  flex: 1;
+  min-width: 0;
+}
+
+.aviso-vencimento-texto strong {
+  display: block;
+  font-size: 1.15rem;
+  line-height: 1.3;
+}
+
+.aviso-vencimento-texto p {
+  margin-top: 4px;
+  font-size: 0.92rem;
+}
+
+.aviso-vencimento-botao {
+  flex-shrink: 0;
+  background: #b45309;
+  color: #fff;
+  font-weight: 700;
+}
+
+.aviso-vencimento.urgente .aviso-vencimento-botao {
+  background: #dc2626;
+}
+
+.aviso-vencimento-botao:hover {
+  filter: brightness(1.08);
+  color: #fff;
+}
+
+@keyframes aviso-pulsar {
+  50% {
+    box-shadow: 0 10px 34px -6px rgba(220, 38, 38, 0.75);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aviso-vencimento.urgente {
+    animation: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .aviso-vencimento {
+    flex-wrap: wrap;
+    padding: 16px;
+  }
+  .aviso-vencimento-botao {
+    width: 100%;
+    text-align: center;
+  }
+  .formas-pagamento {
+    grid-template-columns: 1fr;
+  }
+}

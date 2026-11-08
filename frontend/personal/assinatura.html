@@ -56,22 +56,63 @@
         </div>
       </div>
 
-      <div class="card" style="max-width:480px;">
+      <div class="card assinatura-card">
         <h3 style="margin-bottom:var(--espaco-3);">Status atual</h3>
         <div id="status-assinatura"><div class="spinner"></div></div>
 
-        <button id="botao-assinar" class="btn btn-primary btn-block" style="margin-top:var(--espaco-5);" hidden>
-          Assinar com cartão
-        </button>
-        <!-- Formulário de cartão do Mercado Pago (Card Brick): o número do
+        <!-- 1) Escolha da forma de pagamento -->
+        <div id="pagamento" hidden>
+          <h3 class="pagamento-titulo" id="pagamento-titulo">Como você quer pagar?</h3>
+          <div class="formas-pagamento" role="radiogroup" aria-label="Forma de pagamento">
+            <label class="forma-opcao" data-forma="credito">
+              <input type="radio" name="forma" value="credito" />
+              <span class="forma-nome">Cartão de crédito</span>
+              <span class="forma-detalhe">Automático todo mês</span>
+            </label>
+            <label class="forma-opcao" data-forma="debito">
+              <input type="radio" name="forma" value="debito" />
+              <span class="forma-nome">Cartão de débito</span>
+              <span class="forma-detalhe">Você paga a cada mês</span>
+            </label>
+            <label class="forma-opcao" data-forma="pix">
+              <input type="radio" name="forma" value="pix" />
+              <span class="forma-nome">Pix</span>
+              <span class="forma-detalhe">Você paga a cada mês</span>
+            </label>
+          </div>
+
+          <!-- 2) Resumo com as datas, antes de finalizar -->
+          <div class="resumo-compra" id="resumo-compra" hidden></div>
+
+          <button id="botao-continuar" class="btn btn-primary btn-block" style="margin-top:var(--espaco-4);" hidden>Continuar</button>
+        </div>
+
+        <!-- 3a) Formulário de cartão do Mercado Pago (Card Brick): o número do
              cartão é digitado num campo do próprio Mercado Pago e vira um
              token — nunca passa pelo Seklyn. Ver assets/js/assinatura.js. -->
         <div id="cartao-brick" style="margin-top:var(--espaco-4);" hidden></div>
+
+        <!-- 3b) Pix -->
+        <div class="pix-area" id="pix-area" hidden>
+          <p class="pix-instrucao">Abra o app do seu banco, escolha <strong>Pix → Ler QR code</strong> ou <strong>Pix copia e cola</strong>.</p>
+          <img id="pix-qr" alt="QR code do Pix" width="220" height="220" />
+          <label class="label" for="pix-codigo">Pix copia e cola</label>
+          <div class="pix-copia">
+            <input id="pix-codigo" class="input" readonly />
+            <button id="pix-copiar" class="btn btn-secondary" type="button">Copiar</button>
+          </div>
+          <p class="pix-aguardando"><span class="spinner spinner-pequeno"></span> Aguardando o pagamento… a tela atualiza sozinha.</p>
+          <p class="hint-text" id="pix-expira"></p>
+        </div>
+
+        <button id="botao-voltar-pagamento" class="btn btn-ghost btn-block" style="margin-top:var(--espaco-3);" hidden>Escolher outra forma</button>
+
         <button id="botao-cancelar-assinatura" class="btn btn-ghost btn-block" style="margin-top:var(--espaco-3);" hidden>
           Cancelar assinatura
         </button>
-        <p class="hint-text" id="nota-pagamento" style="margin-top:var(--espaco-3);">
-          Cobrança mensal automática no cartão, processada pelo Mercado Pago — os dados do cartão ficam com eles e nunca passam pelo Seklyn. Não precisa ter conta no Mercado Pago.
+        <p class="hint-text" id="nota-cancelamento" style="margin-top:var(--espaco-2);" hidden></p>
+        <p class="hint-text" id="nota-pagamento" style="margin-top:var(--espaco-4);">
+          Pagamento processado pelo Mercado Pago — os dados do cartão ficam com eles e nunca passam pelo Seklyn. Não precisa ter conta no Mercado Pago.
         </p>
       </div>
     </main>

@@ -10,7 +10,7 @@
  * devolver uma Promise: se ela falhar, o formulário volta pro estado de
  * edição pra pessoa tentar de novo. Retorna `{ desmontar }`.
  */
-export async function montarFormularioCartao({ containerId, publicKey, valor, email, textoBotao, aoEnviar }) {
+export async function montarFormularioCartao({ containerId, publicKey, valor, email, textoBotao, aoEnviar, tiposExcluidos }) {
   if (typeof window.MercadoPago === "undefined") {
     throw new Error("Não deu pra carregar o formulário do Mercado Pago. Verifique sua internet e recarregue a página.");
   }
@@ -22,7 +22,9 @@ export async function montarFormularioCartao({ containerId, publicKey, valor, em
       payer: email ? { email } : undefined,
     },
     customization: {
-      paymentMethods: { maxInstallments: 1 }, // cobrança mensal: sempre à vista
+      // Cobrança mensal: sempre à vista. tiposExcluidos: ["debit_card"] = só
+      // crédito; ["credit_card", "prepaid_card"] = só débito.
+      paymentMethods: { maxInstallments: 1, ...(tiposExcluidos ? { types: { excluded: tiposExcluidos } } : {}) },
       visual: {
         style: { theme: "default", customVariables: { baseColor: corMarca } },
         texts: textoBotao ? { formSubmit: textoBotao } : undefined,
@@ -30,7 +32,8 @@ export async function montarFormularioCartao({ containerId, publicKey, valor, em
     },
     callbacks: {
       onReady: () => {},
-      onSubmit: (dadosCartao) => aoEnviar(dadosCartao.token),
+      // dadosCartao: token, payment_method_id, issuer_id, payer.identification…
+      onSubmit: (dadosCartao) => aoEnviar(dadosCartao.token, dadosCartao),
       onError: (erro) => console.warn("Card Brick:", erro),
     },
   });
