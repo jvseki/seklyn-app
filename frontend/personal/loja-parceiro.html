@@ -97,7 +97,12 @@
                 <input class="input" id="parceiro-percentual" type="number" min="0" max="100" value="50" />
               </div>
             </div>
-            <p class="hint-text">O percentual vale sobre o valor já sem a taxa do Mercado Pago: 50% = metade da venda e metade da taxa pra cada um.</p>
+            <label class="label" for="parceiro-taxa">Quem paga a taxa do Mercado Pago</label>
+            <select class="input" id="parceiro-taxa">
+              <option value="parceiro">O parceiro (você recebe sua % do valor cheio)</option>
+              <option value="dividida">Dividida entre os dois</option>
+            </select>
+            <p class="hint-text" id="parceiro-regra"></p>
             <button class="btn btn-primary" type="submit">Salvar parceiro</button>
           </form>
         </section>
@@ -117,9 +122,39 @@
                 <input class="input" id="venda-email" type="email" required placeholder="cliente@email.com" />
               </div>
             </div>
+            <span class="label">Forma de pagamento</span>
+            <div class="metodos-pagamento" role="radiogroup" aria-label="Forma de pagamento da venda">
+              <label class="metodo selecionado">
+                <input type="radio" name="venda-forma" value="credito" checked />
+                <span class="metodo-icone" aria-hidden="true">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg>
+                </span>
+                <span class="metodo-texto"><span class="metodo-nome">Crédito</span><span class="metodo-detalhe">À vista no cartão</span></span>
+                <span class="metodo-check" aria-hidden="true"></span>
+              </label>
+              <label class="metodo">
+                <input type="radio" name="venda-forma" value="debito" />
+                <span class="metodo-icone" aria-hidden="true">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M6 9h4v4H6z"/><line x1="14" y1="15" x2="18" y2="15"/></svg>
+                </span>
+                <span class="metodo-texto"><span class="metodo-nome">Débito</span><span class="metodo-detalhe">Sai na hora da conta</span></span>
+                <span class="metodo-check" aria-hidden="true"></span>
+              </label>
+              <label class="metodo">
+                <input type="radio" name="venda-forma" value="pix" />
+                <span class="metodo-icone metodo-icone-pix" aria-hidden="true">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5 21.5 12 12 21.5 2.5 12Z"/><path d="M8.5 12 12 8.5 15.5 12 12 15.5Z"/></svg>
+                </span>
+                <span class="metodo-texto"><span class="metodo-nome">Pix</span><span class="metodo-detalhe">QR na tela · menor taxa</span></span>
+                <span class="metodo-check" aria-hidden="true"></span>
+              </label>
+            </div>
             <div class="loja-simulacao" id="venda-simulacao"></div>
             <button class="btn btn-primary" type="submit" id="venda-gerar">Gerar Pix da venda</button>
           </form>
+          <!-- Formulário de cartão do Mercado Pago (o número do cartão nunca passa pelo Seklyn). -->
+          <div id="venda-cartao" hidden></div>
+          <button class="btn btn-ghost btn-sm" type="button" id="venda-cartao-voltar" hidden>Voltar</button>
           <div class="loja-pix" id="venda-pix" hidden>
             <p><strong>Pix da venda</strong>: escaneie com o app do banco (no teste, pague do seu Nubank).</p>
             <img id="venda-pix-qr" alt="QR code do Pix da venda" width="200" height="200" />
@@ -160,6 +195,7 @@
   <script type="module" src="../assets/js/tema.js"></script>
   <script type="module" src="../assets/js/menu.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+  <script src="https://sdk.mercadopago.com/js/v2"></script>
   <script type="module" src="../assets/js/loja-parceiro.js"></script>
 </body>
 </html>

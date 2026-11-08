@@ -205,6 +205,7 @@ export const api = {
   painelLojaAdmin: () => apiFetch("/admin/loja"),
   salvarParceiroAdmin: (dados) => apiFetch("/admin/loja/parceiro", { method: "PUT", body: JSON.stringify(dados) }),
   criarVendaLojaAdmin: (dados) => apiFetch("/admin/loja/vendas", { method: "POST", body: JSON.stringify(dados) }),
+  criarVendaCartaoLojaAdmin: (dados) => apiFetch("/admin/loja/vendas/cartao", { method: "POST", body: JSON.stringify(dados) }),
   consultarVendaLojaAdmin: (id) => apiFetch(`/admin/loja/vendas/${id}`),
   repasseLojaAdmin: (id) => apiFetch(`/admin/loja/vendas/${id}/repasse`),
   marcarRepassadoLojaAdmin: (id) => apiFetch(`/admin/loja/vendas/${id}/repassado`, { method: "POST" }),

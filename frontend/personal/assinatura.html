@@ -63,21 +63,31 @@
         <!-- 1) Escolha da forma de pagamento -->
         <div id="pagamento" hidden>
           <h3 class="pagamento-titulo" id="pagamento-titulo">Como você quer pagar?</h3>
-          <div class="formas-pagamento" role="radiogroup" aria-label="Forma de pagamento">
-            <label class="forma-opcao" data-forma="credito">
+          <div class="metodos-pagamento" role="radiogroup" aria-label="Forma de pagamento">
+            <label class="metodo" data-forma="credito">
               <input type="radio" name="forma" value="credito" />
-              <span class="forma-nome">Cartão de crédito</span>
-              <span class="forma-detalhe">Automático todo mês</span>
+              <span class="metodo-icone" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg>
+              </span>
+              <span class="metodo-texto"><span class="metodo-nome">Crédito</span><span class="metodo-detalhe">Automático todo mês</span></span>
+              <span class="metodo-selo">Mais prático</span>
+              <span class="metodo-check" aria-hidden="true"></span>
             </label>
-            <label class="forma-opcao" data-forma="debito">
+            <label class="metodo" data-forma="debito">
               <input type="radio" name="forma" value="debito" />
-              <span class="forma-nome">Cartão de débito</span>
-              <span class="forma-detalhe">Você paga a cada mês</span>
+              <span class="metodo-icone" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M6 9h4v4H6z"/><line x1="14" y1="15" x2="18" y2="15"/></svg>
+              </span>
+              <span class="metodo-texto"><span class="metodo-nome">Débito</span><span class="metodo-detalhe">Você paga a cada mês</span></span>
+              <span class="metodo-check" aria-hidden="true"></span>
             </label>
-            <label class="forma-opcao" data-forma="pix">
+            <label class="metodo" data-forma="pix">
               <input type="radio" name="forma" value="pix" />
-              <span class="forma-nome">Pix</span>
-              <span class="forma-detalhe">Você paga a cada mês</span>
+              <span class="metodo-icone metodo-icone-pix" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5 21.5 12 12 21.5 2.5 12Z"/><path d="M8.5 12 12 8.5 15.5 12 12 15.5Z"/></svg>
+              </span>
+              <span class="metodo-texto"><span class="metodo-nome">Pix</span><span class="metodo-detalhe">Você paga a cada mês</span></span>
+              <span class="metodo-check" aria-hidden="true"></span>
             </label>
           </div>
 

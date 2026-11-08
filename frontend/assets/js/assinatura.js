@@ -97,7 +97,7 @@ function renderizar(a) {
   // Formas de pagamento liberadas agora.
   const liberadas = { credito: a.pode_assinar_credito, debito: a.pode_pagar_avulso, pix: a.pode_pagar_avulso };
   const algumaLiberada = Object.values(liberadas).some(Boolean);
-  $all(".forma-opcao").forEach((opcao) => {
+  $all(".metodo").forEach((opcao) => {
     opcao.hidden = !liberadas[opcao.dataset.forma];
   });
   if (formaEscolhida && !liberadas[formaEscolhida]) escolherForma(null);
@@ -137,9 +137,9 @@ async function carregarStatus() {
 
 function escolherForma(forma) {
   formaEscolhida = forma;
-  $all(".forma-opcao").forEach((opcao) => {
+  $all(".metodo").forEach((opcao) => {
     const ativa = opcao.dataset.forma === forma;
-    opcao.classList.toggle("selecionada", ativa);
+    opcao.classList.toggle("selecionado", ativa);
     opcao.querySelector("input").checked = ativa;
   });
   resumoEl.hidden = !forma;
@@ -192,7 +192,7 @@ function mostrarResumo() {
     formaEscolhida === "pix" ? `Gerar Pix de ${valor}` : formaEscolhida === "debito" ? `Pagar ${valor} no débito` : cobraAgora ? `Assinar por ${valor}/mês` : "Ativar cobrança automática";
 }
 
-$all(".forma-opcao input").forEach((input) => input.addEventListener("change", () => escolherForma(input.value)));
+$all(".metodo input").forEach((input) => input.addEventListener("change", () => escolherForma(input.value)));
 
 // ---------- Fluxos de pagamento ----------
 

@@ -26,6 +26,10 @@ class Parceiro(Base):
     # Quanto do valor LÍQUIDO (já sem a taxa do Mercado Pago) é do parceiro.
     # 50 = metade da venda e metade da taxa pra cada um.
     percentual_parceiro: Mapped[int] = mapped_column(Integer, nullable=False, default=50)
+    # Quem paga a taxa do Mercado Pago: "parceiro" (o dono recebe a % dele
+    # sobre o valor CHEIO e a taxa sai toda da parte do parceiro) ou
+    # "dividida" (a % vale sobre o líquido, cada um paga sua parte da taxa).
+    taxa_paga_por: Mapped[str] = mapped_column(String(20), nullable=False, default="parceiro", server_default="parceiro")
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     vendas: Mapped[list["VendaParceiro"]] = relationship(back_populates="parceiro", cascade="all, delete-orphan")
@@ -41,7 +45,13 @@ class VendaParceiro(Base):
     # Percentual congelado no momento da venda (mudar o parceiro depois não
     # altera vendas antigas).
     percentual_parceiro: Mapped[int] = mapped_column(Integer, nullable=False)
+    # Quem paga a taxa do Mercado Pago: "parceiro" (o dono recebe a % dele
+    # sobre o valor CHEIO e a taxa sai toda da parte do parceiro) ou
+    # "dividida" (a % vale sobre o líquido, cada um paga sua parte da taxa).
+    taxa_paga_por: Mapped[str] = mapped_column(String(20), nullable=False, default="parceiro", server_default="parceiro")
     mp_pagamento_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    # "pix", "credito" ou "debito"
+    forma_pagamento: Mapped[str] = mapped_column(String(20), nullable=False, default="pix", server_default="pix")
     # "aguardando" (Pix gerado), "paga", "reembolsada", "expirada"
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="aguardando")
     taxa_mp: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)

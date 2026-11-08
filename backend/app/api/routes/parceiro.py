@@ -18,6 +18,7 @@ from app.schemas.parceiro import (
     ParceiroIn,
     ParceiroOut,
     RepasseOut,
+    VendaCartaoIn,
     VendaCriadaOut,
     VendaIn,
     VendaOut,
@@ -72,6 +73,7 @@ def painel(db: Session = Depends(get_db)) -> PainelParceiroOut:
         ja_repassado=sum((v.parte_parceiro or zero for v in pagas if v.repasse_status == "feito"), zero),
         liquido_dono=sum((v.parte_dono or zero for v in pagas), zero),
         taxa_pix_estimada=float(loja.TAXA_PIX_ESTIMADA),
+        mp_public_key=mp.settings.mercadopago_public_key or None,
     )
 
 
@@ -86,6 +88,7 @@ def salvar_parceiro(dados: ParceiroIn, db: Session = Depends(get_db)) -> Parceir
     parceiro.chave_pix = chave
     parceiro.cidade = dados.cidade.strip()
     parceiro.percentual_parceiro = dados.percentual_parceiro
+    parceiro.taxa_paga_por = dados.taxa_paga_por
     db.add(parceiro)
     db.commit()
     db.refresh(parceiro)
@@ -112,6 +115,37 @@ def nova_venda(dados: VendaIn, admin: Personal = Depends(exigir_admin), db: Sess
         pix_qr_code_base64=pix["qr_code_base64"],
         pix_expira_em=pix["expira_em"],
     )
+
+
+@router.post("/vendas/cartao", response_model=VendaOut)
+def nova_venda_cartao(dados: VendaCartaoIn, db: Session = Depends(get_db)) -> VendaOut:
+    """Venda no cartão de crédito ou débito (à vista), digitado no formulário
+    do Mercado Pago — só o token de uso único chega aqui."""
+    _exigir_mp()
+    parceiro = _parceiro(db)
+    if parceiro is None:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Cadastre o parceiro (nome e chave Pix) primeiro.")
+    try:
+        venda = loja.criar_venda_cartao(
+            db,
+            parceiro,
+            dados.produto.strip(),
+            dados.valor,
+            dados.email_pagador.strip(),
+            dados.card_token,
+            dados.payment_method_id,
+            dados.issuer_id,
+            dados.documento_tipo,
+            dados.documento_numero,
+        )
+    except mp.CartaoRecusado as recusa:
+        raise HTTPException(status_code=status.HTTP_402_PAYMENT_REQUIRED, detail=recusa.mensagem) from recusa
+    except mp.ErroMercadoPago as erro:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Não deu pra falar com o Mercado Pago agora. Nenhuma cobrança foi feita.",
+        ) from erro
+    return VendaOut.model_validate(venda)
 
 
 @router.get("/vendas/{venda_id}", response_model=VendaOut)

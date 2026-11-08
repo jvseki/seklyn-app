@@ -5,12 +5,15 @@
 // pra chave de terceiros) — o dono escaneia no app e marca como repassado.
 import { api } from "./api.js";
 import { protegerPagina } from "./auth.js";
+import { montarFormularioCartao } from "./cartao-mp.js";
 import { confirmarAcao } from "./confirmar.js";
 import { $, escaparHtml, formatarDataHoraCompleta, mensagemDeErro, mostrarToast } from "./utils.js";
 
 protegerPagina();
 
 const reais = (v) => Number(v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const FORMAS = { pix: "Pix", credito: "Crédito", debito: "Débito" };
+const arred = (n) => Math.round(n * 100) / 100;
 const STATUS_VENDA = {
   aguardando: ["Aguardando Pix", "badge-aviso"],
   paga: ["Paga", "badge-sucesso"],
@@ -21,6 +24,7 @@ const STATUS_VENDA = {
 let painel = null;
 let consultaVenda = null;
 let vendaDoRepasse = null;
+let formularioCartao = null;
 
 // ---------- Painel ----------
 
@@ -45,6 +49,7 @@ async function carregar() {
     $("#parceiro-chave").value = p.chave_pix;
     $("#parceiro-cidade").value = p.cidade;
     $("#parceiro-percentual").value = p.percentual_parceiro;
+    $("#parceiro-taxa").value = p.taxa_paga_por || "parceiro";
     $("#form-parceiro").dataset.preenchido = "1";
   }
   simular();
@@ -65,7 +70,7 @@ function renderizarVendas() {
       const divisao = v.parte_parceiro != null
         ? `<div class="venda-divisao">
             <span>Taxa MP <strong>${reais(v.taxa_mp)}</strong></span>
-            <span>${nome} (${v.percentual_parceiro}%) <strong>${reais(v.parte_parceiro)}</strong></span>
+            <span>${nome} <strong>${reais(v.parte_parceiro)}</strong></span>
             <span>Você <strong>${reais(v.parte_dono)}</strong></span>
           </div>`
         : "";
@@ -78,7 +83,7 @@ function renderizarVendas() {
         <article class="venda-item">
           <div class="venda-topo">
             <div>
-              <strong>${escaparHtml(v.produto)}</strong> · ${reais(v.valor)}
+              <strong>${escaparHtml(v.produto)}</strong> · ${reais(v.valor)} · ${FORMAS[v.forma_pagamento] || "Pix"}
               <div class="hint-text">#${v.id} · ${formatarDataHoraCompleta(v.criado_em)}</div>
             </div>
             <span class="badge ${classe}">${texto}</span>
@@ -101,6 +106,7 @@ $("#form-parceiro").addEventListener("submit", async (e) => {
       chave_pix: $("#parceiro-chave").value.trim(),
       cidade: $("#parceiro-cidade").value.trim() || "Andradina",
       percentual_parceiro: Number($("#parceiro-percentual").value || 50),
+      taxa_paga_por: $("#parceiro-taxa").value,
     });
     delete $("#form-parceiro").dataset.preenchido;
     mostrarToast("Parceiro salvo.", "sucesso");
@@ -112,25 +118,57 @@ $("#form-parceiro").addEventListener("submit", async (e) => {
 
 // ---------- Simulação antes de vender ----------
 
+const formaVenda = () => document.querySelector("input[name='venda-forma']:checked")?.value || "credito";
+
 function simular() {
   const valor = Number($("#venda-valor").value || 0);
   const pct = Number($("#parceiro-percentual").value || 50);
+  const regra = $("#parceiro-taxa").value;
   const nome = escaparHtml($("#parceiro-nome").value || "Parceiro");
+  const forma = formaVenda();
+  $("#parceiro-regra").textContent =
+    regra === "parceiro"
+      ? `Você recebe ${100 - pct}% do valor cheio de cada venda; a taxa do Mercado Pago sai toda da parte do parceiro.`
+      : `A divisão vale sobre o valor já sem a taxa: cada um paga a sua parte da taxa (${pct}% pro parceiro).`;
+  $("#venda-gerar").textContent =
+    forma === "pix" ? "Gerar Pix da venda" : forma === "debito" ? "Continuar para o débito" : "Continuar para o crédito";
   if (!valor || !painel) {
     $("#venda-simulacao").innerHTML = "";
     return;
   }
-  const taxa = Math.round(valor * painel.taxa_pix_estimada * 100) / 100;
-  const liquido = valor - taxa;
-  const parceiro = Math.round(liquido * pct) / 100;
-  $("#venda-simulacao").innerHTML = `
-    <div class="resumo-linha"><span>Venda</span><strong>${reais(valor)}</strong></div>
-    <div class="resumo-linha"><span>Taxa Pix estimada (${(painel.taxa_pix_estimada * 100).toFixed(2).replace(".", ",")}%)</span><strong>− ${reais(taxa)}</strong></div>
-    <div class="resumo-linha"><span>${nome} (${pct}%)</span><strong>${reais(parceiro)}</strong></div>
-    <div class="resumo-linha"><span>Você</span><strong>${reais(liquido - parceiro)}</strong></div>
-    <p class="resumo-nota">A taxa real é lida do Mercado Pago quando o Pix for pago.</p>`;
+  const linhas = [`<div class="resumo-linha"><span>Venda</span><strong>${reais(valor)}</strong></div>`];
+  if (forma === "pix") {
+    const taxa = arred(valor * painel.taxa_pix_estimada);
+    const liquido = valor - taxa;
+    const dono = regra === "parceiro" ? arred((valor * (100 - pct)) / 100) : arred(liquido - arred((liquido * pct) / 100));
+    const parceiro = Math.max(0, arred(liquido - dono));
+    linhas.push(
+      `<div class="resumo-linha"><span>Taxa Pix estimada (${(painel.taxa_pix_estimada * 100).toFixed(2).replace(".", ",")}%)</span><strong>− ${reais(taxa)}</strong></div>`,
+      `<div class="resumo-linha"><span>Você</span><strong>${reais(dono)}</strong></div>`,
+      `<div class="resumo-linha"><span>${nome}</span><strong>${reais(parceiro)}</strong></div>`,
+      `<p class="resumo-nota">A taxa real é lida do Mercado Pago quando for pago.</p>`
+    );
+  } else if (regra === "parceiro") {
+    const dono = arred((valor * (100 - pct)) / 100);
+    linhas.push(
+      `<div class="resumo-linha"><span>Você (fixo)</span><strong>${reais(dono)}</strong></div>`,
+      `<div class="resumo-linha"><span>${nome}</span><strong>${reais(valor - dono)} − taxa do cartão</strong></div>`,
+      `<p class="resumo-nota">A taxa do ${forma === "debito" ? "débito" : "crédito"} (maior que a do Pix) é lida do Mercado Pago na hora do pagamento e sai da parte do parceiro.</p>`
+    );
+  } else {
+    linhas.push(
+      `<p class="resumo-nota">Cartão: a taxa é lida do Mercado Pago na hora do pagamento e o líquido é dividido (${pct}% pro parceiro).</p>`
+    );
+  }
+  $("#venda-simulacao").innerHTML = linhas.join("");
 }
-["#venda-valor", "#parceiro-percentual", "#parceiro-nome"].forEach((s) => $(s).addEventListener("input", simular));
+document.querySelectorAll("input[name='venda-forma']").forEach((r) =>
+  r.addEventListener("change", () => {
+    document.querySelectorAll(".metodos-pagamento .metodo").forEach((o) => o.classList.toggle("selecionado", o.querySelector("input").checked));
+    simular();
+  })
+);
+["#venda-valor", "#parceiro-percentual", "#parceiro-nome", "#parceiro-taxa"].forEach((s) => $(s).addEventListener("input", simular));
 
 // ---------- Venda ----------
 
@@ -139,8 +177,91 @@ function pararConsulta() {
   consultaVenda = null;
 }
 
+function acompanharVenda(id) {
+  pararConsulta();
+  let vezes = 0;
+  consultaVenda = setInterval(async () => {
+    if (++vezes > 300) return pararConsulta();
+    try {
+      const v = await api.consultarVendaLojaAdmin(id);
+      if (v.status !== "aguardando") {
+        pararConsulta();
+        fecharPixVenda();
+        if (v.status === "paga") mostrarToast(`Pago! ${reais(v.parte_dono)} pra você, ${reais(v.parte_parceiro)} pro parceiro.`, "sucesso");
+        carregar();
+      }
+    } catch {
+      /* tenta de novo */
+    }
+  }, 4000);
+}
+
+function fecharCartao() {
+  formularioCartao?.desmontar();
+  formularioCartao = null;
+  $("#venda-cartao").hidden = true;
+  $("#venda-cartao").innerHTML = "";
+  $("#venda-cartao-voltar").hidden = true;
+  $("#form-venda").hidden = false;
+}
+$("#venda-cartao-voltar").addEventListener("click", fecharCartao);
+
+async function venderNoCartao(tipo) {
+  if (!painel?.mp_public_key) {
+    mostrarToast("Chave pública do Mercado Pago não configurada no servidor.", "erro");
+    return;
+  }
+  const dadosVenda = {
+    produto: $("#venda-produto").value.trim(),
+    valor: Number($("#venda-valor").value).toFixed(2),
+    email_pagador: $("#venda-email").value.trim(),
+  };
+  $("#form-venda").hidden = true;
+  $("#venda-cartao").hidden = false;
+  $("#venda-cartao-voltar").hidden = false;
+  try {
+    formularioCartao = await montarFormularioCartao({
+      containerId: "venda-cartao",
+      publicKey: painel.mp_public_key,
+      valor: dadosVenda.valor,
+      email: dadosVenda.email_pagador,
+      textoBotao: `Pagar ${reais(dadosVenda.valor)} no ${tipo === "debito" ? "débito" : "crédito"}`,
+      // Só aceita o tipo escolhido no menu.
+      tiposExcluidos: tipo === "debito" ? ["credit_card", "prepaid_card"] : ["debit_card", "prepaid_card"],
+      aoEnviar: (token, dados) =>
+        api
+          .criarVendaCartaoLojaAdmin({
+            ...dadosVenda,
+            card_token: token,
+            payment_method_id: dados?.payment_method_id,
+            issuer_id: dados?.issuer_id != null ? String(dados.issuer_id) : null,
+            documento_tipo: dados?.payer?.identification?.type || null,
+            documento_numero: dados?.payer?.identification?.number || null,
+          })
+          .then((v) => {
+            fecharCartao();
+            if (v.status === "paga") {
+              mostrarToast(`Cartão aprovado! ${reais(v.parte_dono)} pra você, ${reais(v.parte_parceiro)} pro parceiro.`, "sucesso");
+            } else {
+              mostrarToast("Pagamento em análise pelo banco: a lista atualiza sozinha.", "info");
+              acompanharVenda(v.id);
+            }
+            carregar();
+          })
+          .catch((erro) => {
+            mostrarToast(mensagemDeErro(erro), "erro");
+            throw erro;
+          }),
+    });
+  } catch (erro) {
+    fecharCartao();
+    mostrarToast(mensagemDeErro(erro), "erro");
+  }
+}
+
 $("#form-venda").addEventListener("submit", async (e) => {
   e.preventDefault();
+  if (formaVenda() !== "pix") return venderNoCartao(formaVenda());
   const botao = $("#venda-gerar");
   botao.disabled = true;
   try {
@@ -154,22 +275,7 @@ $("#form-venda").addEventListener("submit", async (e) => {
     $("#form-venda").hidden = true;
     $("#venda-pix").hidden = false;
     carregar();
-    pararConsulta();
-    let vezes = 0;
-    consultaVenda = setInterval(async () => {
-      if (++vezes > 300) return pararConsulta();
-      try {
-        const v = await api.consultarVendaLojaAdmin(r.venda.id);
-        if (v.status !== "aguardando") {
-          pararConsulta();
-          fecharPixVenda();
-          if (v.status === "paga") mostrarToast(`Pix recebido! ${reais(v.parte_parceiro)} pro parceiro, ${reais(v.parte_dono)} pra você.`, "sucesso");
-          carregar();
-        }
-      } catch {
-        /* tenta de novo */
-      }
-    }, 4000);
+    acompanharVenda(r.venda.id);
   } catch (erro) {
     mostrarToast(mensagemDeErro(erro), "erro");
   } finally {

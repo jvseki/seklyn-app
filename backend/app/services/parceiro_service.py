@@ -28,10 +28,20 @@ CENTAVO = Decimal("0.01")
 # ---------- Divisão ----------
 
 
-def dividir(valor: Decimal, taxa: Decimal, percentual_parceiro: int) -> tuple[Decimal, Decimal]:
-    """(parte do parceiro, parte do dono) a partir do líquido da venda."""
-    liquido = (Decimal(valor) - Decimal(taxa)).quantize(CENTAVO)
-    parceiro = (liquido * Decimal(percentual_parceiro) / 100).quantize(CENTAVO, rounding=ROUND_HALF_UP)
+def dividir(valor: Decimal, taxa: Decimal, percentual_parceiro: int, taxa_paga_por: str = "parceiro") -> tuple[Decimal, Decimal]:
+    """
+    (parte do parceiro, parte do dono).
+    - "parceiro": o dono recebe (100 - %)% do valor CHEIO; a taxa toda sai da
+      parte do parceiro. Ex: R$ 1,00, taxa R$ 0,03, 50% → dono 0,50, parceiro 0,47.
+    - "dividida": a % vale sobre o líquido (cada um paga sua parte da taxa).
+    """
+    valor = Decimal(valor)
+    liquido = (valor - Decimal(taxa)).quantize(CENTAVO)
+    if taxa_paga_por == "dividida":
+        parceiro = (liquido * Decimal(percentual_parceiro) / 100).quantize(CENTAVO, rounding=ROUND_HALF_UP)
+    else:
+        dono = (valor * Decimal(100 - percentual_parceiro) / 100).quantize(CENTAVO, rounding=ROUND_HALF_UP)
+        parceiro = max(liquido - dono, Decimal("0.00"))  # venda minúscula: taxa maior que a parte dele
     return parceiro, liquido - parceiro
 
 
@@ -54,6 +64,7 @@ def criar_venda_pix(db: Session, parceiro: Parceiro, produto: str, valor: Decima
         produto=produto,
         valor=valor,
         percentual_parceiro=parceiro.percentual_parceiro,
+        taxa_paga_por=parceiro.taxa_paga_por,
         status="aguardando",
         repasse_status="pendente",
     )
@@ -78,6 +89,74 @@ def criar_venda_pix(db: Session, parceiro: Parceiro, produto: str, valor: Decima
     return venda, mp._dados_pix(pagamento)
 
 
+FORMA_POR_TIPO = {"credit_card": "credito", "debit_card": "debito", "prepaid_card": "debito", "bank_transfer": "pix"}
+
+
+def criar_venda_cartao(
+    db: Session,
+    parceiro: Parceiro,
+    produto: str,
+    valor: Decimal,
+    email_pagador: str,
+    card_token: str,
+    payment_method_id: str,
+    issuer_id: str | None = None,
+    documento_tipo: str | None = None,
+    documento_numero: str | None = None,
+) -> VendaParceiro:
+    """Venda no cartão (crédito ou débito, à vista). Recusado = CartaoRecusado."""
+    venda = VendaParceiro(
+        parceiro_id=parceiro.id,
+        produto=produto,
+        valor=valor,
+        percentual_parceiro=parceiro.percentual_parceiro,
+        taxa_paga_por=parceiro.taxa_paga_por,
+        status="aguardando",
+        repasse_status="pendente",
+        forma_pagamento="credito",
+    )
+    db.add(venda)
+    db.flush()
+    pagador: dict = {"email": email_pagador}
+    if documento_tipo and documento_numero:
+        pagador["identification"] = {"type": documento_tipo, "number": documento_numero}
+    corpo: dict = {
+        "transaction_amount": float(valor),
+        "token": card_token,
+        "description": f"{produto} — {parceiro.nome}"[:250],
+        "installments": 1,
+        "payment_method_id": payment_method_id,
+        "external_reference": f"{PREFIXO_VENDA}{venda.id}",
+        "payer": pagador,
+    }
+    if issuer_id:
+        corpo["issuer_id"] = int(issuer_id) if str(issuer_id).isdigit() else issuer_id
+    try:
+        pagamento = mp._requisitar("POST", "/v1/payments", corpo)
+    except mp.ErroMercadoPago as erro:
+        db.rollback()
+        if erro.status_http and 400 <= erro.status_http < 500:
+            raise mp.CartaoRecusado(mp._mensagem_recusa(str(erro))) from erro
+        raise
+    venda.mp_pagamento_id = str(pagamento["id"])
+    venda.forma_pagamento = FORMA_POR_TIPO.get(pagamento.get("payment_type_id"), "credito")
+    situacao = pagamento.get("status")
+    if situacao in ("rejected", "cancelled"):
+        venda.status = "expirada"
+        db.commit()
+        raise mp.CartaoRecusado(mp._mensagem_recusa(pagamento.get("status_detail") or ""))
+    db.commit()
+    if situacao == "approved":
+        # A resposta da criação nem sempre traz a taxa: relê o pagamento.
+        try:
+            pagamento = mp._requisitar("GET", f"/v1/payments/{venda.mp_pagamento_id}")
+        except mp.ErroMercadoPago:
+            pass
+        aplicar_pagamento(db, pagamento)
+    db.refresh(venda)
+    return venda
+
+
 def aplicar_pagamento(db: Session, pagamento: dict) -> VendaParceiro | None:
     """Espelha o pagamento do Mercado Pago na venda (aprovado = divide)."""
     referencia = pagamento.get("external_reference") or ""
@@ -89,7 +168,9 @@ def aplicar_pagamento(db: Session, pagamento: dict) -> VendaParceiro | None:
     situacao = pagamento.get("status")
     if situacao == "approved" and venda.status != "paga":
         venda.taxa_mp = _taxa_do_pagamento(pagamento, Decimal(venda.valor))
-        venda.parte_parceiro, venda.parte_dono = dividir(venda.valor, venda.taxa_mp, venda.percentual_parceiro)
+        venda.parte_parceiro, venda.parte_dono = dividir(
+            venda.valor, venda.taxa_mp, venda.percentual_parceiro, venda.taxa_paga_por
+        )
         venda.status = "paga"
         venda.paga_em = datetime.now(timezone.utc)
     elif situacao in ("refunded", "charged_back"):

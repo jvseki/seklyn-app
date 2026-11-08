@@ -15,6 +15,7 @@ class ParceiroIn(BaseModel):
     chave_pix: str = Field(min_length=3, max_length=120)
     cidade: str = Field(default="Andradina", min_length=2, max_length=60)
     percentual_parceiro: int = Field(default=50, ge=0, le=100)
+    taxa_paga_por: Literal["parceiro", "dividida"] = "parceiro"
 
 
 class ParceiroOut(OrmModel):
@@ -24,6 +25,7 @@ class ParceiroOut(OrmModel):
     chave_pix: str
     cidade: str
     percentual_parceiro: int
+    taxa_paga_por: str = "parceiro"
 
 
 class VendaIn(BaseModel):
@@ -33,11 +35,21 @@ class VendaIn(BaseModel):
     email_pagador: str = Field(min_length=5, max_length=120, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
+class VendaCartaoIn(VendaIn):
+    card_token: str = Field(min_length=8, max_length=200)
+    payment_method_id: str = Field(min_length=2, max_length=40)
+    issuer_id: str | None = Field(default=None, max_length=20)
+    documento_tipo: str | None = Field(default=None, max_length=10)
+    documento_numero: str | None = Field(default=None, max_length=20)
+
+
 class VendaOut(OrmModel):
     id: int
     produto: str
     valor: Decimal
     percentual_parceiro: int
+    forma_pagamento: str = "pix"
+    taxa_paga_por: str = "parceiro"
     status: str
     taxa_mp: Decimal | None = None
     parte_parceiro: Decimal | None = None
@@ -64,6 +76,7 @@ class PainelParceiroOut(BaseModel):
     ja_repassado: Decimal
     liquido_dono: Decimal
     taxa_pix_estimada: float  # pra simular a divisão antes de vender
+    mp_public_key: str | None = None  # formulário de cartão (chave pública)
 
 
 class RepasseOut(BaseModel):
