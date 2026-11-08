@@ -292,7 +292,14 @@ def _notificar_aluno_treino_atualizado(db: Session, treino: Treino) -> None:
     if treino.notificado_em and agora - treino.notificado_em < timedelta(minutes=NOTIFICACAO_TREINO_INTERVALO_MINUTOS):
         return
     link_treino = f"{settings.frontend_url}/aluno/treino.html?t={aluno.hash_token}"
-    enviar_email_notificacao_treino(aluno.email, aluno.nome, treino.nome, link_treino)
+    enviar_email_notificacao_treino(
+        aluno.email,
+        aluno.nome,
+        treino.nome,
+        link_treino,
+        personal_nome=aluno.personal.nome,
+        tema_personal=aluno.personal.tema_personalizado,
+    )
     treino.notificado_em = agora
     db.commit()
 
