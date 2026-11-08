@@ -49,13 +49,13 @@
         <div class="cabecalho-pagina">
           <div>
             <h1>Loja do parceiro <span class="badge badge-aviso" style="vertical-align:middle;">Teste</span></h1>
-            <p>Simula a venda de produtos com divisão do valor: o cliente paga por Pix na <strong>sua</strong> conta Mercado Pago e a parte do parceiro vai pra chave Pix dele.</p>
+            <p>Simula a venda de produtos com divisão do valor: o cliente paga (Pix, crédito ou débito) na <strong>sua</strong> conta Mercado Pago e você repassa a parte do parceiro pra chave Pix dele.</p>
           </div>
         </div>
         <ol class="loja-fluxo">
-          <li><span>1</span><div><strong>Cliente paga</strong><small>Pix gerado aqui, cai no seu Mercado Pago</small></div></li>
-          <li><span>2</span><div><strong>Divisão automática</strong><small>Taxa real do Mercado Pago dividida meio a meio</small></div></li>
-          <li><span>3</span><div><strong>Repasse</strong><small>QR com a chave e o valor do parceiro: você só confirma no app</small></div></li>
+          <li><span>1</span><div><strong>Cliente paga</strong><small>Pix ou cartão, cai no seu Mercado Pago</small></div></li>
+          <li><span>2</span><div><strong>Divisão automática</strong><small>Você recebe sua % do valor cheio; a taxa sai da parte do parceiro</small></div></li>
+          <li><span>3</span><div><strong>Repasse (você faz)</strong><small>QR com a chave e o valor do parceiro: escaneie no app e confirme</small></div></li>
         </ol>
         <div class="grid-stats loja-stats" style="margin-bottom:0;">
           <div class="stat-tile"><div class="valor" id="loja-vendido">–</div><div class="rotulo">Vendido</div></div>
@@ -63,6 +63,17 @@
           <div class="stat-tile"><div class="valor" id="loja-a-repassar">–</div><div class="rotulo" id="loja-rotulo-repassar">A repassar ao parceiro</div></div>
           <div class="stat-tile"><div class="valor" id="loja-liquido">–</div><div class="rotulo">Sua parte</div></div>
         </div>
+      </div>
+
+      <div class="aviso-repasse" id="aviso-repasse" role="alert" hidden>
+        <div class="aviso-repasse-icone" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <div class="aviso-repasse-texto">
+          <strong id="aviso-repasse-titulo"></strong>
+          <p>O dinheiro das vendas fica na sua conta Mercado Pago. Ele <strong>não sai sozinho</strong>: o Mercado Pago não envia Pix automático pra chave de outra pessoa. Faça o repasse escaneando o QR no app.</p>
+        </div>
+        <button class="btn aviso-repasse-botao" type="button" id="repassar-tudo">Repassar tudo agora</button>
       </div>
 
       <div class="loja-grid">
@@ -96,6 +107,13 @@
                 <label class="label" for="parceiro-percentual">Parte do parceiro (%)</label>
                 <input class="input" id="parceiro-percentual" type="number" min="0" max="100" value="50" />
               </div>
+            </div>
+            <div class="chave-status" id="chave-status" hidden>
+              <div class="chave-status-info">
+                <span class="chave-status-selo" id="chave-status-selo"></span>
+                <span class="chave-status-texto" id="chave-status-texto"></span>
+              </div>
+              <button class="btn btn-secondary btn-sm" type="button" id="chave-verificar">Verificar chave no app do banco</button>
             </div>
             <label class="label" for="parceiro-taxa">Quem paga a taxa do Mercado Pago</label>
             <select class="input" id="parceiro-taxa">
@@ -182,9 +200,10 @@
             <input class="input" id="repasse-codigo" readonly />
             <button class="btn btn-secondary" type="button" data-copiar="repasse-codigo">Copiar</button>
           </div>
-          <p class="hint-text">Abra o app do Mercado Pago (ou do seu banco) → Pix → Ler QR code ou Pix copia e cola. Chave, nome e valor já vêm preenchidos.</p>
+          <p class="hint-text" id="repasse-dica">Abra o app do Mercado Pago (ou do seu banco) → Pix → Ler QR code ou Pix copia e cola. Chave, nome e valor já vêm preenchidos.</p>
           <div class="loja-modal-acoes">
             <button class="btn btn-ghost" type="button" id="repasse-fechar">Fechar</button>
+            <button class="btn btn-secondary" type="button" id="repasse-secundario" hidden></button>
             <button class="btn btn-primary" type="button" id="repasse-confirmar">Já paguei: marcar como repassado</button>
           </div>
         </div>

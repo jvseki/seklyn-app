@@ -30,6 +30,9 @@ class Parceiro(Base):
     # sobre o valor CHEIO e a taxa sai toda da parte do parceiro) ou
     # "dividida" (a % vale sobre o líquido, cada um paga sua parte da taxa).
     taxa_paga_por: Mapped[str] = mapped_column(String(20), nullable=False, default="parceiro", server_default="parceiro")
+    # Quando o dono confirmou (escaneando o Pix de teste de R$ 0,01) que o
+    # app do banco mostrou o nome certo pra essa chave. Zera se a chave mudar.
+    chave_verificada_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     vendas: Mapped[list["VendaParceiro"]] = relationship(back_populates="parceiro", cascade="all, delete-orphan")

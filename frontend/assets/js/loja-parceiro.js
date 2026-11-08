@@ -23,7 +23,6 @@ const STATUS_VENDA = {
 
 let painel = null;
 let consultaVenda = null;
-let vendaDoRepasse = null;
 let formularioCartao = null;
 
 // ---------- Painel ----------
@@ -54,6 +53,23 @@ async function carregar() {
   }
   simular();
   renderizarVendas();
+  renderizarChave(p);
+  const aviso = $("#aviso-repasse");
+  aviso.hidden = !(Number(painel.a_repassar) > 0);
+  $("#aviso-repasse-titulo").textContent = `${reais(painel.a_repassar)} esperando repasse ao ${nome}`;
+}
+
+function renderizarChave(p) {
+  const bloco = $("#chave-status");
+  bloco.hidden = !p;
+  if (!p) return;
+  const verificada = Boolean(p.chave_verificada_em);
+  bloco.classList.toggle("ok", verificada);
+  $("#chave-status-selo").textContent = verificada ? "✓ Chave verificada" : "! Chave não conferida";
+  $("#chave-status-texto").textContent = verificada
+    ? `Conferida no app do banco em ${formatarDataHoraCompleta(p.chave_verificada_em)}.`
+    : "Confira se ela existe e é mesmo do parceiro antes de repassar dinheiro.";
+  $("#chave-verificar").textContent = verificada ? "Verificar de novo" : "Verificar chave no app do banco";
 }
 
 function renderizarVendas() {
@@ -316,38 +332,128 @@ $("#lista-vendas").addEventListener("click", async (e) => {
   }
 });
 
+// ---------- Modal de Pix (repasse, repasse total, verificar chave) ----------
+
+let acaoConfirmar = null;
+let acaoSecundaria = null;
+
+function abrirModalPix({ titulo, textoHtml, codigo, dica, confirmar, secundario }) {
+  $("#repasse-titulo").textContent = titulo;
+  $("#repasse-texto").innerHTML = textoHtml;
+  $("#repasse-codigo").value = codigo;
+  if (dica) $("#repasse-dica").textContent = dica;
+  const alvo = $("#repasse-qr");
+  if (typeof window.qrcode === "function") {
+    const qr = window.qrcode(0, "M");
+    qr.addData(codigo);
+    qr.make();
+    alvo.innerHTML = qr.createImgTag(6, 12, "QR code do Pix");
+  } else {
+    alvo.innerHTML = '<p class="hint-text">Não deu pra desenhar o QR. Use o "copia e cola" abaixo.</p>';
+  }
+  $("#repasse-confirmar").textContent = confirmar.texto;
+  acaoConfirmar = confirmar.acao;
+  const botao2 = $("#repasse-secundario");
+  botao2.hidden = !secundario;
+  if (secundario) botao2.textContent = secundario.texto;
+  acaoSecundaria = secundario?.acao || null;
+  $("#modal-repasse").hidden = false;
+}
+
+const fecharModal = () => ($("#modal-repasse").hidden = true);
+$("#repasse-fechar").addEventListener("click", fecharModal);
+$("#modal-repasse").addEventListener("click", (e) => {
+  if (e.target.id === "modal-repasse") fecharModal();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !$("#modal-repasse").hidden) fecharModal();
+});
+$("#repasse-confirmar").addEventListener("click", async () => {
+  const botao = $("#repasse-confirmar");
+  botao.disabled = true;
+  try {
+    await acaoConfirmar?.();
+    fecharModal();
+    carregar();
+  } catch (erro) {
+    mostrarToast(mensagemDeErro(erro), "erro");
+  } finally {
+    botao.disabled = false;
+  }
+});
+$("#repasse-secundario").addEventListener("click", () => {
+  fecharModal();
+  acaoSecundaria?.();
+});
+
+const DICA_REPASSE = "Abra o app do Mercado Pago (ou do seu banco) → Pix → Ler QR code ou Pix copia e cola. Chave, nome e valor já vêm preenchidos.";
+
 async function abrirRepasse(id) {
   try {
     const r = await api.repasseLojaAdmin(id);
-    vendaDoRepasse = id;
-    $("#repasse-titulo").textContent = `Repassar ${reais(r.valor)} ao ${r.nome}`;
-    $("#repasse-texto").innerHTML = `Pix pra chave <strong>${escaparHtml(r.chave)}</strong> (${escaparHtml(r.nome)}), valor <strong>${reais(r.valor)}</strong>.`;
-    $("#repasse-codigo").value = r.pix_copia_e_cola;
-    const alvo = $("#repasse-qr");
-    if (typeof window.qrcode === "function") {
-      const qr = window.qrcode(0, "M");
-      qr.addData(r.pix_copia_e_cola);
-      qr.make();
-      alvo.innerHTML = qr.createImgTag(6, 12, "QR code do Pix de repasse");
-    } else {
-      alvo.innerHTML = '<p class="hint-text">Não deu pra desenhar o QR. Use o "copia e cola" abaixo.</p>';
-    }
-    $("#modal-repasse").hidden = false;
+    abrirModalPix({
+      titulo: `Repassar ${reais(r.valor)} ao ${r.nome}`,
+      textoHtml: `Pix pra chave <strong>${escaparHtml(r.chave)}</strong> (${escaparHtml(r.nome)}), valor <strong>${reais(r.valor)}</strong>.`,
+      codigo: r.pix_copia_e_cola,
+      dica: DICA_REPASSE,
+      confirmar: {
+        texto: "Já paguei: marcar como repassado",
+        acao: async () => {
+          await api.marcarRepassadoLojaAdmin(id);
+          mostrarToast("Repasse registrado.", "sucesso");
+        },
+      },
+    });
   } catch (erro) {
     mostrarToast(mensagemDeErro(erro), "erro");
   }
 }
 
-$("#repasse-fechar").addEventListener("click", () => ($("#modal-repasse").hidden = true));
-$("#modal-repasse").addEventListener("click", (e) => {
-  if (e.target.id === "modal-repasse") $("#modal-repasse").hidden = true;
-});
-$("#repasse-confirmar").addEventListener("click", async () => {
+$("#repassar-tudo").addEventListener("click", async () => {
   try {
-    await api.marcarRepassadoLojaAdmin(vendaDoRepasse);
-    $("#modal-repasse").hidden = true;
-    mostrarToast("Repasse registrado.", "sucesso");
-    carregar();
+    const r = await api.repassePendenteLojaAdmin();
+    const qtd = r.vendas.length;
+    abrirModalPix({
+      titulo: `Repassar ${reais(r.valor)} ao ${r.nome}`,
+      textoHtml: `Um Pix só com a parte dele de <strong>${qtd} venda${qtd === 1 ? "" : "s"}</strong>, pra chave <strong>${escaparHtml(r.chave)}</strong>.`,
+      codigo: r.pix_copia_e_cola,
+      dica: DICA_REPASSE,
+      confirmar: {
+        texto: "Já paguei: marcar tudo como repassado",
+        acao: async () => {
+          await api.confirmarRepasseLojaAdmin(r.vendas);
+          mostrarToast(`Repasse de ${reais(r.valor)} registrado.`, "sucesso");
+        },
+      },
+    });
+  } catch (erro) {
+    mostrarToast(mensagemDeErro(erro), "erro");
+  }
+});
+
+$("#chave-verificar").addEventListener("click", async () => {
+  try {
+    const r = await api.testeChaveLojaAdmin();
+    abrirModalPix({
+      titulo: "Verificar a chave Pix",
+      textoHtml: `Escaneie no app do seu banco. <strong>Antes de confirmar</strong>, o app mostra o nome do dono da chave <strong>${escaparHtml(r.chave)}</strong>. Se aparecer o nome de <strong>${escaparHtml(r.nome)}</strong>, a chave existe e está certa. Você pode cancelar sem pagar (ou mandar R$ 0,01).`,
+      codigo: r.pix_copia_e_cola,
+      dica: "Se o app disser \"chave não encontrada\", a chave ou o tipo dela está errado.",
+      confirmar: {
+        texto: "Apareceu o nome certo",
+        acao: async () => {
+          await api.chaveVerificadaLojaAdmin();
+          mostrarToast("Chave Pix verificada!", "sucesso");
+        },
+      },
+      secundario: {
+        texto: "Deu chave não encontrada",
+        acao: () => {
+          mostrarToast("Confira a chave e o tipo (celular, CPF, e-mail…) e salve de novo.", "erro");
+          $("#parceiro-chave").focus();
+        },
+      },
+    });
   } catch (erro) {
     mostrarToast(mensagemDeErro(erro), "erro");
   }

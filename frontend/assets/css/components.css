@@ -2487,3 +2487,117 @@ a.comentario-link:hover {
     right: 44px;
   }
 }
+
+
+/* Loja: aviso de repasse pendente */
+.aviso-repasse {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-4);
+  margin-top: var(--espaco-5);
+  padding: 18px 22px;
+  border-radius: var(--raio-lg);
+  border: 2px solid #f59e0b;
+  background: #fffbeb;
+  color: #78350f;
+  box-shadow: 0 10px 30px -12px rgba(245, 158, 11, 0.55);
+}
+
+.aviso-repasse[hidden] {
+  display: none;
+}
+
+.aviso-repasse-icone {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #f59e0b;
+  color: #fff;
+}
+
+.aviso-repasse-texto {
+  flex: 1;
+  min-width: 0;
+}
+
+.aviso-repasse-texto > strong {
+  display: block;
+  font-size: 1.15rem;
+}
+
+.aviso-repasse-texto p {
+  margin-top: 4px;
+  font-size: 0.9rem;
+}
+
+.aviso-repasse-botao {
+  flex-shrink: 0;
+  background: #b45309;
+  color: #fff;
+  font-weight: 700;
+}
+
+.aviso-repasse-botao:hover {
+  filter: brightness(1.08);
+  color: #fff;
+}
+
+/* Loja: status da chave Pix */
+.chave-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: var(--espaco-2) 0 var(--espaco-3);
+  padding: 12px 14px;
+  border-radius: var(--raio-md);
+  border: 1px solid #fcd34d;
+  background: #fffbeb;
+  color: #78350f;
+}
+
+.chave-status[hidden] {
+  display: none;
+}
+
+.chave-status.ok {
+  border-color: #86efac;
+  background: #f0fdf4;
+  color: #14532d;
+}
+
+.chave-status-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.chave-status-selo {
+  font-weight: 800;
+  font-size: 0.92rem;
+}
+
+.chave-status-texto {
+  font-size: 0.82rem;
+}
+
+.chave-status .btn {
+  margin-top: 0;
+  align-self: center;
+}
+
+@media (max-width: 600px) {
+  .aviso-repasse {
+    flex-wrap: wrap;
+    padding: 16px;
+  }
+  .aviso-repasse-botao,
+  .chave-status .btn {
+    width: 100%;
+  }
+}

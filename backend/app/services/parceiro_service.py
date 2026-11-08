@@ -260,6 +260,16 @@ def montar_br_code(chave: str, nome: str, cidade: str, valor: Decimal | None = N
     return payload + _crc16(payload)
 
 
+def pix_para_parceiro(parceiro: Parceiro, valor: Decimal, txid: str) -> str:
+    return montar_br_code(
+        chave=parceiro.chave_pix,
+        nome=_sem_acento(parceiro.nome, 25),
+        cidade=_sem_acento(parceiro.cidade, 15),
+        valor=valor,
+        txid=txid,
+    )
+
+
 def pix_repasse(venda: VendaParceiro) -> str:
     parceiro = venda.parceiro
     return montar_br_code(

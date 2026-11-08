@@ -26,6 +26,7 @@ class ParceiroOut(OrmModel):
     cidade: str
     percentual_parceiro: int
     taxa_paga_por: str = "parceiro"
+    chave_verificada_em: datetime | None = None
 
 
 class VendaIn(BaseModel):
@@ -84,3 +85,8 @@ class RepasseOut(BaseModel):
     valor: Decimal
     chave: str
     nome: str
+    vendas: list[int] = []  # repasse de várias vendas de uma vez
+
+
+class ConfirmarRepasseIn(BaseModel):
+    vendas: list[int] = Field(min_length=1, max_length=500)

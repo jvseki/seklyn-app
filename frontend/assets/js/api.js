@@ -208,6 +208,11 @@ export const api = {
   criarVendaCartaoLojaAdmin: (dados) => apiFetch("/admin/loja/vendas/cartao", { method: "POST", body: JSON.stringify(dados) }),
   consultarVendaLojaAdmin: (id) => apiFetch(`/admin/loja/vendas/${id}`),
   repasseLojaAdmin: (id) => apiFetch(`/admin/loja/vendas/${id}/repasse`),
+  testeChaveLojaAdmin: () => apiFetch("/admin/loja/parceiro/teste-chave"),
+  chaveVerificadaLojaAdmin: () => apiFetch("/admin/loja/parceiro/chave-verificada", { method: "POST" }),
+  repassePendenteLojaAdmin: () => apiFetch("/admin/loja/repasse-pendente"),
+  confirmarRepasseLojaAdmin: (vendas) =>
+    apiFetch("/admin/loja/repasse-pendente/confirmar", { method: "POST", body: JSON.stringify({ vendas }) }),
   marcarRepassadoLojaAdmin: (id) => apiFetch(`/admin/loja/vendas/${id}/repassado`, { method: "POST" }),
   reembolsarVendaLojaAdmin: (id) => apiFetch(`/admin/loja/vendas/${id}/reembolsar`, { method: "POST" }),
   configTesteCartaoAdmin: () => apiFetch("/admin/teste-cartao/config"),

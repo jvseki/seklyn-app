@@ -14,6 +14,7 @@ from app.deps import exigir_admin
 from app.models.parceiro import Parceiro, VendaParceiro
 from app.models.personal import Personal
 from app.schemas.parceiro import (
+    ConfirmarRepasseIn,
     PainelParceiroOut,
     ParceiroIn,
     ParceiroOut,
@@ -83,6 +84,8 @@ def salvar_parceiro(dados: ParceiroIn, db: Session = Depends(get_db)) -> Parceir
     if not loja.chave_valida(dados.chave_pix_tipo, chave):
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Essa chave Pix não confere com o tipo escolhido.")
     parceiro = _parceiro(db) or Parceiro()
+    if parceiro.chave_pix != chave or parceiro.chave_pix_tipo != dados.chave_pix_tipo:
+        parceiro.chave_verificada_em = None  # chave nova: precisa verificar de novo
     parceiro.nome = dados.nome.strip()
     parceiro.chave_pix_tipo = dados.chave_pix_tipo
     parceiro.chave_pix = chave
@@ -93,6 +96,81 @@ def salvar_parceiro(dados: ParceiroIn, db: Session = Depends(get_db)) -> Parceir
     db.commit()
     db.refresh(parceiro)
     return ParceiroOut.model_validate(parceiro)
+
+
+def _exigir_parceiro(db: Session) -> Parceiro:
+    parceiro = _parceiro(db)
+    if parceiro is None:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Cadastre o parceiro (nome e chave Pix) primeiro.")
+    return parceiro
+
+
+@router.get("/parceiro/teste-chave", response_model=RepasseOut)
+def pix_teste_da_chave(db: Session = Depends(get_db)) -> RepasseOut:
+    """Pix de R$ 0,01 pra chave do parceiro: ao escanear, o app do banco
+    mostra o nome do dono da chave (ou "chave não encontrada") — é a única
+    forma de conferir, porque a consulta de chaves Pix (DICT do Banco
+    Central) não é aberta pra sistemas de fora dos bancos."""
+    parceiro = _exigir_parceiro(db)
+    return RepasseOut(
+        pix_copia_e_cola=loja.pix_para_parceiro(parceiro, Decimal("0.01"), "SEKLYNTESTECHAVE"),
+        valor=Decimal("0.01"),
+        chave=parceiro.chave_pix,
+        nome=parceiro.nome,
+    )
+
+
+@router.post("/parceiro/chave-verificada", response_model=ParceiroOut)
+def marcar_chave_verificada(db: Session = Depends(get_db)) -> ParceiroOut:
+    parceiro = _exigir_parceiro(db)
+    parceiro.chave_verificada_em = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(parceiro)
+    return ParceiroOut.model_validate(parceiro)
+
+
+def _vendas_a_repassar(db: Session, parceiro: Parceiro) -> list[VendaParceiro]:
+    return (
+        db.query(VendaParceiro)
+        .filter(
+            VendaParceiro.parceiro_id == parceiro.id,
+            VendaParceiro.status == "paga",
+            VendaParceiro.repasse_status == "pendente",
+        )
+        .order_by(VendaParceiro.id)
+        .all()
+    )
+
+
+@router.get("/repasse-pendente", response_model=RepasseOut)
+def repasse_pendente(db: Session = Depends(get_db)) -> RepasseOut:
+    """Um Pix só com a soma de tudo que ainda não foi repassado."""
+    parceiro = _exigir_parceiro(db)
+    vendas = [v for v in _vendas_a_repassar(db, parceiro) if v.parte_parceiro and v.parte_parceiro > 0]
+    if not vendas:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Nada pendente pra repassar.")
+    total = sum((v.parte_parceiro for v in vendas), Decimal("0.00"))
+    return RepasseOut(
+        pix_copia_e_cola=loja.pix_para_parceiro(parceiro, total, f"SEKLYNREPASSE{vendas[-1].id}"),
+        valor=total,
+        chave=parceiro.chave_pix,
+        nome=parceiro.nome,
+        vendas=[v.id for v in vendas],
+    )
+
+
+@router.post("/repasse-pendente/confirmar", response_model=list[VendaOut])
+def confirmar_repasse(dados: ConfirmarRepasseIn, db: Session = Depends(get_db)) -> list[VendaOut]:
+    parceiro = _exigir_parceiro(db)
+    agora = datetime.now(timezone.utc)
+    marcadas = []
+    for venda in _vendas_a_repassar(db, parceiro):
+        if venda.id in dados.vendas:
+            venda.repasse_status = "feito"
+            venda.repassado_em = agora
+            marcadas.append(venda)
+    db.commit()
+    return [VendaOut.model_validate(v) for v in marcadas]
 
 
 @router.post("/vendas", response_model=VendaCriadaOut)
