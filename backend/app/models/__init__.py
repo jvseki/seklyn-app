@@ -17,8 +17,11 @@ from app.models.treino_template import TreinoTemplate
 from app.models.anamnese import Anamnese
 from app.models.meta import Meta
 from app.models.comentario_serie import ComentarioSerie
+from app.models.parceiro import Parceiro, VendaParceiro
 
 __all__ = [
+    "Parceiro",
+    "VendaParceiro",
     "Personal",
     "Aluno",
     "Treino",

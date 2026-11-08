@@ -15,6 +15,7 @@ from app.models.aluno import Aluno
 from app.models.personal import Personal
 from app.schemas.assinatura import AssinarCartaoIn, AssinaturaOut, PixOut
 from app.services import mercadopago_service as mp
+from app.services import parceiro_service
 
 router = APIRouter(tags=["Assinatura"])
 logger = logging.getLogger("seklyn.mercadopago")
@@ -225,7 +226,11 @@ async def webhook_mercadopago(request: Request, db: Session = Depends(get_db)) -
         elif tipo in ("subscription_authorized_payment", "authorized_payment"):
             mp.tratar_pagamento_autorizado(db, recurso_id)
         elif tipo == "payment":
-            mp.sincronizar_pagamento_avulso(db, recurso_id)  # Pix/débito (ignora o resto)
+            pagamento = mp._requisitar("GET", f"/v1/payments/{recurso_id}")
+            if (pagamento.get("external_reference") or "").startswith(parceiro_service.PREFIXO_VENDA):
+                parceiro_service.aplicar_pagamento(db, pagamento)  # venda da loja do parceiro (teste)
+            else:
+                mp.sincronizar_pagamento_avulso(db, recurso_id)  # Pix/débito da assinatura (ignora o resto)
     except mp.ErroMercadoPago as erro:
         # Falha consultando a API: 500 faz o Mercado Pago tentar de novo depois.
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Falha temporária.") from erro

@@ -201,6 +201,14 @@ export const api = {
     apiFetch(`/admin/personais/${id}/limite`, { method: "PUT", body: JSON.stringify({ limite_alunos }) }),
   definirValorPersonalAdmin: (id, valor_mensal) =>
     apiFetch(`/admin/personais/${id}/valor`, { method: "PUT", body: JSON.stringify({ valor_mensal }) }),
+  // --- Loja do parceiro (teste, admin) ---
+  painelLojaAdmin: () => apiFetch("/admin/loja"),
+  salvarParceiroAdmin: (dados) => apiFetch("/admin/loja/parceiro", { method: "PUT", body: JSON.stringify(dados) }),
+  criarVendaLojaAdmin: (dados) => apiFetch("/admin/loja/vendas", { method: "POST", body: JSON.stringify(dados) }),
+  consultarVendaLojaAdmin: (id) => apiFetch(`/admin/loja/vendas/${id}`),
+  repasseLojaAdmin: (id) => apiFetch(`/admin/loja/vendas/${id}/repasse`),
+  marcarRepassadoLojaAdmin: (id) => apiFetch(`/admin/loja/vendas/${id}/repassado`, { method: "POST" }),
+  reembolsarVendaLojaAdmin: (id) => apiFetch(`/admin/loja/vendas/${id}/reembolsar`, { method: "POST" }),
   configTesteCartaoAdmin: () => apiFetch("/admin/teste-cartao/config"),
   criarTesteCartaoAdmin: (cardToken, payerEmail) =>
     apiFetch("/admin/teste-cartao", { method: "POST", body: JSON.stringify({ card_token: cardToken, payer_email: payerEmail }) }),

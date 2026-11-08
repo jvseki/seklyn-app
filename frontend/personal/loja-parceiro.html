@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <script>
+    (function () {
+      if (localStorage.getItem("pv_tema") === "escuro") document.documentElement.dataset.theme = "escuro";
+    })();
+  </script>
+  <script src="../assets/js/config.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Loja do parceiro — Seklyn</title>
+  <link rel="icon" type="image/png" href="../assets/img/logo-s.png" />
+  <link rel="stylesheet" href="../assets/css/variables.css" />
+  <link rel="stylesheet" href="../assets/css/base.css" />
+  <link rel="stylesheet" href="../assets/css/components.css" />
+  <link rel="stylesheet" href="../assets/css/desktop.css" />
+</head>
+<body>
+  <div class="topbar-mobile">
+    <button class="botao-hamburguer" type="button" data-acao="abrir-menu" aria-label="Abrir menu">☰</button>
+    <a href="/" style="text-decoration:none;color:inherit;"><span class="marca-texto" style="font-weight:800;">Sek<span class="ponto">lyn</span></span></a>
+    <a href="/" class="botao-hamburguer" title="Ir para seklyn.com.br" aria-label="Ir para seklyn.com.br"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></a>
+  </div>
+  <div class="sidebar-overlay"></div>
+
+  <div class="app-personal">
+    <aside class="sidebar">
+      <a href="/" class="sidebar-marca marca-logo" title="Ir para seklyn.com.br">
+        <img src="../assets/img/logo-s.png" alt="" width="24" height="24" style="object-fit:contain;" />
+        <span class="marca-texto">Sek<span class="ponto">lyn</span></span>
+      </a>
+      <nav class="sidebar-nav">
+        <a href="dashboard.html" class="sidebar-link"><svg class="sidebar-link-icone" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Alunos</span></a>
+        <a href="recomendacoes.html" class="sidebar-link"><svg class="sidebar-link-icone" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg><span>Recomendações</span></a>
+        <a href="assinatura.html" class="sidebar-link"><svg class="sidebar-link-icone" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg><span>Assinatura</span></a>
+        <a href="admin.html" class="sidebar-link" data-admin-only hidden><svg class="sidebar-link-icone" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg><span>Admin</span></a>
+        <a href="loja-parceiro.html" class="sidebar-link ativo" data-admin-only hidden><svg class="sidebar-link-icone" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l1.5-5h15L21 9"/><path d="M3 9h18v2a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0Z"/><path d="M5 13v8h14v-8"/></svg><span>Loja (teste)</span></a>
+      </nav>
+      <div class="sidebar-rodape">
+        <button class="botao-tema" type="button" data-acao="alternar-tema" aria-label="Alternar tema">🌙</button>
+        <a href="/" class="botao-tema" title="Ir para seklyn.com.br" aria-label="Ir para seklyn.com.br"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></a>
+        <button class="btn btn-ghost btn-sm" data-acao="sair">Sair</button>
+      </div>
+    </aside>
+
+    <main class="conteudo-personal">
+      <div class="painel-hero">
+        <div class="cabecalho-pagina">
+          <div>
+            <h1>Loja do parceiro <span class="badge badge-aviso" style="vertical-align:middle;">Teste</span></h1>
+            <p>Simula a venda de produtos com divisão do valor: o cliente paga por Pix na <strong>sua</strong> conta Mercado Pago e a parte do parceiro vai pra chave Pix dele.</p>
+          </div>
+        </div>
+        <ol class="loja-fluxo">
+          <li><span>1</span><div><strong>Cliente paga</strong><small>Pix gerado aqui, cai no seu Mercado Pago</small></div></li>
+          <li><span>2</span><div><strong>Divisão automática</strong><small>Taxa real do Mercado Pago dividida meio a meio</small></div></li>
+          <li><span>3</span><div><strong>Repasse</strong><small>QR com a chave e o valor do parceiro: você só confirma no app</small></div></li>
+        </ol>
+        <div class="grid-stats loja-stats" style="margin-bottom:0;">
+          <div class="stat-tile"><div class="valor" id="loja-vendido">–</div><div class="rotulo">Vendido</div></div>
+          <div class="stat-tile"><div class="valor" id="loja-taxas">–</div><div class="rotulo">Taxas Mercado Pago</div></div>
+          <div class="stat-tile"><div class="valor" id="loja-a-repassar">–</div><div class="rotulo" id="loja-rotulo-repassar">A repassar ao parceiro</div></div>
+          <div class="stat-tile"><div class="valor" id="loja-liquido">–</div><div class="rotulo">Sua parte</div></div>
+        </div>
+      </div>
+
+      <div class="loja-grid">
+        <section class="card">
+          <h2 class="loja-titulo">Parceiro</h2>
+          <form id="form-parceiro" class="loja-form">
+            <label class="label" for="parceiro-nome">Nome</label>
+            <input class="input" id="parceiro-nome" required maxlength="120" placeholder="Douglas Personal" />
+            <div class="loja-linha">
+              <div>
+                <label class="label" for="parceiro-tipo">Tipo da chave Pix</label>
+                <select class="input" id="parceiro-tipo">
+                  <option value="celular">Celular</option>
+                  <option value="cpf">CPF</option>
+                  <option value="email">E-mail</option>
+                  <option value="aleatoria">Chave aleatória</option>
+                  <option value="cnpj">CNPJ</option>
+                </select>
+              </div>
+              <div>
+                <label class="label" for="parceiro-chave">Chave Pix</label>
+                <input class="input" id="parceiro-chave" required maxlength="120" />
+              </div>
+            </div>
+            <div class="loja-linha">
+              <div>
+                <label class="label" for="parceiro-cidade">Cidade</label>
+                <input class="input" id="parceiro-cidade" value="Andradina" maxlength="60" />
+              </div>
+              <div>
+                <label class="label" for="parceiro-percentual">Parte do parceiro (%)</label>
+                <input class="input" id="parceiro-percentual" type="number" min="0" max="100" value="50" />
+              </div>
+            </div>
+            <p class="hint-text">O percentual vale sobre o valor já sem a taxa do Mercado Pago: 50% = metade da venda e metade da taxa pra cada um.</p>
+            <button class="btn btn-primary" type="submit">Salvar parceiro</button>
+          </form>
+        </section>
+
+        <section class="card">
+          <h2 class="loja-titulo">Nova venda</h2>
+          <form id="form-venda" class="loja-form">
+            <label class="label" for="venda-produto">Produto</label>
+            <input class="input" id="venda-produto" required maxlength="120" placeholder="Camiseta Seklyn" />
+            <div class="loja-linha">
+              <div>
+                <label class="label" for="venda-valor">Valor (R$)</label>
+                <input class="input" id="venda-valor" type="number" min="1" step="0.01" value="1.00" required />
+              </div>
+              <div>
+                <label class="label" for="venda-email">E-mail de quem paga</label>
+                <input class="input" id="venda-email" type="email" required placeholder="cliente@email.com" />
+              </div>
+            </div>
+            <div class="loja-simulacao" id="venda-simulacao"></div>
+            <button class="btn btn-primary" type="submit" id="venda-gerar">Gerar Pix da venda</button>
+          </form>
+          <div class="loja-pix" id="venda-pix" hidden>
+            <p><strong>Pix da venda</strong>: escaneie com o app do banco (no teste, pague do seu Nubank).</p>
+            <img id="venda-pix-qr" alt="QR code do Pix da venda" width="200" height="200" />
+            <div class="pix-copia">
+              <input class="input" id="venda-pix-codigo" readonly />
+              <button class="btn btn-secondary" type="button" data-copiar="venda-pix-codigo">Copiar</button>
+            </div>
+            <p class="pix-aguardando"><span class="spinner"></span> Aguardando o pagamento…</p>
+            <button class="btn btn-ghost btn-sm" type="button" id="venda-pix-fechar">Fechar</button>
+          </div>
+        </section>
+      </div>
+
+      <section class="card" style="margin-top:var(--espaco-5);">
+        <h2 class="loja-titulo">Vendas</h2>
+        <div id="lista-vendas"><div class="spinner"></div></div>
+      </section>
+
+      <div class="loja-modal" id="modal-repasse" hidden>
+        <div class="loja-modal-caixa card" role="dialog" aria-modal="true" aria-labelledby="repasse-titulo">
+          <h2 class="loja-titulo" id="repasse-titulo">Repasse</h2>
+          <p id="repasse-texto"></p>
+          <div id="repasse-qr" class="loja-repasse-qr"></div>
+          <div class="pix-copia">
+            <input class="input" id="repasse-codigo" readonly />
+            <button class="btn btn-secondary" type="button" data-copiar="repasse-codigo">Copiar</button>
+          </div>
+          <p class="hint-text">Abra o app do Mercado Pago (ou do seu banco) → Pix → Ler QR code ou Pix copia e cola. Chave, nome e valor já vêm preenchidos.</p>
+          <div class="loja-modal-acoes">
+            <button class="btn btn-ghost" type="button" id="repasse-fechar">Fechar</button>
+            <button class="btn btn-primary" type="button" id="repasse-confirmar">Já paguei: marcar como repassado</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="../assets/js/tema.js"></script>
+  <script type="module" src="../assets/js/menu.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+  <script type="module" src="../assets/js/loja-parceiro.js"></script>
+</body>
+</html>
