@@ -2,3 +2,6 @@ node_modules/
 out/
 .remotion/
 public/apresentacao/trilha.wav
+
+# trilha gerada por scripts/gerar_trilha_parceria.py
+public/parceria/trilha.wav

@@ -4,6 +4,7 @@ import { LogoHero } from "./LogoHero";
 import { DURACAO_SIMULACAO, SimulacaoLoja } from "./SimulacaoLoja";
 import { ApresentacaoSeklyn, DURACAO_APRESENTACAO } from "./ApresentacaoSeklyn";
 import { WALL_A, WALL_L, WallpaperIphone } from "./WallpaperIphone";
+import { DURACAO_PARCERIA, ExplicacaoParceria } from "./ExplicacaoParceria";
 
 const FPS = 30;
 const DURACAO_SEGUNDOS = 6;
@@ -55,6 +56,15 @@ export const RemotionRoot: React.FC = () => {
         id="SimulacaoLoja"
         component={SimulacaoLoja}
         durationInFrames={DURACAO_SIMULACAO}
+        fps={FPS}
+        width={1080}
+        height={1920}
+      />
+      {/* Explicação da parceria pro Douglas, com os números do teste real (08/11). */}
+      <Composition
+        id="ExplicacaoParceria"
+        component={ExplicacaoParceria}
+        durationInFrames={DURACAO_PARCERIA}
         fps={FPS}
         width={1080}
         height={1920}
