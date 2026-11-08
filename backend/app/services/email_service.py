@@ -91,7 +91,7 @@ CORES_TEMA = {
 def _layout(*, titulo: str, previa: str, paragrafos: list[str], botao_texto: str, botao_link: str, rodape: str, cor: str = "#7c3aed") -> str:
     """Monta o HTML completo do e-mail. `paragrafos` já devem vir escapados."""
     corpo = "".join(
-        f'<p style="margin:0 0 16px;font-size:16px;line-height:1.6;color:#334155;">{p}</p>' for p in paragrafos
+        f'<p style="margin:0 0 18px;font-size:17px;line-height:1.65;color:#0f172a;">{p}</p>' for p in paragrafos
     )
     link = escape(botao_link, quote=True)
     fonte = "'Segoe UI',Roboto,Arial,sans-serif"
@@ -122,10 +122,10 @@ def _layout(*, titulo: str, previa: str, paragrafos: list[str], botao_texto: str
           <a href="{link}" style="display:inline-block;padding:15px 30px;font-family:{fonte};font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:14px;">{escape(botao_texto)} &rarr;</a>
         </td>
       </tr></table>
-      <p style="margin:0 0 26px;font-size:13px;line-height:1.5;color:#94a3b8;">Se o botão não funcionar, copie e cole no navegador:<br><a href="{link}" style="color:{cor};word-break:break-all;">{escape(botao_link)}</a></p>
+      <p style="margin:0 0 26px;font-size:14px;line-height:1.55;color:#475569;">Se o botão não funcionar, copie e cole no navegador:<br><a href="{link}" style="color:{cor};font-weight:600;word-break:break-all;">{escape(botao_link)}</a></p>
     </td></tr>
-    <tr><td style="padding:20px 32px 28px;border-top:1px solid #ede9fe;font-family:{fonte};">
-      <p style="margin:0;font-size:12px;line-height:1.6;color:#94a3b8;">{rodape}<br><strong style="color:#64748b;">Seklyn</strong> · acompanhamento de treinos série por série · <a href="https://seklyn.com.br" style="color:#94a3b8;">seklyn.com.br</a></p>
+    <tr><td style="padding:20px 32px 28px;border-top:1px solid #e2e8f0;background:#faf9ff;font-family:{fonte};">
+      <p style="margin:0;font-size:13px;line-height:1.65;color:#475569;">{rodape}<br><strong style="color:#0f172a;">Seklyn</strong> · acompanhamento de treinos série por série · <a href="https://seklyn.com.br" style="color:#475569;text-decoration:underline;">seklyn.com.br</a></p>
     </td></tr>
   </table>
 </td></tr>
