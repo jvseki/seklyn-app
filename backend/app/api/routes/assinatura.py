@@ -41,7 +41,7 @@ def _saida(db: Session, personal: Personal) -> AssinaturaOut:
         forma_pagamento=assinatura.forma_pagamento,
         cancelamento_agendado=assinatura.cancelamento_agendado,
         reembolso_ate=mp.janela_reembolso_ate(assinatura),
-        reembolso_horas=mp.settings.reembolso_horas,
+        reembolso_horas=mp.reembolso_horas_para(assinatura),
         dias_para_vencer=dias,
         alerta_vencimento=(
             assinatura.forma_pagamento in ("debito", "pix")

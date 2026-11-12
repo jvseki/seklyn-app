@@ -262,14 +262,28 @@ def pode_pagar_avulso(assinatura: Assinatura) -> bool:
     return False  # crédito automático ativo ou liberado pelo admin
 
 
+def reembolso_horas_para(assinatura: Assinatura) -> int:
+    """
+    Reembolso ao cancelar: por enquanto SÓ pra conta admin (o dono, pra
+    testar). Pros clientes, cancelar só para a renovação e o acesso vai até o
+    fim do mês pago. Pra liberar pra todo mundo no lançamento, é só tirar a
+    checagem de admin daqui.
+    """
+    personal = assinatura.personal
+    if personal is None or not personal.is_admin:
+        return 0
+    return settings.reembolso_horas
+
+
 def janela_reembolso_ate(assinatura: Assinatura) -> datetime | None:
     """Até quando dá pra cancelar com reembolso total (None = já passou)."""
     pago_em = assinatura.ultimo_pagamento_em
-    if not settings.reembolso_horas or pago_em is None or not assinatura.ativa:
+    horas = reembolso_horas_para(assinatura)
+    if not horas or pago_em is None or not assinatura.ativa:
         return None
     if pago_em.tzinfo is None:
         pago_em = pago_em.replace(tzinfo=timezone.utc)
-    limite = pago_em + timedelta(hours=settings.reembolso_horas)
+    limite = pago_em + timedelta(hours=horas)
     return limite if limite > _agora() else None
 
 

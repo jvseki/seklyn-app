@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60 * 24 * 30  # 30 dias — evita deslogar sozinho a cada dia que reabre o site
 
+    # Documentação interativa da API (/docs, /redoc, /openapi.json). Desligada
+    # por padrão: em produção ela entregaria o mapa de todas as rotas. Ligue
+    # só no seu computador (MOSTRAR_DOCS=true no .env local).
+    mostrar_docs: bool = False
+
     # Frontend (CORS + geração de links do aluno)
     frontend_url: str = "http://localhost:5500"
 

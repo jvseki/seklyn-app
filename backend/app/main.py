@@ -2,9 +2,10 @@
 Ponto de entrada da API do Seklyn.
 Rodar em desenvolvimento: uvicorn app.main:app --reload
 """
+import logging
 import os
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -14,11 +15,15 @@ from app.core.config import get_settings
 from app.core.erros import tratar_erro_validacao
 
 settings = get_settings()
+logger_seguranca = logging.getLogger("seklyn.seguranca")
 
 app = FastAPI(
     title="Seklyn API",
     description="API do Seklyn — acompanhamento de treinos para Personal Trainers e seus alunos.",
     version="0.1.0",
+    docs_url="/docs" if settings.mostrar_docs else None,
+    redoc_url="/redoc" if settings.mostrar_docs else None,
+    openapi_url="/openapi.json" if settings.mostrar_docs else None,
 )
 
 # Erros de validação (campo muito longo, obrigatório faltando, etc.) vêm em
@@ -47,6 +52,19 @@ app.include_router(videos.router)
 os.makedirs("uploads/videos", exist_ok=True)
 os.makedirs("uploads/fotos", exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+
+
+@app.post("/api/csp-report", status_code=204, include_in_schema=False)
+async def relatorio_csp(request: Request) -> Response:
+    """
+    Recebe os avisos da Content-Security-Policy (o navegador manda quando
+    algo bloqueado/suspeito tenta carregar no site). Por enquanto a política
+    roda em modo "só relatar": isso mostra o que precisa ser liberado antes
+    de passar a bloquear de verdade (sem quebrar o pagamento).
+    """
+    corpo = (await request.body())[:2000]
+    logger_seguranca.warning("CSP: %s", corpo.decode("utf-8", errors="replace"))
+    return Response(status_code=204)
 
 
 @app.get("/api/saude", tags=["Saúde"])
