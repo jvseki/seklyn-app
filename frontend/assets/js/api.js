@@ -163,9 +163,17 @@ export const api = {
     apiFetch(`/personal/recomendacoes/${id}`, { method: "PUT", body: JSON.stringify(dados) }),
   excluirRecomendacao: (id) => apiFetch(`/personal/recomendacoes/${id}`, { method: "DELETE" }),
 
-  // --- Assinatura / Stripe ---
+  // --- Assinatura (Mercado Pago) ---
   statusAssinatura: () => apiFetch("/personal/assinatura"),
-  criarCheckoutSession: () => apiFetch("/stripe/criar-checkout-session", { method: "POST" }),
+  // tipo: "credito" (automático) ou "debito" (1 mês); extras do débito vêm do formulário do MP.
+  assinarComCartao: (cardToken, tipo = "credito", extras = {}) =>
+    apiFetch("/personal/assinatura/cartao", {
+      method: "POST",
+      body: JSON.stringify({ card_token: cardToken, tipo, ...extras }),
+    }),
+  gerarPixAssinatura: (cpf = null) =>
+    apiFetch("/personal/assinatura/pix", { method: "POST", body: JSON.stringify(cpf ? { cpf } : {}) }),
+  cancelarAssinatura: () => apiFetch("/personal/assinatura/cancelar", { method: "POST" }),
 
   // --- Vídeos demonstrativos de exercício (reusados por nome, entre alunos) ---
   buscarVideoExercicio: (nomeExercicio) =>
@@ -192,6 +200,36 @@ export const api = {
   desativarPersonalAdmin: (id) => apiFetch(`/admin/personais/${id}/desativar`, { method: "POST" }),
   definirLimitePersonalAdmin: (id, limite_alunos) =>
     apiFetch(`/admin/personais/${id}/limite`, { method: "PUT", body: JSON.stringify({ limite_alunos }) }),
+  definirValorPersonalAdmin: (id, valor_mensal) =>
+    apiFetch(`/admin/personais/${id}/valor`, { method: "PUT", body: JSON.stringify({ valor_mensal }) }),
+  // --- Loja do parceiro (teste, admin) ---
+  painelLojaAdmin: () => apiFetch("/admin/loja"),
+  salvarParceiroAdmin: (dados) => apiFetch("/admin/loja/parceiro", { method: "PUT", body: JSON.stringify(dados) }),
+  criarVendaLojaAdmin: (dados) => apiFetch("/admin/loja/vendas", { method: "POST", body: JSON.stringify(dados) }),
+  criarVendaCartaoLojaAdmin: (dados) => apiFetch("/admin/loja/vendas/cartao", { method: "POST", body: JSON.stringify(dados) }),
+  consultarVendaLojaAdmin: (id) => apiFetch(`/admin/loja/vendas/${id}`),
+  repasseLojaAdmin: (id) => apiFetch(`/admin/loja/vendas/${id}/repasse`),
+  testeChaveLojaAdmin: () => apiFetch("/admin/loja/parceiro/teste-chave"),
+  chaveVerificadaLojaAdmin: () => apiFetch("/admin/loja/parceiro/chave-verificada", { method: "POST" }),
+  repassePendenteLojaAdmin: () => apiFetch("/admin/loja/repasse-pendente"),
+  confirmarRepasseLojaAdmin: (vendas) =>
+    apiFetch("/admin/loja/repasse-pendente/confirmar", { method: "POST", body: JSON.stringify({ vendas }) }),
+  marcarRepassadoLojaAdmin: (id) => apiFetch(`/admin/loja/vendas/${id}/repassado`, { method: "POST" }),
+  reembolsarVendaLojaAdmin: (id) => apiFetch(`/admin/loja/vendas/${id}/reembolsar`, { method: "POST" }),
+  configTesteCartaoAdmin: () => apiFetch("/admin/teste-cartao/config"),
+  criarTesteDebitoAdmin: (dados) => apiFetch("/admin/teste-pagamento/debito", { method: "POST", body: JSON.stringify(dados) }),
+  criarTestePixAdmin: (payerEmail) =>
+    apiFetch("/admin/teste-pagamento/pix", { method: "POST", body: JSON.stringify({ payer_email: payerEmail }) }),
+  consultarTestePagamentoAdmin: (id) => apiFetch(`/admin/teste-pagamento/${encodeURIComponent(id)}`),
+  reembolsarTestePagamentoAdmin: (id) => apiFetch(`/admin/teste-pagamento/${encodeURIComponent(id)}/reembolsar`, { method: "POST" }),
+  // intervaloDias: testar o crédito AUTOMÁTICO (cobra agora e de novo em N dias).
+  criarTesteCartaoAdmin: (cardToken, payerEmail, intervaloDias = null) =>
+    apiFetch("/admin/teste-cartao", {
+      method: "POST",
+      body: JSON.stringify({ card_token: cardToken, payer_email: payerEmail, intervalo_dias: intervaloDias }),
+    }),
+  consultarTesteCartaoAdmin: (id) => apiFetch(`/admin/teste-cartao/${encodeURIComponent(id)}`),
+  reembolsarTesteCartaoAdmin: (id) => apiFetch(`/admin/teste-cartao/${encodeURIComponent(id)}/reembolsar`, { method: "POST" }),
   definirTemaPersonalAdmin: (id, tema_personalizado) =>
     apiFetch(`/admin/personais/${id}/tema`, { method: "PUT", body: JSON.stringify({ tema_personalizado }) }),
 

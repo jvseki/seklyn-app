@@ -35,6 +35,7 @@
         <a href="recomendacoes.html" class="sidebar-link"><svg class="sidebar-link-icone" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg><span>Recomendações</span></a>
         <a href="assinatura.html" class="sidebar-link"><svg class="sidebar-link-icone" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg><span>Assinatura</span></a>
         <a href="admin.html" class="sidebar-link ativo" data-admin-only hidden><svg class="sidebar-link-icone" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg><span>Admin</span></a>
+        <a href="loja-parceiro.html" class="sidebar-link" data-admin-only hidden><svg class="sidebar-link-icone" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l1.5-5h15L21 9"/><path d="M3 9h18v2a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0Z"/><path d="M5 13v8h14v-8"/></svg><span>Loja (teste)</span></a>
       </nav>
       <div class="sidebar-rodape">
         <button class="botao-tema" type="button" data-acao="alternar-tema" aria-label="Alternar tema">🌙</button>
@@ -48,7 +49,7 @@
         <div class="cabecalho-pagina">
           <div>
             <h1>Administração</h1>
-            <p>Todas as contas de Personal cadastradas no Seklyn — ative, desative e ajuste o limite de alunos.</p>
+            <p>Todas as contas de Personal cadastradas no Seklyn — ative, desative e ajuste o limite de alunos e a mensalidade.</p>
           </div>
         </div>
 
@@ -73,12 +74,11 @@
           <thead>
             <tr>
               <th>Personal</th>
-              <th>E-mail</th>
               <th>Tema</th>
               <th>Alunos</th>
               <th>Assinatura</th>
               <th>Limite</th>
-              <th>Criado em</th>
+              <th>Mensalidade</th>
               <th>Ações</th>
             </tr>
           </thead>
@@ -91,12 +91,89 @@
       <div class="estado-vazio" id="estado-vazio-admin" hidden>
         <p>Nenhum Personal cadastrado ainda.</p>
       </div>
+
+      <!-- Teste de cobrança real (ver teste-cartao-admin.js): R$ 1,00 no seu
+           cartão numa assinatura de teste separada, depois cancela e reembolsa. -->
+      <section class="card teste-cartao" id="teste-cartao">
+        <div class="teste-cartao-topo">
+          <div>
+            <h2>Teste de cobrança real</h2>
+            <p class="hint-text">Cobra <strong>R$ 1,00 de verdade</strong> (crédito, débito ou Pix) pra confirmar que a integração com o Mercado Pago funciona. Não mexe na assinatura de ninguém — e no fim você cancela e reembolsa aqui mesmo.</p>
+          </div>
+          <span class="badge badge-aviso">Só admin</span>
+        </div>
+        <div id="teste-cartao-indisponivel" class="alerta alerta-aviso" hidden>
+          O Mercado Pago ainda não está configurado no servidor (faltam o Access Token e a chave pública no .env).
+        </div>
+        <div id="teste-cartao-inicio" hidden>
+          <div class="form-group">
+            <label class="label" for="teste-cartao-email">E-mail do pagador</label>
+            <input class="input" type="email" id="teste-cartao-email" />
+            <p class="hint-text">Precisa ser <strong>diferente</strong> do e-mail da sua conta Mercado Pago — o Mercado Pago não deixa pagar a si mesmo.</p>
+          </div>
+          <span class="label">Forma de pagamento</span>
+          <div class="metodos-pagamento" role="radiogroup" aria-label="Forma de pagamento do teste">
+            <label class="metodo selecionado">
+              <input type="radio" name="teste-forma" value="credito" checked />
+              <span class="metodo-icone" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg>
+              </span>
+              <span class="metodo-texto"><span class="metodo-nome">Crédito</span><span class="metodo-detalhe">Assinatura de teste</span></span>
+              <span class="metodo-check" aria-hidden="true"></span>
+            </label>
+            <label class="metodo">
+              <input type="radio" name="teste-forma" value="debito" />
+              <span class="metodo-icone" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M6 9h4v4H6z"/><line x1="14" y1="15" x2="18" y2="15"/></svg>
+              </span>
+              <span class="metodo-texto"><span class="metodo-nome">Débito</span><span class="metodo-detalhe">Cobrança única</span></span>
+              <span class="metodo-check" aria-hidden="true"></span>
+            </label>
+            <label class="metodo">
+              <input type="radio" name="teste-forma" value="pix" />
+              <span class="metodo-icone metodo-icone-pix" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5 21.5 12 12 21.5 2.5 12Z"/><path d="M8.5 12 12 8.5 15.5 12 12 15.5Z"/></svg>
+              </span>
+              <span class="metodo-texto"><span class="metodo-nome">Pix</span><span class="metodo-detalhe">QR na tela</span></span>
+              <span class="metodo-check" aria-hidden="true"></span>
+            </label>
+          </div>
+          <label class="teste-auto" id="teste-cartao-auto-bloco">
+            <input type="checkbox" id="teste-cartao-auto" />
+            <span>
+              <strong>Testar o crédito automático</strong>
+              <small id="teste-cartao-auto-texto">Cobra R$ 1,00 agora e de novo em 2 dias, sozinho. No dia seguinte o servidor cancela e devolve tudo.</small>
+            </span>
+          </label>
+          <button class="btn btn-primary" type="button" id="teste-cartao-abrir" style="margin-top:var(--espaco-3);">Continuar no crédito</button>
+        </div>
+        <div id="teste-cartao-brick" hidden></div>
+        <div class="loja-pix" id="teste-cartao-pix" hidden>
+          <p><strong>Pix de R$ 1,00 (teste)</strong>: escaneie com o app do banco.</p>
+          <img id="teste-cartao-pix-qr" alt="QR code do Pix de teste" width="200" height="200" />
+          <div class="pix-copia">
+            <input class="input" id="teste-cartao-pix-codigo" readonly />
+            <button class="btn btn-secondary" type="button" id="teste-cartao-pix-copiar">Copiar</button>
+          </div>
+          <p class="pix-aguardando"><span class="spinner"></span> Aguardando o pagamento…</p>
+        </div>
+        <button class="btn btn-ghost btn-sm" type="button" id="teste-cartao-voltar" hidden>Escolher outra forma</button>
+        <div id="teste-cartao-resultado" hidden>
+          <div id="teste-cartao-status"></div>
+          <div class="teste-cartao-acoes">
+            <button class="btn btn-ghost btn-sm" type="button" id="teste-cartao-atualizar">Atualizar status</button>
+            <button class="btn btn-primary btn-sm" type="button" id="teste-cartao-reembolsar">Cancelar e reembolsar</button>
+          </div>
+        </div>
+      </section>
     </main>
   </div>
 
   <script type="module" src="../assets/js/tema.js"></script>
   <script type="module" src="../assets/js/menu.js"></script>
+  <script src="https://sdk.mercadopago.com/js/v2"></script>
   <script type="module" src="../assets/js/admin.js"></script>
+  <script type="module" src="../assets/js/teste-cartao-admin.js"></script>
   <script type="module" src="../assets/js/spotlight.js"></script>
 </body>
 </html>

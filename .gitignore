@@ -21,3 +21,6 @@ node_modules/
 Thumbs.db
 .claude/
 .admin_key_local_nao_commitar.txt
+
+# Arquivos enviados pelos usuários (fotos, vídeos) e dados de execução
+backend/uploads/

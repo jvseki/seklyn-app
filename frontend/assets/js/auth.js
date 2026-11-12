@@ -1,6 +1,6 @@
 // Seklyn — login e cadastro do Personal.
 import { api, salvarToken, limparToken, estaAutenticado } from "./api.js";
-import { $, mensagemDeErro } from "./utils.js";
+import { $, cpfValido, escaparHtml, formatarDataHora, mensagemDeErro } from "./utils.js";
 import { aplicarTemaPersonalizado } from "./tema-personalizado.js";
 import { montarMenuConta } from "./conta-menu.js";
 
@@ -24,6 +24,59 @@ export function protegerPagina() {
       }
     })
     .catch(() => {});
+  mostrarAvisoVencimento();
+}
+
+/**
+ * Aviso GRANDE no topo de todas as telas do Personal quando a assinatura
+ * paga por Pix/débito (que não renovam sozinhos) está perto de vencer ou já
+ * venceu. Some sozinho quando o próximo mês é pago.
+ */
+async function mostrarAvisoVencimento() {
+  const principal = document.querySelector(".conteudo-personal");
+  if (!principal || document.querySelector(".aviso-vencimento")) return;
+  let a;
+  try {
+    a = await api.statusAssinatura();
+  } catch {
+    return;
+  }
+  const venceu = a.status === "vencida";
+  if (!a.alerta_vencimento && !venceu) return;
+  const fim = formatarDataHora(a.current_period_end);
+  const dias = a.dias_para_vencer;
+  const titulo = venceu
+    ? `Sua assinatura venceu em ${fim}`
+    : dias === 0
+      ? "Sua assinatura vence HOJE"
+      : `Sua assinatura vence em ${dias} dia${dias === 1 ? "" : "s"} (${fim})`;
+  const texto = venceu
+    ? "Criar e editar treinos está bloqueado até você pagar. Seus alunos e treinos continuam salvos."
+    : "Pix e débito não renovam sozinhos. Pague o próximo mês pra não perder o acesso — pagando antes, você não perde nenhum dia.";
+  const naPaginaDeAssinatura = /assinatura\.html$/.test(window.location.pathname);
+  const aviso = document.createElement("div");
+  aviso.className = `aviso-vencimento${venceu || dias <= 1 ? " urgente" : ""}`;
+  aviso.setAttribute("role", "alert");
+  aviso.innerHTML = `
+    <div class="aviso-vencimento-icone" aria-hidden="true">!</div>
+    <div class="aviso-vencimento-texto">
+      <strong>${escaparHtml(titulo)}</strong>
+      <p>${escaparHtml(texto)}</p>
+    </div>
+    ${naPaginaDeAssinatura ? "" : '<a class="btn aviso-vencimento-botao" href="assinatura.html">Pagar agora</a>'}
+  `;
+  principal.prepend(aviso);
+  // O aviso genérico do painel ("assinatura não está ativa") ficaria repetido.
+  if (venceu) {
+    const generico = document.querySelector("#banner-assinatura");
+    if (generico) {
+      generico.hidden = true;
+      generico.dataset.substituido = "1";
+      new MutationObserver(() => {
+        if (!generico.hidden) generico.hidden = true;
+      }).observe(generico, { attributes: true, attributeFilter: ["hidden"] });
+    }
+  }
 }
 
 export function sair() {
@@ -91,6 +144,12 @@ function iniciarFormularioCadastro() {
       return;
     }
 
+    if (!cpfValido(formulario.cpf.value)) {
+      exibirErroFormulario(formulario, "CPF inválido. Confira os números.");
+      formulario.cpf.focus();
+      return;
+    }
+
     botao.disabled = true;
     try {
       const dados = {
@@ -98,6 +157,7 @@ function iniciarFormularioCadastro() {
         email: formulario.email.value.trim(),
         senha: formulario.senha.value,
         telefone: formulario.telefone.value.trim() || null,
+        cpf: formulario.cpf.value.trim(),
       };
       const resultado = await api.registrar(dados);
       salvarToken(resultado.access_token);
