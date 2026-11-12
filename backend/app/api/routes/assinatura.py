@@ -13,7 +13,7 @@ from app.core.database import get_db
 from app.deps import get_current_personal
 from app.models.aluno import Aluno
 from app.models.personal import Personal
-from app.schemas.assinatura import AssinarCartaoIn, AssinaturaOut, PixOut
+from app.schemas.assinatura import AssinarCartaoIn, AssinaturaOut, PixIn, PixOut
 from app.services import mercadopago_service as mp
 from app.services import parceiro_service
 
@@ -34,7 +34,7 @@ def _saida(db: Session, personal: Personal) -> AssinaturaOut:
         current_period_end=assinatura.current_period_end,
         limite_alunos=assinatura.limite_alunos,
         alunos_cadastrados=db.query(Aluno).filter(Aluno.personal_id == personal.id).count(),
-        valor_mensal=assinatura.valor_mensal,
+        valor_mensal=mp.valor_da_assinatura(assinatura),
         automatica=automatica,
         pagamento_disponivel=disponivel,
         mp_public_key=mp.settings.mercadopago_public_key or None,
@@ -50,7 +50,7 @@ def _saida(db: Session, personal: Personal) -> AssinaturaOut:
             and dias <= mp.settings.dias_alerta_vencimento
         ),
         pode_pagar_avulso=disponivel and mp.pode_pagar_avulso(assinatura),
-        pode_assinar_credito=disponivel and bool(assinatura.valor_mensal) and not (automatica and assinatura.ativa),
+        pode_assinar_credito=disponivel and bool(mp.valor_da_assinatura(assinatura)) and not (automatica and assinatura.ativa),
         pagamento_em_andamento=bool(assinatura.pagamento_pendente_id),
     )
 
@@ -97,7 +97,7 @@ def assinar_com_cartao(
             detail="Pagamento com cartão ainda não está disponível. Fale com o suporte.",
         )
     assinatura = mp.obter_ou_criar_assinatura(db, personal)
-    if not assinatura.valor_mensal:
+    if not mp.valor_da_assinatura(assinatura):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Seu plano ainda não foi definido. Fale com o suporte pra combinar o valor.",
@@ -141,14 +141,21 @@ def assinar_com_cartao(
 
 @router.post("/api/personal/assinatura/pix", response_model=PixOut)
 def gerar_pix(
+    dados: PixIn | None = None,
     personal: Personal = Depends(get_current_personal),
     db: Session = Depends(get_db),
 ) -> PixOut:
-    """Gera o Pix de 1 mês (ou devolve o que ainda está em aberto)."""
+    """Gera o Pix de 1 mês (ou devolve o que ainda está em aberto), com nome,
+    e-mail e CPF da conta como pagador. Conta antiga sem CPF manda ele aqui."""
+    if dados and dados.cpf and not personal.cpf:
+        personal.cpf = dados.cpf
+        db.commit()
+    if not personal.cpf:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Informe seu CPF pra gerar o Pix.")
     if not mp.configurado():
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Pagamento ainda não está disponível.")
     assinatura = mp.obter_ou_criar_assinatura(db, personal)
-    if not assinatura.valor_mensal:
+    if not mp.valor_da_assinatura(assinatura):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Seu plano ainda não foi definido. Fale com o suporte pra combinar o valor.",

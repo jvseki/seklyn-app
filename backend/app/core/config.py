@@ -1,6 +1,7 @@
 """
 Configurações da aplicação, lidas do arquivo .env (veja .env.example).
 """
+from decimal import Decimal
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -36,6 +37,9 @@ class Settings(BaseSettings):
     # reembolso total. Passou disso, cancelar só para a renovação e o acesso
     # continua até o fim do mês já pago. 0 = sem reembolso.
     reembolso_horas: int = 10
+    # Mensalidade de quem ainda não tem valor combinado no admin. Em teste: 1.00.
+    # Mude no .env (VALOR_MENSAL_PADRAO=89.90) quando for lançar; 0 = sem padrão.
+    valor_mensal_padrao: Decimal = Decimal("1.00")
     # Pix e débito não renovam sozinhos: a partir de quantos dias antes do
     # vencimento o aviso grande de "pague o próximo mês" aparece.
     dias_alerta_vencimento: int = 5

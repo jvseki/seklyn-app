@@ -49,6 +49,8 @@ class AdminTesteCartaoIn(BaseModel):
     # Precisa ser diferente do e-mail da conta Mercado Pago que recebe
     # (o MP não deixa pagar a si mesmo).
     payer_email: EmailStr
+    # Testar o crédito AUTOMÁTICO: cobra agora e de novo daqui a N dias.
+    intervalo_dias: int | None = Field(default=None, ge=1, le=7)
 
 
 class AdminTestePagamentoOut(BaseModel):

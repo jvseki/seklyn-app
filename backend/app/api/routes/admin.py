@@ -218,7 +218,7 @@ def criar_teste_cartao(dados: AdminTesteCartaoIn) -> AdminTesteCartaoOut:
     if not mp.configurado():
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Mercado Pago não configurado no servidor.")
     try:
-        criado = mp.criar_assinatura_teste(dados.card_token, dados.payer_email)
+        criado = mp.criar_assinatura_teste(dados.card_token, dados.payer_email, dados.intervalo_dias)
     except (mp.CartaoRecusado, mp.ErroMercadoPago) as erro:
         raise _erro_mp_amigavel(erro) from erro
     return AdminTesteCartaoOut(preapproval_id=criado["preapproval_id"], status=criado["status"])

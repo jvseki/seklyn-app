@@ -3,7 +3,9 @@ from decimal import Decimal
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+from app.core.cpf import cpf_valido, formatar_cpf
 
 from app.schemas.common import OrmModel
 
@@ -39,6 +41,20 @@ class AssinarCartaoIn(BaseModel):
     issuer_id: str | None = Field(default=None, max_length=20)
     documento_tipo: str | None = Field(default=None, max_length=10)
     documento_numero: str | None = Field(default=None, max_length=20)
+
+
+class PixIn(BaseModel):
+    # Só pra conta antiga que ainda não tem CPF (o cadastro novo já pede).
+    cpf: str | None = Field(default=None, max_length=14)
+
+    @field_validator("cpf")
+    @classmethod
+    def cpf_ok(cls, valor: str | None) -> str | None:
+        if valor is None or not valor.strip():
+            return None
+        if not cpf_valido(valor):
+            raise ValueError("CPF inválido. Confira os números.")
+        return formatar_cpf(valor)
 
 
 class PixOut(BaseModel):

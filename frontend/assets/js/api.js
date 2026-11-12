@@ -171,7 +171,8 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ card_token: cardToken, tipo, ...extras }),
     }),
-  gerarPixAssinatura: () => apiFetch("/personal/assinatura/pix", { method: "POST" }),
+  gerarPixAssinatura: (cpf = null) =>
+    apiFetch("/personal/assinatura/pix", { method: "POST", body: JSON.stringify(cpf ? { cpf } : {}) }),
   cancelarAssinatura: () => apiFetch("/personal/assinatura/cancelar", { method: "POST" }),
 
   // --- Vídeos demonstrativos de exercício (reusados por nome, entre alunos) ---
@@ -221,8 +222,12 @@ export const api = {
     apiFetch("/admin/teste-pagamento/pix", { method: "POST", body: JSON.stringify({ payer_email: payerEmail }) }),
   consultarTestePagamentoAdmin: (id) => apiFetch(`/admin/teste-pagamento/${encodeURIComponent(id)}`),
   reembolsarTestePagamentoAdmin: (id) => apiFetch(`/admin/teste-pagamento/${encodeURIComponent(id)}/reembolsar`, { method: "POST" }),
-  criarTesteCartaoAdmin: (cardToken, payerEmail) =>
-    apiFetch("/admin/teste-cartao", { method: "POST", body: JSON.stringify({ card_token: cardToken, payer_email: payerEmail }) }),
+  // intervaloDias: testar o crédito AUTOMÁTICO (cobra agora e de novo em N dias).
+  criarTesteCartaoAdmin: (cardToken, payerEmail, intervaloDias = null) =>
+    apiFetch("/admin/teste-cartao", {
+      method: "POST",
+      body: JSON.stringify({ card_token: cardToken, payer_email: payerEmail, intervalo_dias: intervaloDias }),
+    }),
   consultarTesteCartaoAdmin: (id) => apiFetch(`/admin/teste-cartao/${encodeURIComponent(id)}`),
   reembolsarTesteCartaoAdmin: (id) => apiFetch(`/admin/teste-cartao/${encodeURIComponent(id)}/reembolsar`, { method: "POST" }),
   definirTemaPersonalAdmin: (id, tema_personalizado) =>

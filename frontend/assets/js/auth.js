@@ -1,6 +1,6 @@
 // Seklyn — login e cadastro do Personal.
 import { api, salvarToken, limparToken, estaAutenticado } from "./api.js";
-import { $, escaparHtml, formatarDataHora, mensagemDeErro } from "./utils.js";
+import { $, cpfValido, escaparHtml, formatarDataHora, mensagemDeErro } from "./utils.js";
 import { aplicarTemaPersonalizado } from "./tema-personalizado.js";
 import { montarMenuConta } from "./conta-menu.js";
 
@@ -144,6 +144,12 @@ function iniciarFormularioCadastro() {
       return;
     }
 
+    if (!cpfValido(formulario.cpf.value)) {
+      exibirErroFormulario(formulario, "CPF inválido. Confira os números.");
+      formulario.cpf.focus();
+      return;
+    }
+
     botao.disabled = true;
     try {
       const dados = {
@@ -151,6 +157,7 @@ function iniciarFormularioCadastro() {
         email: formulario.email.value.trim(),
         senha: formulario.senha.value,
         telefone: formulario.telefone.value.trim() || null,
+        cpf: formulario.cpf.value.trim(),
       };
       const resultado = await api.registrar(dados);
       salvarToken(resultado.access_token);

@@ -12,7 +12,7 @@ import { api } from "./api.js";
 import { protegerPagina } from "./auth.js";
 import { montarFormularioCartao } from "./cartao-mp.js";
 import { confirmarAcao } from "./confirmar.js";
-import { $, $all, escaparHtml, formatarDataHora, mensagemDeErro, mostrarToast } from "./utils.js";
+import { $, $all, cpfValido, escaparHtml, formatarDataHora, mensagemDeErro, mostrarToast } from "./utils.js";
 
 protegerPagina();
 
@@ -64,6 +64,7 @@ let formaEscolhida = null;
 let fluxoAberto = false; // formulário de cartão ou Pix na tela
 let formularioCartao = null;
 let consultaPix = null;
+let personalAtual = null; // nome, e-mail e CPF da conta (dados do pagador no Pix)
 
 // ---------- Status ----------
 
@@ -100,6 +101,12 @@ function renderizar(a) {
   $all(".metodo").forEach((opcao) => {
     opcao.hidden = !liberadas[opcao.dataset.forma];
   });
+  // Grupo sem nenhuma opção liberada some (e o "ou" entre eles também).
+  $all(".grupo-pagamento").forEach((grupo) => {
+    grupo.hidden = !grupo.querySelector(".metodo:not([hidden])");
+  });
+  const divisor = $(".grupos-divisor");
+  if (divisor) divisor.hidden = $all(".grupo-pagamento:not([hidden])").length < 2;
   if (formaEscolhida && !liberadas[formaEscolhida]) escolherForma(null);
   tituloPagamentoEl.textContent = !a.ativa
     ? "Como você quer pagar?"
@@ -126,6 +133,15 @@ function renderizar(a) {
 }
 
 async function carregarStatus() {
+  if (!personalAtual) {
+    api
+      .me()
+      .then((p) => {
+        personalAtual = p;
+        if (formaEscolhida) mostrarResumo();
+      })
+      .catch(() => {});
+  }
   try {
     renderizar(await api.statusAssinatura());
   } catch (erro) {
@@ -178,6 +194,21 @@ function mostrarResumo() {
       `<p class="resumo-nota">${formaEscolhida === "pix" ? "Pix" : "Débito"} não renova sozinho: alguns dias antes de ${data(proxima)} aparece um aviso pra você pagar o próximo mês.</p>`
     );
   }
+  if (formaEscolhida === "pix") {
+    const p = personalAtual;
+    const cpfLinha =
+      p && !p.cpf
+        ? `<label class="label" for="pix-cpf" style="margin-top:10px;">CPF</label>
+           <input class="input" id="pix-cpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" data-mascara-cpf />`
+        : `<div class="resumo-linha"><span>CPF</span><strong>${escaparHtml(p?.cpf || "…")}</strong></div>`;
+    linhas.push(`
+      <div class="pix-pagador">
+        <div class="pix-pagador-titulo">Seus dados no Pix</div>
+        <div class="resumo-linha"><span>Nome</span><strong>${escaparHtml(p?.nome || "…")}</strong></div>
+        <div class="resumo-linha"><span>E-mail</span><strong>${escaparHtml(p?.email || "…")}</strong></div>
+        ${cpfLinha}
+      </div>`);
+  }
   if (a.reembolso_horas > 0 && cobraAgora) {
     linhas.push(
       `<p class="resumo-nota resumo-cancelamento"><strong>Cancelamento:</strong> em até ${a.reembolso_horas}h depois do pagamento, você recebe o valor de volta. Depois disso, a assinatura fica ativa até ${data(fimSeCancelar)} e não renova.</p>`
@@ -189,7 +220,7 @@ function mostrarResumo() {
   }
   resumoEl.innerHTML = linhas.join("");
   botaoContinuar.textContent =
-    formaEscolhida === "pix" ? `Gerar Pix de ${valor}` : formaEscolhida === "debito" ? `Pagar ${valor} no débito` : cobraAgora ? `Assinar por ${valor}/mês` : "Ativar cobrança automática";
+    formaEscolhida === "pix" ? `Confirmar e gerar Pix de ${valor}` : formaEscolhida === "debito" ? `Pagar ${valor} no débito` : cobraAgora ? `Assinar por ${valor}/mês` : "Ativar cobrança automática";
 }
 
 $all(".metodo input").forEach((input) => input.addEventListener("change", () => escolherForma(input.value)));
@@ -304,10 +335,17 @@ async function pagarComCartao() {
 
 async function pagarComPix() {
   const antes = assinaturaAtual;
+  const campoCpf = $("#pix-cpf");
+  if (campoCpf && !cpfValido(campoCpf.value)) {
+    mostrarToast("CPF inválido. Confira os números.", "erro");
+    campoCpf.focus();
+    return;
+  }
   abrirFluxo();
   botaoContinuar.disabled = true;
   try {
-    const pix = await api.gerarPixAssinatura();
+    const pix = await api.gerarPixAssinatura(campoCpf ? campoCpf.value.trim() : null);
+    if (campoCpf && personalAtual) personalAtual.cpf = campoCpf.value.trim();
     $("#pix-qr").src = `data:image/png;base64,${pix.qr_code_base64}`;
     $("#pix-codigo").value = pix.qr_code;
     $("#pix-expira").textContent = pix.expira_em ? `Esse Pix vale até ${hora(pix.expira_em)} de ${data(pix.expira_em)}.` : "";

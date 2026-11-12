@@ -74,6 +74,7 @@ document.querySelectorAll("input[name='teste-forma']").forEach((r) =>
       .querySelectorAll("#teste-cartao .metodo")
       .forEach((o) => o.classList.toggle("selecionado", o.querySelector("input").checked));
     botaoAbrir.textContent = { credito: "Continuar no crédito", debito: "Continuar no débito", pix: "Gerar Pix de R$ 1,00" }[formaEscolhida()];
+    $("#teste-cartao-auto-bloco").hidden = formaEscolhida() !== "credito";
   })
 );
 
@@ -221,7 +222,9 @@ botaoAbrir?.addEventListener("click", async () => {
       aoEnviar: (token, dados) => {
         const pedido =
           tipo === "credito"
-            ? api.criarTesteCartaoAdmin(token, email).then((c) => ({ tipo: "credito", id: c.preapproval_id }))
+            ? api
+                .criarTesteCartaoAdmin(token, email, $("#teste-cartao-auto").checked ? 2 : null)
+                .then((c) => ({ tipo: "credito", id: c.preapproval_id }))
             : api
                 .criarTesteDebitoAdmin({
                   card_token: token,
@@ -308,5 +311,16 @@ async function iniciar() {
   if (pendente) mostrarResultado(pendente);
   else inicioEl.hidden = false;
 }
+
+// Datas reais no texto do teste do automático (ex: hoje 12/11 → 14/11, devolve 15/11).
+(() => {
+  const dia = (n) => {
+    const d = new Date();
+    d.setDate(d.getDate() + n);
+    return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+  };
+  const texto = $("#teste-cartao-auto-texto");
+  if (texto) texto.textContent = `Cobra R$ 1,00 hoje (${dia(0)}) e de novo sozinho em ${dia(2)}. No dia ${dia(3)} o servidor cancela e devolve tudo.`;
+})();
 
 iniciar();

@@ -2601,3 +2601,142 @@ a.comentario-link:hover {
     width: 100%;
   }
 }
+
+
+/* ---------- Assinatura: grupos Automático / Mês a mês (layout oficial) ---------- */
+.grupo-pagamento {
+  padding: 16px;
+  border-radius: var(--raio-lg);
+  border: 1px solid var(--cor-borda);
+  background: color-mix(in srgb, var(--cor-primaria) 3%, var(--cor-superficie));
+}
+
+.grupo-pagamento[hidden],
+.grupos-divisor[hidden] {
+  display: none;
+}
+
+.grupo-pagamento[data-grupo="mensal"] {
+  background: color-mix(in srgb, #14b8a6 4%, var(--cor-superficie));
+}
+
+.grupo-pagamento-topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin-bottom: 12px;
+}
+
+.grupo-pagamento-nome {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cor-primaria);
+}
+
+.grupo-pagamento[data-grupo="mensal"] .grupo-pagamento-nome {
+  color: #0d9488;
+}
+
+.grupo-pagamento-desc {
+  font-size: 0.82rem;
+  color: var(--cor-texto-muted);
+}
+
+.metodos-pagamento.metodos-uma-coluna {
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin: 0;
+}
+
+.metodos-uma-coluna .metodo {
+  flex-direction: row;
+  align-items: center;
+  padding: 14px 16px;
+}
+
+.metodos-uma-coluna .metodo-check {
+  top: 50%;
+  transform: translateY(-50%);
+  right: 16px;
+}
+
+.metodos-uma-coluna .metodo-selo {
+  left: auto;
+  right: 48px;
+}
+
+/* o "ou" que afasta o crédito do débito */
+.grupos-divisor {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0;
+  color: var(--cor-texto-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.grupos-divisor::before,
+.grupos-divisor::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--cor-borda);
+}
+
+.pix-pagador {
+  margin: 12px 0 4px;
+  padding: 12px 14px;
+  border-radius: var(--raio-md);
+  background: color-mix(in srgb, #14b8a6 8%, var(--cor-superficie));
+  border: 1px solid color-mix(in srgb, #14b8a6 30%, transparent);
+}
+
+.pix-pagador-titulo {
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: #0d9488;
+  margin-bottom: 4px;
+}
+
+
+/* Admin: opção "testar o crédito automático" */
+.teste-auto {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: var(--espaco-3);
+  padding: 12px 14px;
+  border-radius: var(--raio-md);
+  border: 1px dashed color-mix(in srgb, var(--cor-primaria) 45%, transparent);
+  background: color-mix(in srgb, var(--cor-primaria) 5%, transparent);
+  cursor: pointer;
+}
+
+.teste-auto[hidden] {
+  display: none;
+}
+
+.teste-auto input {
+  margin-top: 4px;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--cor-primaria);
+  flex-shrink: 0;
+}
+
+.teste-auto small {
+  display: block;
+  margin-top: 2px;
+  color: var(--cor-texto-muted);
+  font-size: 0.82rem;
+}
+
+.metodos-uma-coluna .metodo {
+  padding-right: 52px;
+}

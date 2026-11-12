@@ -29,7 +29,9 @@ import calendar
 import hashlib
 import hmac
 import json
+import re
 import logging
+import os
 import urllib.error
 import urllib.request
 import uuid
@@ -91,6 +93,26 @@ def _mensagem_recusa(detalhe: str) -> str:
     return "O cartão foi recusado. Confira os dados ou tente outro cartão."
 
 
+def valor_da_assinatura(assinatura: Assinatura) -> Decimal | None:
+    """Valor combinado no admin ou, se não houver, o padrão do .env."""
+    if assinatura.valor_mensal:
+        return assinatura.valor_mensal
+    return settings.valor_mensal_padrao if settings.valor_mensal_padrao and settings.valor_mensal_padrao > 0 else None
+
+
+def dados_pagador(personal: Personal) -> dict:
+    """Nome, e-mail e CPF da conta → dados do pagador no Mercado Pago."""
+    partes = (personal.nome or "").strip().split()
+    pagador: dict = {"email": personal.email}
+    if partes:
+        pagador["first_name"] = partes[0]
+        pagador["last_name"] = " ".join(partes[1:]) or partes[0]
+    cpf = re.sub(r"\D", "", personal.cpf or "")
+    if len(cpf) == 11:
+        pagador["identification"] = {"type": "CPF", "number": cpf}
+    return pagador
+
+
 def configurado() -> bool:
     return bool(settings.mercadopago_access_token)
 
@@ -144,7 +166,7 @@ def assinar_com_cartao(db: Session, personal: Personal, assinatura: Assinatura, 
     chega aqui: o Brick troca ele por um `card_token` de uso único, e é só
     isso que o backend recebe. Não exige conta Mercado Pago do Personal.
     """
-    valor: Decimal = assinatura.valor_mensal
+    valor: Decimal = valor_da_assinatura(assinatura)
     # Um checkout anterior que ficou pela metade (ou uma assinatura com
     # cobrança recusada) é cancelado antes — senão o Personal poderia acabar
     # com duas assinaturas cobrando quando a antiga voltasse a funcionar.
@@ -230,7 +252,7 @@ def dias_para_vencer(assinatura: Assinatura) -> int | None:
 
 def pode_pagar_avulso(assinatura: Assinatura) -> bool:
     """Pix/débito: pra assinar ou pagar o próximo mês (a partir do aviso)."""
-    if not assinatura.valor_mensal:
+    if not valor_da_assinatura(assinatura):
         return False
     if not assinatura.ativa:
         return True
@@ -298,11 +320,11 @@ def pagar_com_debito(
     documento_tipo: str | None = None,
     documento_numero: str | None = None,
 ) -> Assinatura:
-    pagador: dict = {"email": personal.email}
+    pagador = dados_pagador(personal)
     if documento_tipo and documento_numero:
         pagador["identification"] = {"type": documento_tipo, "number": documento_numero}
     corpo: dict = {
-        "transaction_amount": float(assinatura.valor_mensal),
+        "transaction_amount": float(valor_da_assinatura(assinatura)),
         "token": card_token,
         "description": "Seklyn — mensalidade (1 mês)",
         "installments": 1,
@@ -349,7 +371,7 @@ def gerar_pix(db: Session, personal: Personal, assinatura: Assinatura) -> dict:
             if (
                 aberto.get("payment_method_id") == "pix"
                 and aberto.get("status") == "pending"
-                and float(aberto.get("transaction_amount") or 0) == float(assinatura.valor_mensal)
+                and float(aberto.get("transaction_amount") or 0) == float(valor_da_assinatura(assinatura))
             ):
                 return _dados_pix(aberto)
         except ErroMercadoPago:
@@ -359,11 +381,11 @@ def gerar_pix(db: Session, personal: Personal, assinatura: Assinatura) -> dict:
         "POST",
         "/v1/payments",
         {
-            "transaction_amount": float(assinatura.valor_mensal),
+            "transaction_amount": float(valor_da_assinatura(assinatura)),
             "payment_method_id": "pix",
             "description": "Seklyn — mensalidade (1 mês)",
             "external_reference": _referencia_avulsa(personal.id, "pix"),
-            "payer": {"email": personal.email},
+            "payer": dados_pagador(personal),
             "date_of_expiration": expira.isoformat(timespec="milliseconds"),
         },
     )
@@ -523,23 +545,38 @@ PREFIXO_TESTE = "seklyn-teste-"
 VALOR_TESTE = 1.00
 
 
-def criar_assinatura_teste(card_token: str, payer_email: str) -> dict:
-    referencia = f"{PREFIXO_TESTE}{uuid.uuid4().hex[:12]}"
+PREFIXO_TESTE_AUTO = f"{PREFIXO_TESTE}auto-"
+# Lista dos testes do automático (fica no volume de uploads, que sobrevive a
+# deploys) — o encerramento agendado lê daqui, além de buscar na API.
+ARQUIVO_TESTES_AUTO = os.path.join("uploads", "testes_automaticos.txt")
+
+
+def criar_assinatura_teste(card_token: str, payer_email: str, intervalo_dias: int | None = None) -> dict:
+    """
+    Assinatura de teste de R$ 1,00. Com `intervalo_dias`, testa o AUTOMÁTICO:
+    cobra agora e de novo daqui a N dias, e termina sozinha logo depois
+    (end_date), então são só 2 cobranças. O reembolso é feito por
+    scripts/encerrar_testes_automaticos.py (agendado no servidor).
+    """
+    referencia = f"{PREFIXO_TESTE_AUTO if intervalo_dias else PREFIXO_TESTE}{uuid.uuid4().hex[:12]}"
+    recorrencia = {"frequency": 1, "frequency_type": "months", "transaction_amount": VALOR_TESTE, "currency_id": "BRL"}
+    if intervalo_dias:
+        recorrencia["frequency"] = intervalo_dias
+        recorrencia["frequency_type"] = "days"
+        fim = _agora() + timedelta(days=intervalo_dias, hours=20)
+        recorrencia["end_date"] = fim.isoformat(timespec="milliseconds")
     try:
         resposta = _requisitar(
             "POST",
             "/preapproval",
             {
-                "reason": "Seklyn — teste de cobrança (será reembolsado)",
+                "reason": "Seklyn — teste do crédito automático (será reembolsado)"
+                if intervalo_dias
+                else "Seklyn — teste de cobrança (será reembolsado)",
                 "external_reference": referencia,
                 "payer_email": payer_email,
                 "card_token_id": card_token,
-                "auto_recurring": {
-                    "frequency": 1,
-                    "frequency_type": "months",
-                    "transaction_amount": VALOR_TESTE,
-                    "currency_id": "BRL",
-                },
+                "auto_recurring": recorrencia,
                 "back_url": f"{settings.frontend_url}/personal/admin.html",
                 "status": "authorized",
             },
@@ -548,7 +585,32 @@ def criar_assinatura_teste(card_token: str, payer_email: str) -> dict:
         if erro.status_http and 400 <= erro.status_http < 500:
             raise CartaoRecusado(_mensagem_recusa(str(erro))) from erro
         raise
+    if intervalo_dias:
+        try:
+            os.makedirs(os.path.dirname(ARQUIVO_TESTES_AUTO), exist_ok=True)
+            with open(ARQUIVO_TESTES_AUTO, "a", encoding="utf-8") as arquivo:
+                arquivo.write(f"{resposta['id']}\n")
+        except OSError:
+            logger.warning("Não deu pra anotar o teste automático %s", resposta["id"])
     return {"preapproval_id": resposta["id"], "status": resposta.get("status")}
+
+
+def ids_testes_automaticos() -> list[str]:
+    """Testes do automático: os anotados no arquivo + os achados na API."""
+    ids: list[str] = []
+    try:
+        with open(ARQUIVO_TESTES_AUTO, encoding="utf-8") as arquivo:
+            ids = [linha.strip() for linha in arquivo if linha.strip()]
+    except OSError:
+        pass
+    try:
+        busca = _requisitar("GET", "/preapproval/search?limit=100&sort=date_created:desc")
+        for item in busca.get("results", []):
+            if (item.get("external_reference") or "").startswith(PREFIXO_TESTE_AUTO):
+                ids.append(str(item["id"]))
+    except ErroMercadoPago:
+        logger.warning("Busca de preapprovals falhou (seguindo só com o arquivo)")
+    return list(dict.fromkeys(ids))
 
 
 def _preapproval_de_teste(preapproval_id: str) -> dict:
