@@ -29,7 +29,7 @@ class Parceiro(Base):
     # Quem paga a taxa do Mercado Pago: "parceiro" (o dono recebe a % dele
     # sobre o valor CHEIO e a taxa sai toda da parte do parceiro) ou
     # "dividida" (a % vale sobre o líquido, cada um paga sua parte da taxa).
-    taxa_paga_por: Mapped[str] = mapped_column(String(20), nullable=False, default="parceiro", server_default="parceiro")
+    taxa_paga_por: Mapped[str] = mapped_column(String(20), nullable=False, default="dividida", server_default="dividida")
     # Quando o dono confirmou (escaneando o Pix de teste de R$ 0,01) que o
     # app do banco mostrou o nome certo pra essa chave. Zera se a chave mudar.
     chave_verificada_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -53,6 +53,9 @@ class VendaParceiro(Base):
     # "dividida" (a % vale sobre o líquido, cada um paga sua parte da taxa).
     taxa_paga_por: Mapped[str] = mapped_column(String(20), nullable=False, default="parceiro", server_default="parceiro")
     mp_pagamento_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    # Venda feita na loja pública (planilhas): quem comprou e o quê.
+    comprador_id: Mapped[int | None] = mapped_column(ForeignKey("compradores.id", ondelete="SET NULL"), nullable=True, index=True)
+    produto_id: Mapped[int | None] = mapped_column(ForeignKey("produtos.id", ondelete="SET NULL"), nullable=True)
     # "pix", "credito" ou "debito"
     forma_pagamento: Mapped[str] = mapped_column(String(20), nullable=False, default="pix", server_default="pix")
     # "aguardando" (Pix gerado), "paga", "reembolsada", "expirada"

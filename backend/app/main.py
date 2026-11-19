@@ -10,7 +10,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api.routes import admin, aluno, assinatura, auth, personal, recomendacoes, videos, parceiro
+from app.api.routes import admin, aluno, assinatura, auth, loja, personal, recomendacoes, videos, parceiro
 from app.core.config import get_settings
 from app.core.erros import tratar_erro_validacao
 
@@ -45,13 +45,18 @@ app.include_router(recomendacoes.router)
 app.include_router(assinatura.router)
 app.include_router(admin.router)
 app.include_router(parceiro.router)
+app.include_router(loja.router)
 app.include_router(videos.router)
 
 # Vídeos e fotos enviados (upload direto) — fica em uploads/, montado no
 # volume persistente do Docker pra sobreviver a rebuild/restart do container.
+# SÓ fotos e vídeos de exercício são públicos. uploads/privado/ (conteúdo pago
+# da loja) NUNCA é montado aqui: sai só por /api/loja/arquivo com link assinado.
 os.makedirs("uploads/videos", exist_ok=True)
 os.makedirs("uploads/fotos", exist_ok=True)
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+os.makedirs("uploads/privado", exist_ok=True)
+app.mount("/uploads/videos", StaticFiles(directory="uploads/videos"), name="uploads-videos")
+app.mount("/uploads/fotos", StaticFiles(directory="uploads/fotos"), name="uploads-fotos")
 
 
 @app.post("/api/csp-report", status_code=204, include_in_schema=False)

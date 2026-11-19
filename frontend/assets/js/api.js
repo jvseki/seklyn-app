@@ -216,6 +216,12 @@ export const api = {
     apiFetch("/admin/loja/repasse-pendente/confirmar", { method: "POST", body: JSON.stringify({ vendas }) }),
   marcarRepassadoLojaAdmin: (id) => apiFetch(`/admin/loja/vendas/${id}/repassado`, { method: "POST" }),
   reembolsarVendaLojaAdmin: (id) => apiFetch(`/admin/loja/vendas/${id}/reembolsar`, { method: "POST" }),
+  // --- Planilhas da loja (produtos) ---
+  produtosAdmin: () => apiFetch("/admin/loja/produtos"),
+  criarProdutoAdmin: (dados) => apiFetch("/admin/loja/produtos", { method: "POST", body: JSON.stringify(dados) }),
+  editarProdutoAdmin: (id, dados) => apiFetch(`/admin/loja/produtos/${id}`, { method: "PUT", body: JSON.stringify(dados) }),
+  apagarProdutoAdmin: (id) => apiFetch(`/admin/loja/produtos/${id}`, { method: "DELETE" }),
+  apagarConteudoAdmin: (id) => apiFetch(`/admin/loja/produtos/conteudos/${id}`, { method: "DELETE" }),
   configTesteCartaoAdmin: () => apiFetch("/admin/teste-cartao/config"),
   criarTesteDebitoAdmin: (dados) => apiFetch("/admin/teste-pagamento/debito", { method: "POST", body: JSON.stringify(dados) }),
   criarTestePixAdmin: (payerEmail) =>

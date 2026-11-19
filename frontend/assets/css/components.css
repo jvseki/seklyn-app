@@ -2740,3 +2740,138 @@ a.comentario-link:hover {
 .metodos-uma-coluna .metodo {
   padding-right: 52px;
 }
+
+/* ---------- Admin: planilhas da loja ---------- */
+.produtos-admin-topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: var(--espaco-4);
+}
+
+.produto-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+  margin-bottom: var(--espaco-4);
+  border-radius: var(--raio-md);
+  border: 1px solid var(--cor-borda);
+  background: color-mix(in srgb, var(--cor-primaria) 4%, var(--cor-superficie));
+}
+
+.produto-form h3 {
+  margin: 0 0 6px;
+}
+
+.produto-form-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.produto-admin {
+  padding: 14px 0;
+  border-top: 1px solid var(--cor-borda);
+}
+
+.produto-admin-cabeca {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.produto-admin-capa {
+  width: 84px;
+  height: 56px;
+  border-radius: 10px;
+  overflow: hidden;
+  flex-shrink: 0;
+  cursor: pointer;
+  border: 1px dashed var(--cor-borda);
+  display: grid;
+  place-items: center;
+  text-align: center;
+  font-size: 1.2rem;
+  background: color-mix(in srgb, var(--cor-primaria) 6%, transparent);
+}
+
+.produto-admin-capa img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.produto-admin-capa small {
+  display: block;
+  font-size: 0.65rem;
+  color: var(--cor-texto-muted);
+}
+
+.produto-admin-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 160px;
+}
+
+.produto-admin-acoes {
+  display: flex;
+  gap: 6px;
+}
+
+.produto-admin-conteudos {
+  list-style: none;
+  margin: 10px 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.produto-admin-conteudos li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--cor-primaria) 4%, transparent);
+  font-size: 0.9rem;
+}
+
+.produto-admin-novo {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.produto-admin-progresso {
+  height: 6px;
+  border-radius: 99px;
+  background: var(--cor-borda);
+  overflow: hidden;
+}
+
+.produto-admin-progresso span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, var(--cor-primaria), #ec4899);
+  transition: width 0.2s;
+}
+
+@media (min-width: 900px) {
+  .produto-admin-novo {
+    grid-template-columns: 2fr 1.2fr 2fr auto;
+    align-items: center;
+  }
+
+  .produto-admin-progresso {
+    grid-column: 1 / -1;
+  }
+}

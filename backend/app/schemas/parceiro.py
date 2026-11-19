@@ -15,7 +15,7 @@ class ParceiroIn(BaseModel):
     chave_pix: str = Field(min_length=3, max_length=120)
     cidade: str = Field(default="Andradina", min_length=2, max_length=60)
     percentual_parceiro: int = Field(default=50, ge=0, le=100)
-    taxa_paga_por: Literal["parceiro", "dividida"] = "parceiro"
+    taxa_paga_por: Literal["parceiro", "dividida"] = "dividida"
 
 
 class ParceiroOut(OrmModel):

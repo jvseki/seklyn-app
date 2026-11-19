@@ -58,7 +58,17 @@ def _taxa_do_pagamento(pagamento: dict, valor: Decimal) -> Decimal:
 # ---------- Vendas ----------
 
 
-def criar_venda_pix(db: Session, parceiro: Parceiro, produto: str, valor: Decimal, email_pagador: str) -> tuple[VendaParceiro, dict]:
+def criar_venda_pix(
+    db: Session,
+    parceiro: Parceiro,
+    produto: str,
+    valor: Decimal,
+    email_pagador: str,
+    pagador: dict | None = None,
+    comprador_id: int | None = None,
+    produto_id: int | None = None,
+) -> tuple[VendaParceiro, dict]:
+    """`pagador`: nome/CPF completos do comprador da loja (senão só o e-mail)."""
     venda = VendaParceiro(
         parceiro_id=parceiro.id,
         produto=produto,
@@ -67,6 +77,8 @@ def criar_venda_pix(db: Session, parceiro: Parceiro, produto: str, valor: Decima
         taxa_paga_por=parceiro.taxa_paga_por,
         status="aguardando",
         repasse_status="pendente",
+        comprador_id=comprador_id,
+        produto_id=produto_id,
     )
     db.add(venda)
     db.flush()
@@ -79,7 +91,7 @@ def criar_venda_pix(db: Session, parceiro: Parceiro, produto: str, valor: Decima
             "payment_method_id": "pix",
             "description": f"{produto} — {parceiro.nome}"[:250],
             "external_reference": f"{PREFIXO_VENDA}{venda.id}",
-            "payer": {"email": email_pagador},
+            "payer": pagador or {"email": email_pagador},
             "date_of_expiration": expira.isoformat(timespec="milliseconds"),
         },
     )
@@ -103,6 +115,9 @@ def criar_venda_cartao(
     issuer_id: str | None = None,
     documento_tipo: str | None = None,
     documento_numero: str | None = None,
+    pagador_base: dict | None = None,
+    comprador_id: int | None = None,
+    produto_id: int | None = None,
 ) -> VendaParceiro:
     """Venda no cartão (crédito ou débito, à vista). Recusado = CartaoRecusado."""
     venda = VendaParceiro(
@@ -114,10 +129,12 @@ def criar_venda_cartao(
         status="aguardando",
         repasse_status="pendente",
         forma_pagamento="credito",
+        comprador_id=comprador_id,
+        produto_id=produto_id,
     )
     db.add(venda)
     db.flush()
-    pagador: dict = {"email": email_pagador}
+    pagador: dict = dict(pagador_base) if pagador_base else {"email": email_pagador}
     if documento_tipo and documento_numero:
         pagador["identification"] = {"type": documento_tipo, "number": documento_numero}
     corpo: dict = {
