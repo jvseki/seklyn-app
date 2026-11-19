@@ -5,6 +5,7 @@ import { DURACAO_SIMULACAO, SimulacaoLoja } from "./SimulacaoLoja";
 import { ApresentacaoSeklyn, DURACAO_APRESENTACAO } from "./ApresentacaoSeklyn";
 import { WALL_A, WALL_L, WallpaperIphone } from "./WallpaperIphone";
 import { DURACAO_PARCERIA, ExplicacaoParceria } from "./ExplicacaoParceria";
+import { DURACAO_LOJA, LojaPlanilhas } from "./LojaPlanilhas";
 
 const FPS = 30;
 const DURACAO_SEGUNDOS = 6;
@@ -69,6 +70,8 @@ export const RemotionRoot: React.FC = () => {
         width={1080}
         height={1920}
       />
+      {/* Loja de planilhas (Douglas × Seklyn) com avatar treinando e trilha original. */}
+      <Composition id="LojaPlanilhas" component={LojaPlanilhas} durationInFrames={DURACAO_LOJA} fps={FPS} width={1080} height={1920} />
       <Composition
         id="LogoHeroMobileClaro"
         component={LogoHero}
