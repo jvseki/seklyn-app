@@ -20,7 +20,12 @@ class Comprador(Base):
     nome: Mapped[str] = mapped_column(String(120), nullable=False)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     senha_hash: Mapped[str] = mapped_column(String(255), nullable=False)
-    cpf: Mapped[str] = mapped_column(String(14), nullable=False)
+    cpf: Mapped[str | None] = mapped_column(String(14), nullable=True)  # conta Seklyn antiga pode não ter
+    # Quem já tem conta Seklyn (Personal) entra na loja com o MESMO login: a
+    # conta de comprador fica ligada à dele e a senha conferida é a do Personal.
+    personal_id: Mapped[int | None] = mapped_column(
+        ForeignKey("personais.id", ondelete="SET NULL"), unique=True, nullable=True
+    )
     telefone: Mapped[str | None] = mapped_column(String(30), nullable=True)
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

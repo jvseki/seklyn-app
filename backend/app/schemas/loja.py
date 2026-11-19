@@ -63,7 +63,7 @@ class CompradorOut(OrmModel):
     id: int
     nome: str
     email: EmailStr
-    cpf: str
+    cpf: str | None = None
     telefone: str | None = None
 
 

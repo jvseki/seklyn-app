@@ -623,3 +623,79 @@
   color: var(--cor-texto-muted);
   font-size: 0.85rem;
 }
+
+
+/* ---------- acesso às planilhas de treino (loja) ---------- */
+.landing-link-planilhas {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  text-decoration: none;
+  color: #fff;
+  background: linear-gradient(120deg, #7c3aed, #ec4899);
+  box-shadow: 0 8px 24px -10px rgba(236, 72, 153, 0.7);
+  white-space: nowrap;
+  transition: transform 0.2s;
+}
+
+.landing-link-planilhas:hover {
+  transform: translateY(-1px);
+  color: #fff;
+}
+
+.hero-novo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 8px 16px 8px 8px;
+  border-radius: 999px;
+  text-decoration: none;
+  color: var(--cor-texto);
+  font-weight: 600;
+  font-size: 0.92rem;
+  background: color-mix(in srgb, var(--cor-primaria) 8%, var(--cor-superficie));
+  border: 1px solid color-mix(in srgb, var(--cor-primaria) 30%, transparent);
+  box-shadow: 0 10px 30px -18px var(--cor-primaria);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.hero-novo:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 36px -16px var(--cor-primaria);
+}
+
+.hero-novo-selo {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #fff;
+  background: linear-gradient(120deg, #7c3aed, #ec4899);
+}
+
+.hero-novo-seta {
+  transition: transform 0.2s;
+}
+
+.hero-novo:hover .hero-novo-seta {
+  transform: translateX(4px);
+}
+
+@media (max-width: 600px) {
+  .landing-link-planilhas span {
+    display: none;
+  }
+  .landing-link-planilhas {
+    padding: 7px 10px;
+  }
+  .hero-novo {
+    font-size: 0.84rem;
+  }
+}

@@ -800,6 +800,23 @@ for c in SessionLocal().query(_Conteudo).all():
     if c.caminho and _os.path.exists(c.caminho):
         _os.remove(c.caminho)
 
+# 38) Conta Seklyn (Personal) entra na loja com o mesmo login.
+r = cliente.post("/api/loja/conta/registrar", json={"nome": "Ana", "email": "ANA@teste.com", "senha": "outrasenha1", "cpf": "52998224725"})
+checar("loja: e-mail de conta Seklyn não cria conta separada (409)", r.status_code == 409 and "Entrar" in r.text, r.text)
+r = cliente.post("/api/loja/conta/login", json={"email": "ana@teste.com", "senha": "senha-errada"})
+checar("loja: conta Seklyn com senha errada → 401", r.status_code == 401, r.text)
+r = cliente.post("/api/loja/conta/login", json={"email": "Ana@Teste.com", "senha": "x" * 8})
+j = r.json()
+checar("loja: entra com o login do Seklyn (mesma senha)", r.status_code == 200 and j["comprador"]["nome"] == "Ana Souza" and j["comprador"]["cpf"] == "529.982.247-25", r.text)
+H_ANA_LOJA = {"Authorization": f"Bearer {j['access_token']}"}
+checar("loja: conta ligada vê Minhas planilhas", cliente.get("/api/loja/conta/compras", headers=H_ANA_LOJA).status_code == 200)
+r = cliente.post("/api/loja/conta/login", json={"email": "ana@teste.com", "senha": "x" * 8})
+checar("loja: segunda entrada usa a mesma conta", r.json()["comprador"]["id"] == j["comprador"]["id"], r.text)
+r = cliente.post("/api/auth/personal/trocar-senha", json={"senha_atual": "x" * 8, "senha_nova": "novaSenha123"}, headers=H_ANA)
+checar("Ana troca a senha do Seklyn", r.status_code in (200, 204), r.text)
+checar("loja: senha antiga do Seklyn deixa de valer", cliente.post("/api/loja/conta/login", json={"email": "ana@teste.com", "senha": "x" * 8}).status_code == 401)
+checar("loja: senha nova do Seklyn vale na loja", cliente.post("/api/loja/conta/login", json={"email": "ana@teste.com", "senha": "novaSenha123"}).status_code == 200)
+
 # arquivo que o teste do automático anota em uploads/
 if os.path.exists("uploads/testes_automaticos.txt"):
     os.remove("uploads/testes_automaticos.txt")

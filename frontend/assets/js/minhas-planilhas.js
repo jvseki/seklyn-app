@@ -1,7 +1,7 @@
 // Seklyn — "Minhas planilhas" do comprador: lista o que comprou, toca os
 // vídeos (links assinados, válidos por algumas horas) e baixa os arquivos.
 import { lojaApi, tokenComprador, urlCompleta } from "./loja-api.js";
-import { $, escaparHtml, mensagemDeErro, mostrarToast } from "./utils.js";
+import { $, $all, cpfValido, escaparHtml, mensagemDeErro, mostrarToast } from "./utils.js";
 
 const STATUS = {
   paga: ["Liberada", "pl-status-paga"],
@@ -119,6 +119,37 @@ $("#form-login").addEventListener("submit", async (e) => {
   try {
     const r = await lojaApi.login($("#l-email").value.trim(), $("#l-senha").value);
     tokenComprador.salvar(r.access_token);
+    carregar();
+  } catch (erro) {
+    mostrarToast(mensagemDeErro(erro), "erro");
+  }
+});
+
+$all(".pl-aba").forEach((aba) =>
+  aba.addEventListener("click", () => {
+    $all(".pl-aba").forEach((x) => x.classList.toggle("ativa", x === aba));
+    $("#form-login").hidden = aba.dataset.aba !== "entrar";
+    $("#form-criar-conta").hidden = aba.dataset.aba !== "criar";
+  })
+);
+
+$("#form-criar-conta").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const dados = {
+    nome: $("#r-nome").value.trim(),
+    email: $("#r-email").value.trim(),
+    cpf: $("#r-cpf").value.trim(),
+    telefone: $("#r-tel").value.trim() || null,
+    senha: $("#r-senha").value,
+  };
+  if (dados.nome.length < 2) return mostrarToast("Digite seu nome.", "erro");
+  if (!$("#r-email").checkValidity() || !dados.email) return mostrarToast("Digite um e-mail válido.", "erro");
+  if (!cpfValido(dados.cpf)) return mostrarToast("CPF inválido. Confira os números.", "erro");
+  if (dados.senha.length < 8) return mostrarToast("A senha precisa ter pelo menos 8 caracteres.", "erro");
+  try {
+    const r = await lojaApi.registrar(dados);
+    tokenComprador.salvar(r.access_token);
+    mostrarToast("Conta criada!", "sucesso");
     carregar();
   } catch (erro) {
     mostrarToast(mensagemDeErro(erro), "erro");

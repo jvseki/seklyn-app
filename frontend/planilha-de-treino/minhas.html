@@ -34,14 +34,31 @@
   <main class="pl-area">
     <!-- sem login -->
     <section class="pl-login pl-cartao" id="bloco-login" hidden>
-      <h1>Entrar</h1>
-      <p class="pl-mini" style="text-align:left;margin:0 0 10px;">Use o e-mail e a senha que você criou na compra.</p>
+      <h1>Minhas planilhas</h1>
+      <div class="pl-abas" role="tablist" style="margin-top:14px;">
+        <button type="button" class="pl-aba ativa" data-aba="entrar">Entrar</button>
+        <button type="button" class="pl-aba" data-aba="criar">Criar conta</button>
+      </div>
       <form id="form-login" class="pl-form" novalidate>
+        <p class="pl-mini" style="text-align:left;margin:0 0 4px;">Já tem conta no Seklyn? Use o <b>mesmo e-mail e senha</b>.</p>
         <label class="label" for="l-email">E-mail</label>
         <input class="input" id="l-email" type="email" required autocomplete="email" />
         <label class="label" for="l-senha">Senha</label>
         <input class="input" id="l-senha" type="password" required autocomplete="current-password" />
         <button class="pl-btn pl-btn-brilho pl-btn-bloco" type="submit">Entrar</button>
+      </form>
+      <form id="form-criar-conta" class="pl-form" novalidate hidden>
+        <label class="label" for="r-nome">Nome completo</label>
+        <input class="input" id="r-nome" required autocomplete="name" maxlength="120" />
+        <label class="label" for="r-email">E-mail</label>
+        <input class="input" id="r-email" type="email" required autocomplete="email" />
+        <label class="label" for="r-cpf">CPF</label>
+        <input class="input" id="r-cpf" required inputmode="numeric" maxlength="14" placeholder="000.000.000-00" data-mascara-cpf />
+        <label class="label" for="r-tel">WhatsApp (opcional)</label>
+        <input class="input" id="r-tel" type="tel" autocomplete="tel" maxlength="30" />
+        <label class="label" for="r-senha">Crie uma senha</label>
+        <input class="input" id="r-senha" type="password" required autocomplete="new-password" minlength="8" placeholder="mínimo 8 caracteres" />
+        <button class="pl-btn pl-btn-brilho pl-btn-bloco" type="submit">Criar conta</button>
       </form>
       <p class="pl-mini">Ainda não comprou? <a href="./#planilhas">Ver planilhas</a></p>
     </section>

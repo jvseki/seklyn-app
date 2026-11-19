@@ -9,6 +9,7 @@ import os
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
 from fastapi.responses import Response, StreamingResponse
 from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -23,6 +24,7 @@ from app.core.security import (
 from app.deps import exigir_admin
 from app.models.loja import Comprador, ConteudoProduto, Produto
 from app.models.parceiro import Parceiro, VendaParceiro
+from app.models.personal import Personal
 from app.schemas.loja import (
     CompraCartaoIn,
     CompradorCriar,
@@ -143,6 +145,11 @@ def registrar_comprador(dados: CompradorCriar, db: Session = Depends(get_db)) ->
     email = dados.email.lower().strip()
     if db.query(Comprador).filter(Comprador.email == email).first():
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Já existe uma conta com esse e-mail. Entre com ela.")
+    if _personal_por_email(db, email):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Esse e-mail já tem conta no Seklyn. Use \"Entrar\" com a mesma senha do Seklyn.",
+        )
     comprador = Comprador(
         nome=dados.nome.strip(),
         email=email,
@@ -158,10 +165,36 @@ def registrar_comprador(dados: CompradorCriar, db: Session = Depends(get_db)) ->
 
 @router.post(f"{API}/conta/login", response_model=CompradorTokenOut)
 def login_comprador(dados: CompradorLogin, db: Session = Depends(get_db)) -> CompradorTokenOut:
-    comprador = db.query(Comprador).filter(Comprador.email == dados.email.lower().strip()).first()
-    if comprador is None or not verificar_senha(dados.senha, comprador.senha_hash):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="E-mail ou senha incorretos.")
+    """Login da loja. Aceita também a conta Seklyn (Personal): na primeira vez
+    cria a conta de comprador ligada a ela; a senha é sempre a do Personal."""
+    email = dados.email.lower().strip()
+    erro = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="E-mail ou senha incorretos.")
+    comprador = db.query(Comprador).filter(Comprador.email == email).first()
+    if comprador is not None:
+        personal = db.get(Personal, comprador.personal_id) if comprador.personal_id else None
+        hash_certo = personal.senha_hash if personal else comprador.senha_hash
+        if not verificar_senha(dados.senha, hash_certo):
+            raise erro
+    else:
+        personal = _personal_por_email(db, email)
+        if personal is None or not verificar_senha(dados.senha, personal.senha_hash):
+            raise erro
+        comprador = Comprador(
+            nome=personal.nome,
+            email=email,
+            senha_hash=personal.senha_hash,
+            cpf=personal.cpf,
+            telefone=personal.telefone,
+            personal_id=personal.id,
+        )
+        db.add(comprador)
+        db.commit()
+        db.refresh(comprador)
     return CompradorTokenOut(access_token=criar_token_comprador(comprador.id), comprador=CompradorOut.model_validate(comprador))
+
+
+def _personal_por_email(db: Session, email: str) -> Personal | None:
+    return db.query(Personal).filter(func.lower(Personal.email) == email.lower()).first()
 
 
 @router.get(f"{API}/conta/me", response_model=CompradorOut)
