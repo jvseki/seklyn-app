@@ -221,3 +221,29 @@ export function contarAte(elemento, texto, duracaoMs = 1100) {
   }
   requestAnimationFrame(passo);
 }
+
+/** CPF: dígitos verificadores (mesma regra do backend). */
+export function cpfValido(cpf) {
+  const d = String(cpf || "").replace(/\D/g, "");
+  if (d.length !== 11 || /^(\d)\1{10}$/.test(d)) return false;
+  for (const tamanho of [9, 10]) {
+    let soma = 0;
+    for (let i = 0; i < tamanho; i++) soma += Number(d[i]) * (tamanho + 1 - i);
+    if (((soma * 10) % 11) % 10 !== Number(d[tamanho])) return false;
+  }
+  return true;
+}
+
+/** Máscara 000.000.000-00 enquanto digita (em todo input com data-mascara-cpf). */
+export function mascaraCpf(valor) {
+  const d = String(valor || "").replace(/\D/g, "").slice(0, 11);
+  return d
+    .replace(/^(\d{3})(\d)/, "$1.$2")
+    .replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d{1,2})$/, ".$1-$2");
+}
+
+document.addEventListener("input", (evento) => {
+  const campo = evento.target;
+  if (campo instanceof HTMLInputElement && campo.hasAttribute("data-mascara-cpf")) campo.value = mascaraCpf(campo.value);
+});

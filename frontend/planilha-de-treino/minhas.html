@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Minhas planilhas — Seklyn</title>
+  <meta name="theme-color" content="#07040f" />
+  <meta name="robots" content="noindex" />
+  <link rel="icon" type="image/png" href="../assets/img/logo-s.png" />
+  <script src="../assets/js/config.js"></script>
+  <link rel="stylesheet" href="../assets/css/variables.css" />
+  <link rel="stylesheet" href="../assets/css/base.css" />
+  <link rel="stylesheet" href="../assets/css/components.css" />
+  <link rel="stylesheet" href="../assets/css/planilha.css" />
+</head>
+<body class="pagina-planilha">
+  <div class="pl-fundo" aria-hidden="true">
+    <span class="pl-blob pl-blob-1"></span>
+    <span class="pl-blob pl-blob-2"></span>
+    <span class="pl-grade"></span>
+  </div>
+
+  <header class="pl-topo">
+    <a href="./" class="pl-marca" aria-label="Voltar pras planilhas">
+      <img src="../assets/img/logo-s.png" alt="" width="28" height="28" />
+      <span>Sek<b>lyn</b></span>
+    </a>
+    <nav class="pl-topo-acoes">
+      <a href="./#planilhas" class="pl-link-topo">Ver planilhas</a>
+      <button class="pl-btn-topo" type="button" id="sair" hidden>Sair</button>
+    </nav>
+  </header>
+
+  <main class="pl-area">
+    <!-- sem login -->
+    <section class="pl-login pl-cartao" id="bloco-login" hidden>
+      <h1>Minhas planilhas</h1>
+      <div class="pl-abas" role="tablist" style="margin-top:14px;">
+        <button type="button" class="pl-aba ativa" data-aba="entrar">Entrar</button>
+        <button type="button" class="pl-aba" data-aba="criar">Criar conta</button>
+      </div>
+      <form id="form-login" class="pl-form" novalidate>
+        <p class="pl-mini" style="text-align:left;margin:0 0 4px;">Já tem conta no Seklyn? Use o <b>mesmo e-mail e senha</b>.</p>
+        <label class="label" for="l-email">E-mail</label>
+        <input class="input" id="l-email" type="email" required autocomplete="email" />
+        <label class="label" for="l-senha">Senha</label>
+        <input class="input" id="l-senha" type="password" required autocomplete="current-password" />
+        <button class="pl-btn pl-btn-brilho pl-btn-bloco" type="submit">Entrar</button>
+      </form>
+      <form id="form-criar-conta" class="pl-form" novalidate hidden>
+        <label class="label" for="r-nome">Nome completo</label>
+        <input class="input" id="r-nome" required autocomplete="name" maxlength="120" />
+        <label class="label" for="r-email">E-mail</label>
+        <input class="input" id="r-email" type="email" required autocomplete="email" />
+        <label class="label" for="r-cpf">CPF</label>
+        <input class="input" id="r-cpf" required inputmode="numeric" maxlength="14" placeholder="000.000.000-00" data-mascara-cpf />
+        <label class="label" for="r-tel">WhatsApp (opcional)</label>
+        <input class="input" id="r-tel" type="tel" autocomplete="tel" maxlength="30" />
+        <label class="label" for="r-senha">Crie uma senha</label>
+        <input class="input" id="r-senha" type="password" required autocomplete="new-password" minlength="8" placeholder="mínimo 8 caracteres" />
+        <button class="pl-btn pl-btn-brilho pl-btn-bloco" type="submit">Criar conta</button>
+      </form>
+      <p class="pl-mini">Ainda não comprou? <a href="./#planilhas">Ver planilhas</a></p>
+    </section>
+
+    <!-- logado -->
+    <section id="bloco-area" hidden>
+      <h1>Minhas planilhas</h1>
+      <p class="pl-subtitulo" id="ola"></p>
+      <div class="pl-minhas" id="lista-minhas"><div class="pl-carregando"><span class="spinner"></span></div></div>
+
+      <div class="pl-conteudo" id="conteudo" hidden>
+        <h2 id="conteudo-titulo"></h2>
+        <div class="pl-conteudo-grade">
+          <div>
+            <div class="pl-player" id="player"></div>
+            <p class="pl-mini" id="player-titulo" style="text-align:left;"></p>
+          </div>
+          <div class="pl-aulas" id="aulas"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="../assets/js/minhas-planilhas.js"></script>
+</body>
+</html>

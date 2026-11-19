@@ -46,6 +46,7 @@ def registrar(dados: PersonalCriar, db: Session = Depends(get_db)) -> TokenOut:
         email=dados.email,
         senha_hash=hash_senha(dados.senha),
         telefone=dados.telefone,
+        cpf=dados.cpf,
     )
     db.add(personal)
     db.commit()
