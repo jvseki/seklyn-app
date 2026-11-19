@@ -216,6 +216,12 @@ export const api = {
     apiFetch("/admin/loja/repasse-pendente/confirmar", { method: "POST", body: JSON.stringify({ vendas }) }),
   marcarRepassadoLojaAdmin: (id) => apiFetch(`/admin/loja/vendas/${id}/repassado`, { method: "POST" }),
   reembolsarVendaLojaAdmin: (id) => apiFetch(`/admin/loja/vendas/${id}/reembolsar`, { method: "POST" }),
+  // --- Novidades e pedido de parceria ---
+  marcarNovidadeVista: (versao) => apiFetch("/personal/novidades/vista", { method: "POST", body: JSON.stringify({ versao }) }),
+  minhaSolicitacaoParceria: () => apiFetch("/personal/parceria/solicitacao"),
+  solicitarParceria: (dados) => apiFetch("/personal/parceria/solicitacao", { method: "POST", body: JSON.stringify(dados) }),
+  solicitacoesParceriaAdmin: () => apiFetch("/admin/parceria/solicitacoes"),
+  atualizarSolicitacaoAdmin: (id, dados) => apiFetch(`/admin/parceria/solicitacoes/${id}`, { method: "PUT", body: JSON.stringify(dados) }),
   // --- Planilhas da loja (produtos) ---
   produtosAdmin: () => apiFetch("/admin/loja/produtos"),
   criarProdutoAdmin: (dados) => apiFetch("/admin/loja/produtos", { method: "POST", body: JSON.stringify(dados) }),

@@ -188,7 +188,12 @@ def cancelar(
     if assinatura.cancelamento_agendado:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Sua assinatura já está cancelada.")
     try:
-        mp.cancelar_assinatura(db, assinatura)
+        reembolsado = mp.cancelar_assinatura(db, assinatura)
+        from app.services import email_avisos
+
+        email_avisos.assinatura_cancelada(
+            personal.email, personal.nome, assinatura.fim_do_periodo if assinatura.ativa else None, reembolsado
+        )
     except mp.ErroMercadoPago as erro:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,

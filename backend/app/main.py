@@ -10,7 +10,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api.routes import admin, aluno, assinatura, auth, loja, personal, recomendacoes, videos, parceiro
+from app.api.routes import admin, aluno, assinatura, auth, loja, parceria_personal, personal, recomendacoes, videos, parceiro
 from app.core.config import get_settings
 from app.core.erros import tratar_erro_validacao
 
@@ -46,6 +46,7 @@ app.include_router(assinatura.router)
 app.include_router(admin.router)
 app.include_router(parceiro.router)
 app.include_router(loja.router)
+app.include_router(parceria_personal.router)
 app.include_router(videos.router)
 
 # Vídeos e fotos enviados (upload direto) — fica em uploads/, montado no

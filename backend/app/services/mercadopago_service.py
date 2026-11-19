@@ -214,18 +214,30 @@ def assinar_com_cartao(db: Session, personal: Personal, assinatura: Assinatura, 
     assinatura.forma_pagamento = "credito"
     assinatura.cancelamento_agendado = False
     assinatura.pagamento_pendente_id = None
+    avisar_credito = False
     if comeca_depois:
         # Continua no mês já pago; a cobrança automática começa no fim dele.
         assinatura.status = "active" if novo_status in ("active", "pendente") else novo_status
     else:
         assinatura.status = novo_status
         assinatura.ultimo_pagamento_em = _agora()  # 1ª cobrança é agora
+        avisar_credito = novo_status == "active"
         assinatura.ultimo_pagamento_id = None  # id aparece depois (busca na hora do reembolso)
     proxima = _data_iso(resposta.get("next_payment_date"))
     if proxima:
         assinatura.current_period_end = proxima
     db.commit()
+    if not comeca_depois and avisar_credito:
+        _avisar_pagamento(assinatura, valor, "credito", automatica=True)
     return assinatura
+
+
+def _avisar_pagamento(assinatura: Assinatura, valor, forma: str, automatica: bool) -> None:
+    from app.services import email_avisos
+
+    personal = assinatura.personal
+    if personal is not None:
+        email_avisos.assinatura_paga(personal.email, personal.nome, valor or valor_da_assinatura(assinatura) or 0, forma, assinatura.fim_do_periodo, automatica)
 
 
 # ---------- Pagamento avulso: débito e Pix (um mês por vez) ----------
@@ -322,6 +334,7 @@ def _aplicar_pagamento_avulso(db: Session, assinatura: Assinatura, pagamento: di
     if assinatura.pagamento_pendente_id == pagamento_id:
         assinatura.pagamento_pendente_id = None
     db.commit()
+    _avisar_pagamento(assinatura, pagamento.get("transaction_amount"), forma, automatica=False)
 
 
 def pagar_com_debito(

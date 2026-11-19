@@ -19,8 +19,10 @@ from app.models.meta import Meta
 from app.models.comentario_serie import ComentarioSerie
 from app.models.parceiro import Parceiro, VendaParceiro
 from app.models.loja import Comprador, ConteudoProduto, Produto
+from app.models.solicitacao_parceria import SolicitacaoParceria
 
 __all__ = [
+    "SolicitacaoParceria",
     "Comprador",
     "ConteudoProduto",
     "Produto",

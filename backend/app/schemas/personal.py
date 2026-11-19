@@ -63,6 +63,7 @@ class PersonalOut(OrmModel):
     email_verificado: bool
     tema_personalizado: str | None
     is_admin: bool
+    novidade_vista: int = 0
     criado_em: datetime
 
 

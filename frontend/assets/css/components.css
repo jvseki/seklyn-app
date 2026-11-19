@@ -2875,3 +2875,305 @@ a.comentario-link:hover {
     grid-column: 1 / -1;
   }
 }
+
+
+/* ---------- Novidades (telas que aparecem uma vez por conta) ---------- */
+.nv-fundo {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(15, 10, 30, 0.6);
+  backdrop-filter: blur(6px);
+  animation: nv-aparecer 0.25s ease-out;
+}
+
+.nv-caixa {
+  position: relative;
+  width: 100%;
+  max-height: 92svh;
+  overflow-y: auto;
+  padding: 26px 22px max(22px, env(safe-area-inset-bottom));
+  border-radius: 28px 28px 0 0;
+  background: var(--cor-superficie);
+  box-shadow: 0 -20px 60px -20px rgba(124, 58, 237, 0.5);
+  animation: nv-subir 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.1);
+}
+
+.nv-caixa h2 {
+  margin: 10px 0 8px;
+  font-size: 1.45rem;
+  line-height: 1.2;
+}
+
+.nv-caixa p {
+  color: var(--cor-texto-muted);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.nv-fechar {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--cor-borda);
+  background: transparent;
+  color: var(--cor-texto);
+  font-size: 1.3rem;
+  cursor: pointer;
+}
+
+.nv-selo {
+  display: inline-block;
+  margin-top: 16px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #fff;
+  background: linear-gradient(120deg, #7c3aed, #ec4899);
+}
+
+.nv-arte {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 150px;
+  border-radius: 22px;
+  color: #fff;
+  background: radial-gradient(circle at 80% 0%, rgba(236, 72, 153, 0.55), transparent 55%), linear-gradient(135deg, #1a0f33, #4c1d95);
+  overflow: hidden;
+  animation: nv-arte 0.5s ease-out;
+}
+
+.nv-arte-loja {
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nv-arte-loja span {
+  font-size: 2.6rem;
+}
+
+.nv-arte-loja i {
+  font-style: normal;
+  font-weight: 800;
+  padding: 3px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.nv-arte-passos span,
+.nv-arte-divisao div {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  font-weight: 700;
+  font-size: 0.86rem;
+  white-space: nowrap;
+}
+
+.nv-arte-divisao div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 96px;
+}
+
+.nv-arte-divisao i {
+  font-style: normal;
+  font-weight: 500;
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+.nv-arte-video {
+  flex-direction: column;
+}
+
+.nv-arte-video span {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: #fff;
+  color: #7c3aed;
+  font-size: 1.4rem;
+  box-shadow: 0 0 0 10px rgba(255, 255, 255, 0.15);
+}
+
+.nv-arte-video i {
+  font-style: normal;
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+.nv-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 16px;
+}
+
+.nv-form .btn {
+  margin-top: 10px;
+}
+
+.nv-rodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.nv-pontos {
+  display: flex;
+  gap: 6px;
+}
+
+.nv-pontos span {
+  width: 8px;
+  height: 8px;
+  border-radius: 99px;
+  background: var(--cor-borda);
+  transition: width 0.25s, background 0.25s;
+}
+
+.nv-pontos span.ativo {
+  width: 22px;
+  background: var(--cor-primaria);
+}
+
+.nv-botoes {
+  display: flex;
+  gap: 6px;
+}
+
+@keyframes nv-aparecer {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes nv-subir {
+  from {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+}
+
+@keyframes nv-arte {
+  from {
+    transform: scale(0.96);
+    opacity: 0.4;
+  }
+}
+
+@media (min-width: 700px) {
+  .nv-fundo {
+    align-items: center;
+  }
+  .nv-caixa {
+    width: min(480px, 92vw);
+    border-radius: 28px;
+    padding: 30px 28px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nv-fundo,
+  .nv-caixa,
+  .nv-arte {
+    animation: none;
+  }
+}
+
+/* cartão "Ganhe dinheiro vendendo suas planilhas" no painel */
+.cartao-parceria {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: var(--espaco-5);
+  padding: 16px 18px;
+  border-radius: var(--raio-lg);
+  border: 1px solid color-mix(in srgb, var(--cor-primaria) 30%, transparent);
+  background: radial-gradient(circle at 100% 0%, rgba(236, 72, 153, 0.12), transparent 50%),
+    color-mix(in srgb, var(--cor-primaria) 6%, var(--cor-superficie));
+}
+
+.cartao-parceria[hidden] {
+  display: none;
+}
+
+.cartao-parceria-icone {
+  font-size: 1.8rem;
+}
+
+.cartao-parceria-texto {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cartao-parceria-texto span {
+  color: var(--cor-texto-muted);
+  font-size: 0.9rem;
+}
+
+/* Admin: pedidos de parceria */
+.pedidos-parceria {
+  margin-top: var(--espaco-6);
+}
+
+.pedido-parceria {
+  padding: 14px 0;
+  border-top: 1px solid var(--cor-borda);
+}
+
+.pedido-parceria-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.pedido-parceria-topo > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.pedido-parceria-info {
+  margin: 8px 0 4px;
+}
+
+.pedido-parceria-msg {
+  margin: 0 0 8px;
+  color: var(--cor-texto-muted);
+  font-style: italic;
+}
+
+.pedido-parceria-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.pedido-parceria-acoes .input {
+  width: auto;
+  min-width: 150px;
+}

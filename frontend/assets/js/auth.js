@@ -22,6 +22,8 @@ export function protegerPagina() {
       if (personal.is_admin) {
         document.querySelectorAll("[data-admin-only]").forEach((el) => (el.hidden = false));
       }
+      // Novidades: telas explicando função nova (uma vez por conta) + cartão no painel.
+      import("./novidades.js").then((m) => m.mostrarNovidades(personal)).catch(() => {});
     })
     .catch(() => {});
   mostrarAvisoVencimento();

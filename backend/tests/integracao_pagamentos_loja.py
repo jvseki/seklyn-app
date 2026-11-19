@@ -142,6 +142,12 @@ def mp_falso(metodo, caminho, corpo=None):
 
 
 mp._requisitar = mp_falso
+# E-mails: captura (síncrono) em vez de mandar pelo Resend.
+from app.services import email_avisos as _email_avisos  # noqa: E402
+
+EMAILS = []
+_email_avisos._em_segundo_plano = lambda funcao, *a, **k: funcao(*a, **k)
+_email_avisos.enviar_email = lambda destino, assunto, html, texto=None: EMAILS.append((destino, assunto))
 # Cenários antigos testam o reembolso com conta comum: simula "reembolso pra todos".
 _reembolso_real = mp.reembolso_horas_para
 mp.reembolso_horas_para = lambda assinatura: mp.settings.reembolso_horas
@@ -816,6 +822,50 @@ r = cliente.post("/api/auth/personal/trocar-senha", json={"senha_atual": "x" * 8
 checar("Ana troca a senha do Seklyn", r.status_code in (200, 204), r.text)
 checar("loja: senha antiga do Seklyn deixa de valer", cliente.post("/api/loja/conta/login", json={"email": "ana@teste.com", "senha": "x" * 8}).status_code == 401)
 checar("loja: senha nova do Seklyn vale na loja", cliente.post("/api/loja/conta/login", json={"email": "ana@teste.com", "senha": "novaSenha123"}).status_code == 200)
+
+# 39) E-mails com a marca disparados nos momentos certos.
+assuntos = [a for _, a in EMAILS]
+checar("e-mail: compra confirmada pro aluno", any(d == "maria@teste.com" and "liberada" in a for d, a in EMAILS), assuntos[-10:])
+checar("e-mail: nova venda pros admins", any(d == "dono@seklyn.com.br" and a.startswith("Nova venda") for d, a in EMAILS), assuntos[-10:])
+checar("e-mail: pagamento da assinatura (Pix) pro Personal", any(d == "ana@teste.com" and "Pagamento confirmado" in a for d, a in EMAILS), assuntos[:20])
+checar("e-mail: cancelamento da assinatura", any(d == "ana@teste.com" and "cancelada" in a for d, a in EMAILS), assuntos[:30])
+
+# 40) Novidades (uma vez por conta) e pedido de parceria.
+me = cliente.get("/api/auth/personal/me", headers=H_ANA).json()
+checar("novidades: conta começa sem ter visto", me.get("novidade_vista") == 0, me)
+r = cliente.post("/api/personal/novidades/vista", json={"versao": 1}, headers=H_ANA)
+checar("novidades: marca como vista", r.status_code == 204 and cliente.get("/api/auth/personal/me", headers=H_ANA).json()["novidade_vista"] == 1, r.text)
+cliente.post("/api/personal/novidades/vista", json={"versao": 0}, headers=H_ANA)
+checar("novidades: não volta pra trás", cliente.get("/api/auth/personal/me", headers=H_ANA).json()["novidade_vista"] == 1)
+checar("parceria: sem pedido ainda", cliente.get("/api/personal/parceria/solicitacao", headers=H_ANA).json() is None)
+r = cliente.post("/api/personal/parceria/solicitacao", json={"whatsapp": "123"}, headers=H_ANA)
+checar("parceria: WhatsApp curto → 422", r.status_code == 422, r.text)
+antes = len(EMAILS)
+r = cliente.post("/api/personal/parceria/solicitacao", json={"whatsapp": "(18) 99999-8888", "instagram": "@anapersonal", "mensagem": "Planilha de hipertrofia"}, headers=H_ANA)
+checar("parceria: pedido enviado", r.status_code == 201 and r.json()["status"] == "nova", r.text)
+novos_emails = EMAILS[antes:]
+checar("parceria: e-mail pro admin e confirmação pro Personal", any(d == "dono@seklyn.com.br" for d, _ in novos_emails) and any(d == "ana@teste.com" for d, _ in novos_emails), novos_emails)
+checar("parceria: instagram salvo sem @", cliente.get("/api/personal/parceria/solicitacao", headers=H_ANA).json()["instagram"] == "anapersonal")
+r = cliente.post("/api/personal/parceria/solicitacao", json={"whatsapp": "(18) 99999-8888"}, headers=H_ANA)
+checar("parceria: pedido repetido → 409", r.status_code == 409, r.text)
+checar("parceria: Personal comum não vê a lista (403)", cliente.get("/api/admin/parceria/solicitacoes", headers=H_ANA).status_code == 403)
+lista = cliente.get("/api/admin/parceria/solicitacoes", headers=H_ADMIN).json()
+checar("parceria: admin vê o pedido com nome e e-mail", lista and lista[0]["personal_email"] == "ana@teste.com", lista)
+antes = len(EMAILS)
+r = cliente.put(f"/api/admin/parceria/solicitacoes/{lista[0]['id']}", json={"status": "aprovada"}, headers=H_ADMIN)
+checar("parceria: admin aprova → Personal recebe e-mail", r.status_code == 200 and any(d == "ana@teste.com" and "aprovada" in a for d, a in EMAILS[antes:]), EMAILS[antes:])
+r = cliente.put(f"/api/admin/parceria/solicitacoes/{lista[0]['id']}", json={"status": "qualquer"}, headers=H_ADMIN)
+checar("parceria: status inválido → 422", r.status_code == 422, r.text)
+
+# 41) Aviso de vencimento (cron diário): só 3, 1 e 0 dias antes, Pix/débito.
+editar_ana(status="active", forma_pagamento="pix", cancelamento_agendado=False, current_period_end=agora() + timedelta(days=2, hours=12))
+antes = len(EMAILS)
+runpy.run_path(os.path.join(BACKEND, "scripts", "avisar_vencimentos.py"))
+checar("vencimento: faltando 3 dias → e-mail", any(d == "ana@teste.com" and "vence em 3 dias" in a for d, a in EMAILS[antes:]), EMAILS[antes:])
+editar_ana(current_period_end=agora() + timedelta(days=10))
+antes = len(EMAILS)
+runpy.run_path(os.path.join(BACKEND, "scripts", "avisar_vencimentos.py"))
+checar("vencimento: faltando 10 dias → nada", not any(d == "ana@teste.com" for d, _ in EMAILS[antes:]), EMAILS[antes:])
 
 # arquivo que o teste do automático anota em uploads/
 if os.path.exists("uploads/testes_automaticos.txt"):

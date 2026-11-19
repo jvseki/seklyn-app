@@ -190,12 +190,27 @@ def aplicar_pagamento(db: Session, pagamento: dict) -> VendaParceiro | None:
         )
         venda.status = "paga"
         venda.paga_em = datetime.now(timezone.utc)
+        _avisar_venda_paga(db, venda)
     elif situacao in ("refunded", "charged_back"):
         venda.status = "reembolsada"
     elif situacao in ("cancelled", "rejected") and venda.status == "aguardando":
         venda.status = "expirada"
     db.commit()
     return venda
+
+
+def _avisar_venda_paga(db: Session, venda: VendaParceiro) -> None:
+    from app.models.loja import Comprador, Produto
+    from app.services import email_avisos
+
+    comprador = db.get(Comprador, venda.comprador_id) if venda.comprador_id else None
+    produto = db.get(Produto, venda.produto_id) if venda.produto_id else None
+    titulo = produto.titulo if produto else venda.produto
+    if comprador:
+        email_avisos.compra_confirmada(comprador.email, comprador.nome, titulo, venda.valor, venda.produto_id)
+    email_avisos.nova_venda_admin(
+        email_avisos.emails_admins(db), titulo, venda.valor, comprador.nome if comprador else None, venda.parte_parceiro, venda.parte_dono
+    )
 
 
 def sincronizar(db: Session, venda: VendaParceiro) -> VendaParceiro:

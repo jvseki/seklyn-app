@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, String, func
+from sqlalchemy import Integer, Boolean, DateTime, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -35,6 +35,9 @@ class Personal(Base):
     # Personal cadastrado (tela /personal/admin.html). Definido manualmente no
     # banco, não tem cadastro por fora — é só pra dona conta do produto.
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # Última "novidade" (aviso com telas explicando função nova) que essa conta
+    # já viu — o aviso aparece uma vez só por conta.
+    novidade_vista: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False)
 
     alunos: Mapped[list["Aluno"]] = relationship(back_populates="personal", cascade="all, delete-orphan")
     assinatura: Mapped["Assinatura | None"] = relationship(

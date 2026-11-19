@@ -88,13 +88,67 @@ CORES_TEMA = {
 }
 
 
-def _layout(*, titulo: str, previa: str, paragrafos: list[str], botao_texto: str, botao_link: str, rodape: str, cor: str = "#7c3aed") -> str:
-    """Monta o HTML completo do e-mail. `paragrafos` já devem vir escapados."""
-    corpo = "".join(
-        f'<p style="margin:0 0 18px;font-size:17px;line-height:1.65;color:#0f172a;">{p}</p>' for p in paragrafos
-    )
+def _layout(
+    *,
+    titulo: str,
+    previa: str,
+    paragrafos: list[str],
+    botao_texto: str,
+    botao_link: str,
+    rodape: str,
+    cor: str = "#7c3aed",
+    icone: str | None = None,
+    detalhes: list[tuple[str, str]] | None = None,
+    passos: list[str] | None = None,
+) -> str:
+    """
+    Monta o HTML completo do e-mail (tabelas + CSS inline: funciona em Gmail,
+    Outlook, Apple Mail e celular). `paragrafos` e `passos` já devem vir
+    escapados; `detalhes` (rótulo, valor) é escapado aqui.
+    Opcionais: `icone` (emoji grande no topo), `detalhes` (cartão de resumo)
+    e `passos` (lista numerada).
+    """
+    fonte = "'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
     link = escape(botao_link, quote=True)
-    fonte = "'Segoe UI',Roboto,Arial,sans-serif"
+    corpo = "".join(
+        f'<p style="margin:0 0 16px;font-size:16px;line-height:1.65;color:#1e293b;">{p}</p>' for p in paragrafos
+    )
+
+    bloco_icone = ""
+    if icone:
+        bloco_icone = f"""
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:26px 0 0;"><tr>
+        <td width="64" height="64" align="center" valign="middle" bgcolor="{cor}" style="width:64px;height:64px;border-radius:20px;background:{cor};background-image:linear-gradient(135deg,{cor},#ec4899);font-size:32px;line-height:64px;">{icone}</td>
+      </tr></table>"""
+
+    bloco_detalhes = ""
+    if detalhes:
+        linhas = "".join(
+            f"""<tr>
+          <td width="44%" style="padding:12px 18px;border-bottom:1px solid #ece8ff;font-size:14px;line-height:1.35;color:#64748b;">{escape(rotulo)}</td>
+          <td align="right" style="padding:12px 18px;border-bottom:1px solid #ece8ff;font-size:15px;font-weight:700;color:#0f172a;">{escape(valor)}</td>
+        </tr>"""
+            for rotulo, valor in detalhes
+        )
+        bloco_detalhes = f"""
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 22px;border:1px solid #ece8ff;border-radius:16px;background:#faf8ff;border-collapse:separate;overflow:hidden;">
+        {linhas}
+      </table>"""
+
+    bloco_passos = ""
+    if passos:
+        itens = "".join(
+            f"""<tr>
+          <td width="34" valign="top" style="padding:0 12px 14px 0;">
+            <div style="width:30px;height:30px;border-radius:50%;background:{cor};color:#ffffff;font-weight:800;font-size:14px;line-height:30px;text-align:center;">{i}</div>
+          </td>
+          <td valign="top" style="padding:4px 0 14px;font-size:15px;line-height:1.5;color:#1e293b;">{passo}</td>
+        </tr>"""
+            for i, passo in enumerate(passos, 1)
+        )
+        bloco_passos = f"""
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 18px;">{itens}</table>"""
+
     return f"""<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -102,30 +156,44 @@ def _layout(*, titulo: str, previa: str, paragrafos: list[str], botao_texto: str
 <meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light">
 <title>{escape(titulo)}</title>
 </head>
-<body style="margin:0;padding:0;background:#f3f1fa;">
-<div style="display:none;max-height:0;overflow:hidden;opacity:0;">{escape(previa)}</div>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f3f1fa;">
-<tr><td align="center" style="padding:32px 14px;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:540px;background:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 18px 40px -20px rgba(76,29,149,0.35);">
-    <tr><td bgcolor="#0b0716" style="background:#0b0716;background-image:radial-gradient(circle at 80% 0%,{cor}88,transparent 62%),linear-gradient(135deg,#0b0716,#1e1035);padding:34px 32px 30px;">
-      <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-        <td style="vertical-align:middle;background:#ffffff;border-radius:12px;padding:6px;"><img src="{LOGO_URL}" width="34" height="33" alt="Seklyn" style="display:block;border:0;"></td>
-        <td style="vertical-align:middle;padding-left:12px;font-family:{fonte};font-size:22px;font-weight:800;color:#ffffff;">Sek<span style="color:#c4b5fd;">lyn</span></td>
+<body style="margin:0;padding:0;background:#efecf8;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">{escape(previa)}&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#efecf8;">
+<tr><td align="center" style="padding:28px 12px 36px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background:#ffffff;border-radius:26px;overflow:hidden;box-shadow:0 24px 50px -24px rgba(76,29,149,0.45);">
+
+    <tr><td bgcolor="#0b0716" style="background:#0b0716;background-image:radial-gradient(circle at 85% -10%,{cor}aa,transparent 58%),radial-gradient(circle at 0% 120%,#ec489955,transparent 50%),linear-gradient(140deg,#0b0716,#1a0f33);padding:28px 30px 32px;font-family:{fonte};">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td style="vertical-align:middle;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+            <td style="vertical-align:middle;background:#ffffff;border-radius:11px;padding:5px;"><img src="{LOGO_URL}" width="30" height="29" alt="Seklyn" style="display:block;border:0;"></td>
+            <td style="vertical-align:middle;padding-left:10px;font-size:20px;font-weight:800;color:#ffffff;">Sek<span style="color:#c4b5fd;">lyn</span></td>
+          </tr></table>
+        </td>
+        <td align="right" style="vertical-align:middle;"><a href="https://seklyn.com.br" style="font-size:12px;color:#c4b5fd;text-decoration:none;border:1px solid #4c3a7a;border-radius:999px;padding:6px 12px;">seklyn.com.br</a></td>
       </tr></table>
-      <h1 style="margin:26px 0 0;font-family:{fonte};font-size:27px;line-height:1.2;font-weight:800;color:#ffffff;">{escape(titulo)}</h1>
+      {bloco_icone}
+      <h1 style="margin:{"18px" if icone else "26px"} 0 0;font-size:28px;line-height:1.2;font-weight:800;color:#ffffff;letter-spacing:-0.3px;">{escape(titulo)}</h1>
+      <p style="margin:10px 0 0;font-size:15px;line-height:1.5;color:#d8ccff;">{escape(previa)}</p>
     </td></tr>
-    <tr><td height="4" style="height:4px;line-height:4px;font-size:0;background:{cor};background-image:linear-gradient(90deg,{cor},#ec4899);">&nbsp;</td></tr>
-    <tr><td style="padding:32px 32px 8px;font-family:{fonte};">
+    <tr><td height="4" style="height:4px;line-height:4px;font-size:0;background:{cor};background-image:linear-gradient(90deg,{cor},#ec4899,#22d3ee);">&nbsp;</td></tr>
+
+    <tr><td style="padding:30px 30px 6px;font-family:{fonte};">
       {corpo}
-      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:10px 0 26px;"><tr>
-        <td bgcolor="{cor}" style="border-radius:14px;background:{cor};background-image:linear-gradient(135deg,{cor},#4c1d95);">
-          <a href="{link}" style="display:inline-block;padding:15px 30px;font-family:{fonte};font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:14px;">{escape(botao_texto)} &rarr;</a>
+      {bloco_detalhes}
+      {bloco_passos}
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 14px;"><tr>
+        <td align="center" bgcolor="{cor}" style="border-radius:16px;background:{cor};background-image:linear-gradient(120deg,{cor},#a21caf 70%,#ec4899);box-shadow:0 12px 28px -12px {cor};">
+          <a href="{link}" style="display:block;padding:17px 24px;font-size:17px;font-weight:800;color:#ffffff;text-decoration:none;border-radius:16px;">{escape(botao_texto)} &rarr;</a>
         </td>
       </tr></table>
-      <p style="margin:0 0 26px;font-size:14px;line-height:1.55;color:#475569;">Se o botão não funcionar, copie e cole no navegador:<br><a href="{link}" style="color:{cor};font-weight:600;word-break:break-all;">{escape(botao_link)}</a></p>
+      <p style="margin:0 0 26px;font-size:12px;line-height:1.55;color:#64748b;text-align:center;">Botão não abriu? Copie o link:<br><a href="{link}" style="color:{cor};font-weight:600;word-break:break-all;">{escape(botao_link)}</a></p>
     </td></tr>
-    <tr><td style="padding:20px 32px 28px;border-top:1px solid #e2e8f0;background:#faf9ff;font-family:{fonte};">
-      <p style="margin:0;font-size:13px;line-height:1.65;color:#475569;">{rodape}<br><strong style="color:#0f172a;">Seklyn</strong> · acompanhamento de treinos série por série · <a href="https://seklyn.com.br" style="color:#475569;text-decoration:underline;">seklyn.com.br</a></p>
+
+    <tr><td align="center" style="padding:22px 30px 26px;border-top:1px solid #ece8ff;background:#faf8ff;font-family:{fonte};">
+      <p style="margin:0 0 10px;font-size:13px;line-height:1.6;color:#475569;">{rodape}</p>
+      <p style="margin:0;font-size:12px;line-height:1.6;color:#64748b;"><strong style="color:#0f172a;">Seklyn</strong> · treino acompanhado série por série<br>
+        <a href="https://seklyn.com.br" style="color:#64748b;text-decoration:underline;">seklyn.com.br</a> · <a href="https://seklyn.com.br/planilha-de-treino/" style="color:#64748b;text-decoration:underline;">Planilhas de treino</a></p>
     </td></tr>
   </table>
 </td></tr>
@@ -156,7 +224,8 @@ def enviar_email_notificacao_treino(
         else f"{escape(quem)} atualizou o seu treino <strong>{escape(treino_nome)}</strong>. Já está tudo pronto pra você abrir e marcar série por série.",
     ]
     html = _layout(
-        titulo="Seu treino foi atualizado 💪",
+        titulo="Seu treino foi atualizado",
+        icone="💪",
         previa=f"{treino_nome} — já está no seu app.",
         paragrafos=paragrafos,
         botao_texto="Abrir meu treino",
@@ -176,6 +245,7 @@ def enviar_email_confirmacao(destinatario: str, nome: str, link_confirmacao: str
     primeiro_nome = nome.split(" ")[0]
     html = _layout(
         titulo="Confirme seu e-mail",
+        icone="✉️",
         previa="Falta só um clique pra liberar sua conta no Seklyn.",
         paragrafos=[
             f"Olá, {escape(primeiro_nome)}! Que bom ter você no Seklyn.",

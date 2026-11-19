@@ -94,6 +94,12 @@
 
       <!-- Teste de cobrança real (ver teste-cartao-admin.js): R$ 1,00 no seu
            cartão numa assinatura de teste separada, depois cancela e reembolsa. -->
+      <section class="card pedidos-parceria" id="solicitacoes-parceria">
+        <h2 style="font-size:1.2rem;margin-bottom:4px;">Pedidos de parceria</h2>
+        <p class="hint-text">Personais que querem vender planilhas na loja. Você também recebe cada pedido por e-mail.</p>
+        <div id="lista-solicitacoes"><div class="spinner"></div></div>
+      </section>
+
       <section class="card teste-cartao" id="teste-cartao">
         <div class="teste-cartao-topo">
           <div>
@@ -174,6 +180,7 @@
   <script src="https://sdk.mercadopago.com/js/v2"></script>
   <script type="module" src="../assets/js/admin.js"></script>
   <script type="module" src="../assets/js/teste-cartao-admin.js"></script>
+  <script type="module" src="../assets/js/admin-parcerias.js"></script>
   <script type="module" src="../assets/js/spotlight.js"></script>
 </body>
 </html>
